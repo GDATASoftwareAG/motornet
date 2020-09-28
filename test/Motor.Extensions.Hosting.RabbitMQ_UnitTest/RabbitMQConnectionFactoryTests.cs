@@ -12,9 +12,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerConfig<string>)null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerConfig<string>) null));
         }
-        
+
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
@@ -131,22 +131,22 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             const string vHost = "vHost";
             const int port = 1000;
             var factory = new RabbitMQConnectionFactory();
-            var cfg = GetConsumerConfig(host, user, password, vHost,"test", "exchange", "test");
+            var cfg = GetConsumerConfig(host, user, password, vHost, "test", "exchange", "test");
             cfg.Port = port;
 
             var connectionFactory = factory.From(cfg);
-            
+
             Assert.Equal(user, connectionFactory.UserName);
             Assert.Equal(password, connectionFactory.Password);
             Assert.Equal(vHost, connectionFactory.VirtualHost);
         }
-        
+
         [Fact]
         public void FromPublisherConfig_NullConfig_Throws()
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherConfig<string>)null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherConfig<string>) null));
         }
 
         [Theory]
@@ -256,13 +256,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             cfg.Port = port;
 
             var connectionFactory = factory.From(cfg);
-            
+
             Assert.Equal(user, connectionFactory.UserName);
             Assert.Equal(password, connectionFactory.Password);
             Assert.Equal(vHost, connectionFactory.VirtualHost);
         }
 
-        private RabbitMQConsumerConfig<string> GetConsumerConfig(string host, string user, string password, string virtualHost,
+        private RabbitMQConsumerConfig<string> GetConsumerConfig(string host, string user, string password,
+            string virtualHost,
             string name, string exchange, string routingKey)
         {
             return new RabbitMQConsumerConfig<string>
@@ -295,7 +296,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 Password = password,
                 User = user,
                 VirtualHost = virtualHost,
-                PublishingTarget = new RabbitMQBindingConfig()
+                PublishingTarget = new RabbitMQBindingConfig
                 {
                     Exchange = exchange,
                     RoutingKey = routingKey

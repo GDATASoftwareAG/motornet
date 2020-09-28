@@ -1,5 +1,5 @@
-using Motor.Extensions.Conversion.Abstractions;
 using Google.Protobuf;
+using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.Protobuf
 {

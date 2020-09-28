@@ -6,9 +6,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public class RabbitMQPriorityExtension : ICloudEventExtension
     {
-        public static string CloudEventPrefix = "x-cloud-event";
         public const string PriorityAttributeName = "priority";
-        IDictionary<string, object> attributes = new Dictionary<string, object>();
+        public static string CloudEventPrefix = "x-cloud-event";
+        private IDictionary<string, object> attributes = new Dictionary<string, object>();
 
         public RabbitMQPriorityExtension(byte priority)
         {
@@ -18,7 +18,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public byte? Priority
         {
-            get => (byte?)attributes[PriorityAttributeName];
+            get => (byte?) attributes[PriorityAttributeName];
             set
             {
                 if (value != null) attributes[PriorityAttributeName] = value;
@@ -29,15 +29,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             var eventAttributes = cloudEvent.GetAttributes();
             if (attributes == eventAttributes)
-            {
                 // already done
                 return;
-            }
 
-            foreach (var attr in attributes)
-            {
-                eventAttributes[attr.Key] = attr.Value;
-            }
+            foreach (var attr in attributes) eventAttributes[attr.Key] = attr.Value;
 
             attributes = eventAttributes;
         }
@@ -55,7 +50,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                         {
                             if (!byte.TryParse(s, out var i))
                                 throw new InvalidOperationException("ErrorPriorityValueIsaNotAnInteger");
-                            value = (byte?)i;
+                            value = (byte?) i;
                             return true;
                         }
                         case byte b:

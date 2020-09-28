@@ -28,10 +28,7 @@ namespace Motor.Extensions.Http
             {
                 var headers = new Dictionary<string, string>();
                 _tracer.Inject(scope.Span.Context, BuiltinFormats.HttpHeaders, new TextMapInjectAdapter(headers));
-                foreach (var item in headers)
-                {
-                    request.Headers.Add(item.Key, item.Value);
-                }
+                foreach (var item in headers) request.Headers.Add(item.Key, item.Value);
 
                 try
                 {
@@ -42,7 +39,7 @@ namespace Motor.Extensions.Http
 
                     return response;
                 }
-                catch(HttpRequestException)
+                catch (HttpRequestException)
                 {
                     scope.Span.SetTag(Tags.Error, true);
                     throw;

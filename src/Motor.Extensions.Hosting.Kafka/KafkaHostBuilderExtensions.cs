@@ -1,6 +1,6 @@
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
@@ -11,7 +11,7 @@ namespace Motor.Extensions.Hosting.Kafka
             builder.Configure<KafkaConsumerConfig<T>>(config);
             builder.AddConsumer<KafkaConsumer<T>>();
         }
-        
+
         public static void AddKafka<T>(this IConsumerBuilder<T> builder, string configSection = "KafkaConsumer")
         {
             builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));

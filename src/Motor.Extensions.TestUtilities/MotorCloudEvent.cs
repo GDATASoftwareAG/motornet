@@ -8,6 +8,15 @@ namespace Motor.Extensions.TestUtilities
 {
     public class MotorCloudEvent
     {
+        public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null,
+            IEnumerable<ICloudEventExtension>? extensions = null)
+            where T : class
+        {
+            var applicationNameService = new TestApplicationNameService(source);
+            return new MotorCloudEvent<T>(applicationNameService, data, typeof(T).Name,
+                applicationNameService.GetSource(), extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
+        }
+
         private class TestApplicationNameService : IApplicationNameService
         {
             private readonly Uri _source;
@@ -41,15 +50,6 @@ namespace Motor.Extensions.TestUtilities
             {
                 return _source;
             }
-        }
-
-        public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null,
-            IEnumerable<ICloudEventExtension>? extensions = null)
-            where T : class
-        {
-            var applicationNameService = new TestApplicationNameService(source);
-            return new MotorCloudEvent<T>(applicationNameService, data, typeof(T).Name,
-                applicationNameService.GetSource(), extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
         }
     }
 }

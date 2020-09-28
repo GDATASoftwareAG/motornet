@@ -7,7 +7,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         where TInput : class
     {
         public IMessageHandler<TInput>? InnerMessageHandler { get; set; }
-        
+
         public virtual Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {

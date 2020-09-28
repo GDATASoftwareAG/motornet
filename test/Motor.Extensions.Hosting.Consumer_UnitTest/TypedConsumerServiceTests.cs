@@ -1,8 +1,8 @@
+using Microsoft.Extensions.Logging;
+using Moq;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.Consumer_UnitTest
@@ -16,7 +16,8 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
             var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             var deserializer = new Mock<IMessageDeserializer<string>>();
             var consumer = new Mock<IMessageConsumer<string>>();
-            var consumerService = new TypedConsumerService<string>(logger.Object, queue.Object, deserializer.Object, consumer.Object);
+            var consumerService =
+                new TypedConsumerService<string>(logger.Object, queue.Object, deserializer.Object, consumer.Object);
         }
     }
 }

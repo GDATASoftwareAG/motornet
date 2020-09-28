@@ -1,23 +1,23 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Conversion.Abstractions;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Consumer
 {
     public class TypedConsumerService<TInput> : BackgroundService
         where TInput : class
     {
+        private readonly IMessageConsumer<TInput> _consumer;
+        private readonly IMessageDeserializer<TInput> _deserializer;
         private readonly ILogger<TypedConsumerService<TInput>> _logger;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
-        private readonly IMessageDeserializer<TInput> _deserializer;
-        private readonly IMessageConsumer<TInput> _consumer;
 
         public TypedConsumerService(
-            ILogger<TypedConsumerService<TInput>> logger, 
+            ILogger<TypedConsumerService<TInput>> logger,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
             IMessageDeserializer<TInput> deserializer,
             IMessageConsumer<TInput> consumer)
@@ -48,7 +48,7 @@ namespace Motor.Extensions.Hosting.Consumer
             {
                 var deserialize = _deserializer.Deserialize(dataCloudEvent.TypedData);
                 return await _queue
-                    .QueueBackgroundWorkItem(dataCloudEvent.CreateNew(deserialize, useOldIdentifier: true))
+                    .QueueBackgroundWorkItem(dataCloudEvent.CreateNew(deserialize, true))
                     .ConfigureAwait(true);
             }
             catch (ArgumentException e)
@@ -68,7 +68,7 @@ namespace Motor.Extensions.Hosting.Consumer
             _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
             return _consumer.ExecuteAsync(stoppingToken);
         }
-        
+
         public override void Dispose()
         {
             base.Dispose();

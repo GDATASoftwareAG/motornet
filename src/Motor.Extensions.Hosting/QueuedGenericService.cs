@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Internal;
 
 namespace Motor.Extensions.Hosting
@@ -14,9 +13,9 @@ namespace Motor.Extensions.Hosting
     public class QueuedGenericService<TInput> : BackgroundService
         where TInput : class
     {
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
         private readonly ILogger<QueuedGenericService<TInput>> _logger;
         private readonly QueuedGenericServiceConfig _options;
-        private readonly IHostApplicationLifetime _hostApplicationLifetime;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
         private readonly IMessageHandler<TInput> _rootMessageHandler;
 
@@ -38,11 +37,8 @@ namespace Motor.Extensions.Hosting
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             var tasks = new List<Task>();
-            var optionsParallelProcesses = (_options.ParallelProcesses ?? Environment.ProcessorCount);
-            for (var i = 0; i < optionsParallelProcesses; i++)
-            {
-                tasks.Add(CreateRunnerTaskAsync(token));
-            }
+            var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
+            for (var i = 0; i < optionsParallelProcesses; i++) tasks.Add(CreateRunnerTaskAsync(token));
 
             await Task.WhenAll(tasks);
         }
@@ -58,7 +54,6 @@ namespace Motor.Extensions.Hosting
                     await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
                         .ConfigureAwait(false);
                 }
-
             }, token);
         }
 
@@ -79,10 +74,7 @@ namespace Motor.Extensions.Hosting
             finally
             {
                 taskCompletionSource?.TrySetResult(status);
-                if (status == ProcessedMessageStatus.CriticalFailure)
-                {
-                    _hostApplicationLifetime.StopApplication();
-                }
+                if (status == ProcessedMessageStatus.CriticalFailure) _hostApplicationLifetime.StopApplication();
             }
         }
     }

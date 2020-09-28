@@ -2,9 +2,9 @@
 using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Timer.Config;
 using Quartz;
 using Quartz.Impl;
@@ -13,21 +13,21 @@ namespace Motor.Extensions.Hosting.Timer
 {
     public class Timer : BackgroundService
     {
-        private bool _started;
-        private readonly TimerConfig _config;
-        private IScheduler? _scheduler;
-        private readonly IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> _queue;
         private readonly IApplicationNameService _applicationNameService;
+        private readonly TimerConfig _config;
+        private readonly IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> _queue;
+        private IScheduler? _scheduler;
+        private bool _started;
 
-        public Timer(IOptions<TimerConfig> config, 
+        public Timer(IOptions<TimerConfig> config,
             IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue,
-                IApplicationNameService applicationNameService)
+            IApplicationNameService applicationNameService)
         {
             _queue = queue;
             _applicationNameService = applicationNameService;
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config.Value));
         }
-        
+
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             ThrowIfTimerAlreadyStarted();

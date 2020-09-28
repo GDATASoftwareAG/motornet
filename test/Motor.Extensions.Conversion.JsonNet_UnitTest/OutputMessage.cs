@@ -4,6 +4,6 @@ namespace Motor.Extensions.Conversion.JsonNet_UnitTest
     {
         public string Firstname { get; set; }
         public string Lastname { get; set; }
-        public int Age{ get; set; }
+        public int Age { get; set; }
     }
 }

@@ -6,17 +6,6 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
 {
     public class ProtobufDeserializerTests
     {
-        [Fact]
-        public void Deserialize_ValidMessage_DeserializedMessage()
-        {
-            var serializer = CreateDeserializer();
-
-            var message = serializer.Deserialize(ValidMessage);
-
-            var expectedMessage = new InputMsg {Forename = "Foo", Surename = "Bar", Age = 42};
-            Assert.Equal(expectedMessage, message);
-        }
-
         private byte[] ValidMessage => new byte[]
         {
             0x0a,
@@ -30,16 +19,8 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
             0x61,
             0x72,
             0x18,
-            0x2a,
+            0x2a
         };
-
-        [Fact]
-        public void Deserialize_InvalidMessage_Throw()
-        {
-            var serializer = CreateDeserializer();
-
-            Assert.Throws<ArgumentException>(() => serializer.Deserialize(InvalidMessage));
-        }
 
         private byte[] InvalidMessage => new byte[]
         {
@@ -52,6 +33,25 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
             0x03,
             0x4
         };
+
+        [Fact]
+        public void Deserialize_ValidMessage_DeserializedMessage()
+        {
+            var serializer = CreateDeserializer();
+
+            var message = serializer.Deserialize(ValidMessage);
+
+            var expectedMessage = new InputMsg {Forename = "Foo", Surename = "Bar", Age = 42};
+            Assert.Equal(expectedMessage, message);
+        }
+
+        [Fact]
+        public void Deserialize_InvalidMessage_Throw()
+        {
+            var serializer = CreateDeserializer();
+
+            Assert.Throws<ArgumentException>(() => serializer.Deserialize(InvalidMessage));
+        }
 
         [Fact]
         public void Deserialize_NullMessage_Throw()

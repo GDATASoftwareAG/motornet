@@ -4,36 +4,30 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Diagnostics.Tracing;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
 using OpenTracing;
 using OpenTracing.Propagation;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public class RabbitMQMessageConsumer<T> : RabbitMQConnectionHandler, IMessageConsumer<T>
     {
-        private bool _started;
-        private readonly IRabbitMQConnectionFactory _connectionFactory;
-        private readonly RabbitMQConsumerConfig<T> _config;
         private readonly IHostApplicationLifetime _applicationLifetime;
-        private readonly ITracer _tracer;
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
+        private readonly RabbitMQConsumerConfig<T> _config;
+        private readonly IRabbitMQConnectionFactory _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
+        private readonly ITracer _tracer;
+        private bool _started;
         private CancellationToken StoppingToken;
-
-        public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-        {
-            get;
-            set;
-        }
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
             IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerConfig<T>> config,
@@ -49,13 +43,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             _cloudEventFormatter = cloudEventFormatter;
         }
 
+        public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
+        {
+            get;
+            set;
+        }
+
         public async Task ExecuteAsync(CancellationToken token = default)
         {
             StoppingToken = token;
-            while (token.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(100), token);
-            }
+            while (token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token);
         }
 
         public Task StartAsync(CancellationToken token = default)
@@ -104,25 +101,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private void DeclareQueue()
         {
             var arguments = _config.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            if (_config.Queue.MaxPriority != null)
-            {
-                arguments.Add("x-max-priority", _config.Queue.MaxPriority);
-            }
+            if (_config.Queue.MaxPriority != null) arguments.Add("x-max-priority", _config.Queue.MaxPriority);
 
-            if (_config.Queue.MaxLength != null)
-            {
-                arguments.Add("x-max-length", _config.Queue.MaxLength);
-            }
+            if (_config.Queue.MaxLength != null) arguments.Add("x-max-length", _config.Queue.MaxLength);
 
-            if (_config.Queue.MaxLengthBytes != null)
-            {
-                arguments.Add("x-max-length-bytes", _config.Queue.MaxLengthBytes);
-            }
+            if (_config.Queue.MaxLengthBytes != null) arguments.Add("x-max-length-bytes", _config.Queue.MaxLengthBytes);
 
-            if (_config.Queue.MessageTtl != null)
-            {
-                arguments.Add("x-message-ttl", _config.Queue.MessageTtl);
-            }
+            if (_config.Queue.MessageTtl != null) arguments.Add("x-message-ttl", _config.Queue.MessageTtl);
 
             switch (_config.Queue.Mode)
             {
@@ -136,20 +121,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
 
             Channel?.QueueDeclare(
-                queue: _config.Queue.Name,
-                durable: _config.Queue.Durable,
-                exclusive: false,
-                autoDelete: _config.Queue.AutoDelete,
-                arguments: arguments
+                _config.Queue.Name,
+                _config.Queue.Durable,
+                false,
+                _config.Queue.AutoDelete,
+                arguments
             );
             foreach (var routingKeyConfig in _config.Queue.Bindings)
-            {
                 Channel?.QueueBind(
-                    queue: _config.Queue.Name,
-                    exchange: routingKeyConfig.Exchange,
-                    routingKey: routingKeyConfig.RoutingKey,
-                    arguments: routingKeyConfig.Arguments);
-            }
+                    _config.Queue.Name,
+                    routingKeyConfig.Exchange,
+                    routingKeyConfig.RoutingKey,
+                    routingKeyConfig.Arguments);
         }
 
         private void StartConsumerOnChannel()
@@ -173,14 +156,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 }
 
                 if (args.BasicProperties.IsHeadersPresent())
-                {
                     if (args.BasicProperties.Headers.Any(t => t.Key.StartsWith(RabbitMQHeadersMap.Prefix)))
                     {
                         var spanContext = _tracer.Extract(BuiltinFormats.TextMap,
                             new RabbitMQHeadersMap(args.BasicProperties.Headers));
                         extensions.Add(new JaegerTracingExtension(spanContext));
                     }
-                }
 
                 var cloudEvent = DecodeCloudEventAttributes(args, extensions);
 
@@ -190,7 +171,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 task?.OnCompleted(() =>
                 {
                     if (StoppingToken.IsCancellationRequested) return;
-                    
+
                     var processedMessageStatus = task?.GetResult();
                     switch (processedMessageStatus)
                     {
@@ -198,10 +179,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                             Channel?.BasicAck(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.TemporaryFailure:
-                            Channel?.BasicReject(args.DeliveryTag, requeue: true);
+                            Channel?.BasicReject(args.DeliveryTag, true);
                             break;
                         case ProcessedMessageStatus.InvalidInput:
-                            Channel?.BasicReject(args.DeliveryTag, requeue: false);
+                            Channel?.BasicReject(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.CriticalFailure:
                             _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
@@ -228,7 +209,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var attributes = new Dictionary<string, object>();
 
             if (args.BasicProperties.IsHeadersPresent())
-            {
                 foreach (var header in args.BasicProperties.Headers
                     .Where(t => t.Key.StartsWith(RabbitMQPriorityExtension.CloudEventPrefix))
                     .Select(t =>
@@ -238,27 +218,20 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 {
                     if (string.Equals(header.Key, CloudEventAttributes.DataContentTypeAttributeName(specVersion))
                         || string.Equals(header.Key, CloudEventAttributes.SpecVersionAttributeName(specVersion)))
-                    {
                         continue;
-                    }
 
                     attributes.Add(header.Key, header.Value);
                 }
-            }
 
             if (attributes.Count == 0)
-            {
                 return new MotorCloudEvent<byte[]>(_applicationNameService, args.Body.ToArray(), typeof(T).Name,
                     new Uri("rabbitmq://notset"), extensions: extensions.ToArray());
-            }
 
             var cloudEvent = new MotorCloudEvent<byte[]>(_applicationNameService, args.Body.ToArray(), extensions);
 
             foreach (var attribute in attributes)
-            {
                 cloudEvent.GetAttributes().Add(attribute.Key, _cloudEventFormatter.DecodeAttribute(
                     cloudEvent.SpecVersion, attribute.Key, (byte[]) attribute.Value, extensions));
-            }
 
             return cloudEvent;
         }

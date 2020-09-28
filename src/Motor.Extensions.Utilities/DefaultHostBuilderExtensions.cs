@@ -1,13 +1,13 @@
 using System;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Tracing;
-using Motor.Extensions.Hosting;
-using Motor.Extensions.Hosting.HealthChecks;
-using Motor.Extensions.Utilities.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Diagnostics.Metrics;
+using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Hosting;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.HealthChecks;
+using Motor.Extensions.Utilities.Abstractions;
 
 namespace Motor.Extensions.Utilities
 {
@@ -59,14 +59,14 @@ namespace Motor.Extensions.Utilities
             return hostBuilder
                 .AddHealthCheck<MessageProcessingHealthCheck<TInput>>(nameof(MessageProcessingHealthCheck<TInput>))
                 .ConfigureServices((hostContext, services) =>
-            {
-                services.AddQueuedGenericService<TInput>();
-                services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
-                services.Configure<MessageProcessingHealthCheckConfig>(
-                    hostContext.Configuration.GetSection(healthCheckConfigSection));
-                services
-                    .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
-            });
+                {
+                    services.AddQueuedGenericService<TInput>();
+                    services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
+                    services.Configure<MessageProcessingHealthCheckConfig>(
+                        hostContext.Configuration.GetSection(healthCheckConfigSection));
+                    services
+                        .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
+                });
         }
     }
 }

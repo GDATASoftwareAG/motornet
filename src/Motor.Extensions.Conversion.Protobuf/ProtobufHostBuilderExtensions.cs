@@ -1,12 +1,12 @@
-using Motor.Extensions.Hosting.Abstractions;
 using Google.Protobuf;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Conversion.Protobuf
 {
     public static class ProtobufHostBuilderExtensions
     {
         public static IPublisherBuilder<TOut> AddProtobuf<TOut>(this IPublisherBuilder<TOut> publisherBuilder)
-            where TOut: IMessage
+            where TOut : IMessage
         {
             publisherBuilder.AddSerializer<ProtobufSerializer<TOut>>();
             return publisherBuilder;

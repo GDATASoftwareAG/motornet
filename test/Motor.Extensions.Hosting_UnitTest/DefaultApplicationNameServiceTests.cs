@@ -11,12 +11,14 @@ namespace Motor.Extensions.Hosting_UnitTest
         [InlineData("test", "IpFeatureExtraction.Service", "test/ip-feature-extraction")]
         [InlineData("test", "IpFeatureExtractionConsole", "test/ip-feature-extraction")]
         [InlineData("test", "IpFeatureExtractionService", "test/ip-feature-extraction")]
-        public void ExtractServiceName_ProductAndName_UnifiedServiceName(string product, string assembly, string expected)
+        public void ExtractServiceName_ProductAndName_UnifiedServiceName(string product, string assembly,
+            string expected)
         {
-            var application = new DefaultApplicationNameService(Assembly.GetAssembly(typeof(DefaultApplicationNameService)));
-            
+            var application =
+                new DefaultApplicationNameService(Assembly.GetAssembly(typeof(DefaultApplicationNameService)));
+
             var extractedServiceName = application.ExtractServiceName(product, assembly);
-            
+
             Assert.Equal(expected, extractedServiceName);
         }
     }

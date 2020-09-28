@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.TestUtilities;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.RabbitMQ;
+using Motor.Extensions.TestUtilities;
 using OpenTracing;
 using OpenTracing.Mock;
 using Xunit;
@@ -20,7 +20,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
     {
         private readonly RabbitMQFixture _fixture;
         private readonly Random _random = new Random();
-        public RabbitMQTests(RabbitMQFixture fixture) => _fixture = fixture;
+
+        public RabbitMQTests(RabbitMQFixture fixture)
+        {
+            _fixture = fixture;
+        }
 
         [Fact]
         public async Task ConsumerStartAsync_WithQueueName_QueueExists()
@@ -78,7 +82,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var extensions = new List<ICloudEventExtension>
             {
                 new JaegerTracingExtension(span.Context),
-                new RabbitMQPriorityExtension(priority),
+                new RabbitMQPriorityExtension(priority)
             };
 
             await publisher.PublishMessageAsync(
@@ -177,7 +181,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var consumedSpanContext = (ISpanContext) null;
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
-                .WithSingleRandomPublishedMessage(withSpan: false)
+                .WithSingleRandomPublishedMessage(false)
                 .WithConsumerCallback((motorEvent, bytes) =>
                 {
                     consumedSpanContext = motorEvent.Extension<JaegerTracingExtension>().SpanContext;

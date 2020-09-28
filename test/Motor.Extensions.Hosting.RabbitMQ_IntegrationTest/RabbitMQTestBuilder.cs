@@ -4,47 +4,50 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
-using Motor.Extensions.TestUtilities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.RabbitMQ;
+using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.TestUtilities;
 using OpenTracing;
 using OpenTracing.Mock;
 using OpenTracing.Propagation;
 using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RandomExtensions;
+using RandomDataGenerator.FieldOptions;
+using RandomDataGenerator.Randomizers;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 {
     public class RabbitMQTestBuilder
     {
-        private bool isBuilt;
-        private bool createQueue;
-        private IList<Tuple<byte, byte[], bool>> messages = new List<Tuple<byte, byte[], bool>>();
+        public const ushort PrefetchCount = 100;
 
         private static readonly Random _random = new Random();
+        public readonly MockTracer Tracer = new MockTracer();
+        private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
+        private bool createQueue;
+        private RabbitMQFixture Fixture;
+        private bool isBuilt;
+        public ISpanContext LastPublishedSpanContext;
+        private readonly IList<Tuple<byte, byte[], bool>> messages = new List<Tuple<byte, byte[], bool>>();
         private string QueueName;
         private string RoutingKey;
-        public readonly MockTracer Tracer = new MockTracer();
-        public ISpanContext LastPublishedSpanContext;
-        public const ushort PrefetchCount = 100;
-        private RabbitMQFixture Fixture;
-        private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
 
         public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
         {
+            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+
             return new RabbitMQTestBuilder
             {
-                QueueName = _random.NextString("abcdefghjklrtyu", 10),
-                RoutingKey = _random.NextString("abcdefghjklrtyu", 10),
+                QueueName = randomizerString.Generate(),
+                RoutingKey = randomizerString.Generate(),
                 Fixture = fixture
             };
         }
@@ -56,7 +59,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             return q;
         }
 
-        public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
+        public RabbitMQTestBuilder WithConsumerCallback(
+            Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
         {
             Callback = callback;
             createQueue = true;
@@ -78,10 +82,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         public RabbitMQTestBuilder WithMultipleRandomPublishedMessage(ushort number = PrefetchCount)
         {
-            for (var i = 0; i < number; i++)
-            {
-                WithSingleRandomPublishedMessage();
-            }
+            for (var i = 0; i < number; i++) WithSingleRandomPublishedMessage();
 
             return this;
         }
@@ -94,10 +95,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 using (var channel = Fixture.Connection.CreateModel())
                 {
                     DeclareQueue(config, channel);
-                    foreach (var message in messages)
-                    {
-                        PublishSingleMessage(channel, message, config);
-                    }
+                    foreach (var message in messages) PublishSingleMessage(channel, message, config);
                 }
 
                 Policy
@@ -148,20 +146,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             arguments.Add("x-max-length-bytes", config.Queue.MaxLengthBytes);
             arguments.Add("x-message-ttl", config.Queue.MessageTtl);
             channel.QueueDeclare(
-                queue: config.Queue.Name,
-                durable: config.Queue.Durable,
-                exclusive: false,
-                autoDelete: config.Queue.AutoDelete,
-                arguments: arguments
+                config.Queue.Name,
+                config.Queue.Durable,
+                false,
+                config.Queue.AutoDelete,
+                arguments
             );
             foreach (var routingKeyConfig in config.Queue.Bindings)
-            {
                 channel.QueueBind(
-                    queue: config.Queue.Name,
-                    exchange: routingKeyConfig.Exchange,
-                    routingKey: routingKeyConfig.RoutingKey,
-                    arguments: routingKeyConfig.Arguments);
-            }
+                    config.Queue.Name,
+                    routingKeyConfig.Exchange,
+                    routingKeyConfig.RoutingKey,
+                    routingKeyConfig.Arguments);
         }
 
         private RabbitMQConsumerConfig<T> GetConsumerConfig<T>()
@@ -184,7 +180,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                         }
                     }
                 },
-                PrefetchCount = PrefetchCount,
+                PrefetchCount = PrefetchCount
             };
         }
 
@@ -237,7 +233,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
             var optionsMock = new Mock<IOptions<RabbitMQPublisherConfig<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
-            return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object, new JsonEventFormatter(), Tracer);
+            return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
+                new JsonEventFormatter(), Tracer);
         }
 
         private RabbitMQPublisherConfig<T> GetPublisherConfig<T>()
@@ -279,7 +276,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var extensions = new List<ICloudEventExtension>
             {
                 new JaegerTracingExtension(spanContext),
-                new RabbitMQPriorityExtension(priority),
+                new RabbitMQPriorityExtension(priority)
             };
 
             return MotorCloudEvent.CreateTestCloudEvent(message, extensions: extensions.ToArray());

@@ -4,7 +4,7 @@ using Motor.Extensions.Hosting.Abstractions;
 namespace Motor.Extensions.Hosting.Internal
 {
     public class BaseDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
-        where TInput : class 
+        where TInput : class
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public BaseDelegatingMessageHandler(PrepareDelegatingMessageHandler<TInput> prepare,

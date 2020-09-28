@@ -11,8 +11,6 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
         private readonly TestcontainersContainer _zookeeper;
         private TestcontainersContainer _kafka;
 
-        public string Hostname => _kafka.Hostname;
-
         public KafkaFixture()
         {
             _zookeeper = new TestcontainersBuilder<TestcontainersContainer>()
@@ -24,6 +22,8 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
                 .Build();
         }
 
+        public string Hostname => _kafka.Hostname;
+
         public async Task InitializeAsync()
         {
             await _zookeeper.StartAsync();
@@ -31,7 +31,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var gateway = _zookeeper.Hostname;
             if (gateway == "localhost")
                 gateway = "172.17.0.1";
-            
+
             _kafka = new TestcontainersBuilder<TestcontainersContainer>()
                 .WithImage("confluentinc/cp-kafka:5.4.0")
                 .WithPortBinding(9092, 9092)
@@ -50,7 +50,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
         }
 
         public async Task DisposeAsync()
-        { 
+        {
             await Task.WhenAll(_kafka.StopAsync(), _zookeeper.StopAsync());
         }
     }

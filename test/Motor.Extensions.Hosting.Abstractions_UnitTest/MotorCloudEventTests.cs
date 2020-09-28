@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Motor.Extensions.Hosting.Abstractions;
 using Moq;
+using Motor.Extensions.Hosting.Abstractions;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.Abstractions_UnitTest
@@ -11,9 +11,10 @@ namespace Motor.Extensions.Hosting.Abstractions_UnitTest
         [Fact]
         public void CreateNew_UseFromOld_IdAndDateAreNewCreated()
         {
-            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String", new Uri("test://non"));
+            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String",
+                new Uri("test://non"));
             var expectedData = new List<string>();
-            
+
             var newEvent = oldEvent.CreateNew(expectedData);
 
             Assert.NotEqual(oldEvent.Id, newEvent.Id);
@@ -25,9 +26,10 @@ namespace Motor.Extensions.Hosting.Abstractions_UnitTest
         [Fact]
         public void CreateNew_UseOldIdentifierFromOld_IdAndDateAreNewCreated()
         {
-            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService(), " ", "String", new Uri("test://non"));
+            var oldEvent =
+                new MotorCloudEvent<string>(GetApplicationNameService(), " ", "String", new Uri("test://non"));
             var expectedData = new List<string>();
-            
+
             var newEvent = oldEvent.CreateNew(expectedData, true);
 
             Assert.Equal(oldEvent.Id, newEvent.Id);
@@ -35,13 +37,14 @@ namespace Motor.Extensions.Hosting.Abstractions_UnitTest
             Assert.Equal(oldEvent.Type, newEvent.Type);
             Assert.Equal(oldEvent.Source, newEvent.Source);
         }
-        
+
         [Fact]
         public void CreateNew_UseFromOld_DataIsUpdated()
         {
-            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String", new Uri("test://non"));
+            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String",
+                new Uri("test://non"));
             var expectedData = new List<string>();
-            
+
             var newEvent = oldEvent.CreateNew(expectedData);
 
             Assert.Equal(expectedData, newEvent.Data);

@@ -1,6 +1,6 @@
 using System;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Microsoft.Extensions.Configuration;
+using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
@@ -13,15 +13,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
                 .AddJsonFile($"configs/{configName}.json")
                 .Build();
         }
-        
+
         [Fact]
         public void BindConsumerConfig_ConfigWithoutQueue_ContainsAllValues()
         {
             var config = GetJsonConfig("consumer-no-queue");
             var consumerOptions = new RabbitMQConsumerConfig<string>();
-            
-            ConfigurationBinder.Bind(config, consumerOptions);
-            
+
+            config.Bind(consumerOptions);
+
             Assert.Equal("hostname", consumerOptions.Host);
             Assert.Equal(10000, consumerOptions.Port);
             Assert.Equal("username", consumerOptions.User);
@@ -29,15 +29,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
             Assert.Equal("vhost", consumerOptions.VirtualHost);
             Assert.Equal(10000, consumerOptions.PrefetchCount);
         }
-        
+
         [Fact]
         public void BindConsumerConfig_ConfigWithQueueWithNoBindings_ContainsQueue()
         {
             var config = GetJsonConfig("consumer-queue");
             var consumerOptions = new RabbitMQConsumerConfig<string>();
-            
-            ConfigurationBinder.Bind(config, consumerOptions);
-            
+
+            config.Bind(consumerOptions);
+
             Assert.NotNull(consumerOptions.Queue);
             Assert.Empty(consumerOptions.Queue.Bindings);
             Assert.Equal("test", consumerOptions.Queue.Name);
@@ -48,15 +48,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
             Assert.Equal(30, consumerOptions.Queue.MessageTtl);
             Assert.Equal("teststring", consumerOptions.Queue.Arguments["string"]);
         }
-        
+
         [Fact]
         public void BindConsumerConfig_ConfigWithRoutingKey_ContainsRoutingKey()
         {
             var config = GetJsonConfig("consumer-routing-key");
             var consumerOptions = new RabbitMQConsumerConfig<string>();
-            
-            ConfigurationBinder.Bind(config, consumerOptions);
-            
+
+            config.Bind(consumerOptions);
+
             Assert.NotNull(consumerOptions.Queue.Bindings);
             Assert.Equal("exchange", consumerOptions.Queue.Bindings[0].Exchange);
             Assert.Equal("routing", consumerOptions.Queue.Bindings[0].RoutingKey);
@@ -68,9 +68,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         {
             var config = GetJsonConfig("consumer-default-values");
             var consumerOptions = new RabbitMQConsumerConfig<string>();
-            
-            ConfigurationBinder.Bind(config, consumerOptions);
-            
+
+            config.Bind(consumerOptions);
+
             Assert.Equal(5672, consumerOptions.Port);
             Assert.Equal(0, TimeSpan.FromSeconds(60).CompareTo(consumerOptions.RequestedHeartbeat));
             Assert.Equal("", consumerOptions.VirtualHost);

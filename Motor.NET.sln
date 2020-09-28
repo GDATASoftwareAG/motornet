@@ -10,7 +10,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C8804689-D33A-45CC-B025-2854D37A2D14}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		build.cake = build.cake
 		Readme.md = Readme.md
 		shared.csproj = shared.csproj
 	EndProjectSection

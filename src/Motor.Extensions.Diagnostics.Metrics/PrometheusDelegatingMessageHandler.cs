@@ -11,7 +11,8 @@ namespace Motor.Extensions.Diagnostics.Metrics
     {
         private readonly IMetricFamily<ICounter> _messageProcessingTotal;
 
-        public PrometheusDelegatingMessageHandler(IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
+        public PrometheusDelegatingMessageHandler(
+            IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
         {
             _messageProcessingTotal =
                 metricsFactory.CreateCounter("message_processing_total", "Message processing status total", "status");
@@ -32,6 +33,5 @@ namespace Motor.Extensions.Diagnostics.Metrics
 
             return processedMessageStatus;
         }
-        
     }
 }

@@ -6,16 +6,6 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
 {
     public class ProtobufSerializerTests
     {
-        [Fact]
-        public void Serialize_ValidMessage_SerializedMessage()
-        {
-            var serializer = CreateSerializer();
-
-            var message = serializer.Serialize(ValidMessage);
-
-            Assert.Equal(ValidSerializedMessage, message);
-        }
-
         private InputMsg ValidMessage => new InputMsg {Forename = "Foo", Surename = "Bar", Age = 42};
 
         private byte[] ValidSerializedMessage => new byte[]
@@ -31,8 +21,18 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
             0x61,
             0x72,
             0x18,
-            0x2a,
+            0x2a
         };
+
+        [Fact]
+        public void Serialize_ValidMessage_SerializedMessage()
+        {
+            var serializer = CreateSerializer();
+
+            var message = serializer.Serialize(ValidMessage);
+
+            Assert.Equal(ValidSerializedMessage, message);
+        }
 
         [Fact]
         public void Serialize_NullMessage_Throw()

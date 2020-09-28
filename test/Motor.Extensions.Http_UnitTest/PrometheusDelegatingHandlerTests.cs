@@ -1,11 +1,11 @@
 using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Moq;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Moq;
 using OpenTracing;
 using OpenTracing.Mock;
 using Xunit;
@@ -38,7 +38,7 @@ namespace Motor.Extensions.Http_UnitTest
             var httpClientFactory = hostBuilder.Build().Services.GetService<IHttpClientFactory>();
             var httpClient1 = httpClientFactory.CreateClient("test1");
             var httpClient2 = httpClientFactory.CreateClient("test2");
-            
+
             Assert.NotNull(httpClient1);
             Assert.NotNull(httpClient2);
         }

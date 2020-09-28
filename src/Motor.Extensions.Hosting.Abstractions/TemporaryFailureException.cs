@@ -6,17 +6,14 @@ namespace Motor.Extensions.Hosting.Abstractions
     {
         public TemporaryFailureException()
         {
-            
         }
 
         public TemporaryFailureException(string message) : base(message)
         {
-            
         }
 
         public TemporaryFailureException(string message, Exception ex) : base(message, ex)
         {
-            
         }
     }
 }

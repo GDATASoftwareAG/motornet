@@ -24,7 +24,7 @@ namespace Motor.Extensions.Conversion.JsonNet
             }
             catch (InvalidCastException e)
             {
-                throw new ArgumentException($"JSON contains unexpected type.", nameof(message), e);
+                throw new ArgumentException("JSON contains unexpected type.", nameof(message), e);
             }
         }
     }

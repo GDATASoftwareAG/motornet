@@ -1,6 +1,6 @@
 using System;
-using Motor.Extensions.Conversion.Abstractions;
 using Google.Protobuf;
+using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.Protobuf
 {
@@ -10,10 +10,7 @@ namespace Motor.Extensions.Conversion.Protobuf
 
         public T Deserialize(byte[] inMessage)
         {
-            if (inMessage == null || inMessage.Length == 0)
-            {
-                throw new ArgumentNullException(nameof(inMessage));
-            }
+            if (inMessage == null || inMessage.Length == 0) throw new ArgumentNullException(nameof(inMessage));
 
             T deserializedMsg;
             try

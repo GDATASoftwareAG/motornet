@@ -12,6 +12,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private IDictionary<string, object> _attributes = new Dictionary<string, object>();
 
 
+        public RabbitMQBindingConfigExtension(string exchange, string routingKey)
+        {
+            Exchange = exchange;
+            RoutingKey = routingKey;
+        }
+
+
         public string? Exchange
         {
             get => (string?) _attributes[ExchangeAttributeName];
@@ -34,30 +41,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             ? new RabbitMQBindingConfig
             {
                 Exchange = Exchange,
-                RoutingKey = RoutingKey,
+                RoutingKey = RoutingKey
             }
             : null;
-
-
-        public RabbitMQBindingConfigExtension(string exchange, string routingKey)
-        {
-            Exchange = exchange;
-            RoutingKey = routingKey;
-        }
 
         public void Attach(CloudEvent cloudEvent)
         {
             var eventAttributes = cloudEvent.GetAttributes();
             if (_attributes == eventAttributes)
-            {
                 // already done
                 return;
-            }
 
-            foreach (var attr in _attributes)
-            {
-                eventAttributes[attr.Key] = attr.Value;
-            }
+            foreach (var attr in _attributes) eventAttributes[attr.Key] = attr.Value;
 
             _attributes = eventAttributes;
         }
