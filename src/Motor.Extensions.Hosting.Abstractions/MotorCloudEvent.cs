@@ -34,6 +34,7 @@ namespace Motor.Extensions.Hosting.Abstractions
             _applicationNameService = applicationNameService;
             TypedData = data;
         }
+
         public MotorCloudEvent(
             IApplicationNameService applicationNameService,
             TData data,
@@ -58,10 +59,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         public T GetExtensionOrCreate<T>(Func<T> createNewExtension)
             where T : ICloudEventExtension
         {
-            if (Extensions.TryGetValue(typeof(T), out var cloudEventExtension))
-            {
-                return (T) cloudEventExtension;
-            }
+            if (Extensions.TryGetValue(typeof(T), out var cloudEventExtension)) return (T) cloudEventExtension;
 
             var invoke = createNewExtension.Invoke();
             Extensions.Add(invoke.GetType(), invoke);

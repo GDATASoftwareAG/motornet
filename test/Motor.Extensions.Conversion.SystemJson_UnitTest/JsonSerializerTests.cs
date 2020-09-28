@@ -8,6 +8,8 @@ namespace Motor.Extensions.Conversion.SystemJson_UnitTest
 {
     public class JsonSerializerTests
     {
+        private InputMessage ValidMessage => new InputMessage {Firstname = "Foo", Lastname = "Bar", Age = 42};
+
         [Fact]
         public void Serialize_ValidMessage_SerializedMessage()
         {
@@ -18,8 +20,6 @@ namespace Motor.Extensions.Conversion.SystemJson_UnitTest
 
             Assert.Equal(expected, message);
         }
-
-        private InputMessage ValidMessage => new InputMessage {Firstname = "Foo", Lastname = "Bar", Age = 42};
 
         [Fact]
         public void Serialize_NullMessage_Throw()

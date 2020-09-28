@@ -1,9 +1,9 @@
 using System;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Moq;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.HealthChecks;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest
@@ -50,7 +50,8 @@ namespace Motor.Extensions.Hosting_UnitTest
             Assert.Equal(HealthStatus.Healthy, result);
         }
 
-        private MessageProcessingHealthCheck<string> CreateHealthCheck(bool exceededMaxTimeSinceLastProcessedMessage, int itemCount)
+        private MessageProcessingHealthCheck<string> CreateHealthCheck(bool exceededMaxTimeSinceLastProcessedMessage,
+            int itemCount)
         {
             var maxTimeSinceLastProcessedMessage = TimeSpan.FromMilliseconds(100);
             var config = new MessageProcessingHealthCheckConfig

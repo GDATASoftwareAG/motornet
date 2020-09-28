@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.HealthChecks
 {

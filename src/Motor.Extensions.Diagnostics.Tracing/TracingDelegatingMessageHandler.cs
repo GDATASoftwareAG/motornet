@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Hosting.Abstractions;
 using OpenTracing;
 using OpenTracing.Tag;
 
@@ -25,9 +25,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
             var spanBuilder = _tracer.BuildSpan(nameof(HandleMessageAsync));
             var extension = dataCloudEvent.GetExtensionOrCreate(() => new JaegerTracingExtension((ISpanContext) null));
             if (extension.SpanContext != null)
-            {
                 spanBuilder = spanBuilder.AddReference(References.FollowsFrom, extension.SpanContext);
-            }
 
             using var scope = spanBuilder.StartActive(true);
             using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",
@@ -49,6 +47,5 @@ namespace Motor.Extensions.Diagnostics.Tracing
                 return processedMessageStatus;
             }
         }
-        
     }
 }

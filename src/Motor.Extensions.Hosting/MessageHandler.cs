@@ -1,12 +1,11 @@
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting
 {
     public class MessageHandler<TInput, TOutput> : MultiResultMessageHandler<TInput, TOutput>
-        where TInput : class 
+        where TInput : class
         where TOutput : class
     {
         public MessageHandler(ILogger<MessageHandler<TInput, TOutput>> logger,

@@ -3,21 +3,20 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;
-using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Utilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Prometheus.Client;
+using Prometheus.Client.Abstractions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Xunit;
-using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Utilities_IntegrationTest
 {
@@ -82,10 +81,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (messageFromDestinationQueue == string.Empty)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
-            }
+            while (messageFromDestinationQueue == string.Empty) await Task.Delay(TimeSpan.FromMilliseconds(50));
 
             return messageFromDestinationQueue;
         }
@@ -103,7 +99,8 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             }
 
 
-            public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent, CancellationToken token = default)
+            public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
+                CancellationToken token = default)
             {
                 _logger.LogInformation("log your request");
                 var tmpChar = dataCloudEvent.TypedData.ToCharArray();
@@ -112,7 +109,8 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 return Task.FromResult(dataCloudEvent.CreateNew(new string(reversed)));
             }
 
-            public Task<MotorCloudEvent<string>> ConvertMessageAsContainerAsync(MotorCloudEvent<string> dataCloudEvent, CancellationToken token = default)
+            public Task<MotorCloudEvent<string>> ConvertMessageAsContainerAsync(MotorCloudEvent<string> dataCloudEvent,
+                CancellationToken token = default)
             {
                 throw new NotImplementedException();
             }

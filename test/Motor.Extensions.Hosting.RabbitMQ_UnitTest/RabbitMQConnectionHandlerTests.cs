@@ -1,6 +1,6 @@
 using System;
-using Motor.Extensions.Hosting.RabbitMQ;
 using Moq;
+using Motor.Extensions.Hosting.RabbitMQ;
 using RabbitMQ.Client;
 using Xunit;
 
@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Throws<InvalidOperationException>(() => connectionHandler.EstablishConnection());
         }
-        
+
         [Fact]
         public void EstablishConnection_WithConnectionFactory_ConnectionEstablished()
         {
@@ -50,7 +50,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Throws<InvalidOperationException>(() => connectionHandler.EstablishChannel());
         }
-        
+
         [Fact]
         public void EstablishChannel_WithConnectionFactoryAndEstablishedConnection_ChannelEstablished()
         {
@@ -59,7 +59,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             conFactoryMock.Setup(x => x.CreateConnection()).Returns(connectionMock.Object);
             var connectionHandler = GetConnectionHandler(conFactoryMock.Object);
             connectionHandler.EstablishConnection();
-            
+
             connectionHandler.EstablishChannel();
 
             connectionMock.Verify(x => x.CreateModel(), Times.Exactly(1));
@@ -87,7 +87,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             conHandler.SetConnectionFactory(conFactory);
             return conHandler;
         }
-        
+
         private class TestConnectionHander : RabbitMQConnectionHandler
         {
             public new void EstablishConnection()

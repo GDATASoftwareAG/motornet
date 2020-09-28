@@ -7,7 +7,7 @@ using Motor.Extensions.Hosting.Abstractions;
 namespace Motor.Extensions.Hosting
 {
     public class SingleToMultiConverterAdapter<TInput, TOutput> : IMultiResultMessageConverter<TInput, TOutput>
-        where TInput : class 
+        where TInput : class
         where TOutput : class
     {
         private readonly IMessageConverter<TInput, TOutput> _converter;
@@ -16,8 +16,9 @@ namespace Motor.Extensions.Hosting
         {
             _converter = converter ?? throw new ArgumentNullException(nameof(converter));
         }
-        
-        public async Task<IEnumerable<MotorCloudEvent<TOutput>>> ConvertMessageAsync(MotorCloudEvent<TInput> dataCloudEvent, CancellationToken token)
+
+        public async Task<IEnumerable<MotorCloudEvent<TOutput>>> ConvertMessageAsync(
+            MotorCloudEvent<TInput> dataCloudEvent, CancellationToken token)
         {
             var convertMessage = await _converter.ConvertMessageAsync(dataCloudEvent, token)
                 .ConfigureAwait(false);

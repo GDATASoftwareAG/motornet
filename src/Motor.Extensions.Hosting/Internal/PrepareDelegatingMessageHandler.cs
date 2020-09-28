@@ -2,13 +2,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Internal
 {
-    public class PrepareDelegatingMessageHandler<TInput>: DelegatingMessageHandler<TInput>
-        where TInput : class 
+    public class PrepareDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
+        where TInput : class
     {
         private readonly ILogger<PrepareDelegatingMessageHandler<TInput>> _logger;
 
@@ -38,12 +38,13 @@ namespace Motor.Extensions.Hosting.Internal
                 processedMessageStatus = ProcessedMessageStatus.TemporaryFailure;
             }
             catch (Exception ex)
-            { 
+            {
                 _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
-                    $"Unexpected error on message processing.");
+                    "Unexpected error on message processing.");
 
                 processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
             }
+
             return processedMessageStatus;
         }
     }

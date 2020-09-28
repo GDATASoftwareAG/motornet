@@ -1,37 +1,34 @@
-using System.Security.Authentication.ExtendedProtection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Conversion.Abstractions;
-using Motor.Extensions.Hosting;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.Consumer;
-using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Motor.Extensions.Hosting.Publisher;
-using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
-using Motor.Extensions.Diagnostics.Logging;
-using Motor.Extensions.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
+using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Diagnostics.Logging;
+using Motor.Extensions.Diagnostics.Metrics;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Hosting;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.Consumer;
+using Motor.Extensions.Hosting.Publisher;
+using Motor.Extensions.Hosting.RabbitMQ;
+using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
+using Motor.Extensions.Utilities;
 using OpenTracing;
 using OpenTracing.Mock;
 using OpenTracing.Propagation;
-using Prometheus.Client;
 using Prometheus.Client.Abstractions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RabbitMQ.Client.Framing;
-using RandomExtensions;
+using RandomDataGenerator.FieldOptions;
+using RandomDataGenerator.Randomizers;
 using Serilog;
 using Xunit;
 
@@ -42,7 +39,11 @@ namespace Motor.Extensions.Hosting_IntegrationTest
     {
         private readonly RabbitMQFixture _fixture;
         private readonly Random _random = new Random();
-        public GenericHostingTests(RabbitMQFixture fixture) => _fixture = fixture;
+
+        public GenericHostingTests(RabbitMQFixture fixture)
+        {
+            _fixture = fixture;
+        }
 
         [Fact(Timeout = 20000)]
         public async Task
@@ -182,7 +183,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 })
                 .ConfigureAppConfiguration((builder, config) =>
                 {
-                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+                    config.AddJsonFile("appsettings.json", true, false);
                     config.AddEnvironmentVariables();
                 })
                 .Build();
@@ -192,16 +193,15 @@ namespace Motor.Extensions.Hosting_IntegrationTest
 
         private void PrepareQueues()
         {
-            var consumerQueueName = _random.NextString("abcdefghjklrtyu", 10);
-            var publisherRoutingKey = _random.NextString("abcdefghjkzlmnrtyu", 10);
-            var destinationQueueName = _random.NextString("abcdefghjkzlmnrtyu", 10);
+            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Port", _fixture.Port.ToString());
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Host", _fixture.Hostname);
             Environment.SetEnvironmentVariable("RabbitMQPublisher__Port", _fixture.Port.ToString());
             Environment.SetEnvironmentVariable("RabbitMQPublisher__Host", _fixture.Hostname);
-            Environment.SetEnvironmentVariable("RabbitMQConsumer__Queue__Name", consumerQueueName);
-            Environment.SetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey", publisherRoutingKey);
-            Environment.SetEnvironmentVariable("DestinationQueueName", destinationQueueName);
+            Environment.SetEnvironmentVariable("RabbitMQConsumer__Queue__Name", randomizerString.Generate());
+            Environment.SetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey",
+                randomizerString.Generate());
+            Environment.SetEnvironmentVariable("DestinationQueueName", randomizerString.Generate());
         }
 
         private async Task CreateQueueForServicePublisherWithPublisherBindingFromConfig(IModel channel)
@@ -220,11 +220,8 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             IDictionary<string, object> rabbitMqHeaders = null)
         {
             var basicProperties = channel.CreateBasicProperties();
-            
-            if (rabbitMqHeaders != null)
-            {
-                basicProperties.Headers = rabbitMqHeaders;
-            }
+
+            if (rabbitMqHeaders != null) basicProperties.Headers = rabbitMqHeaders;
 
             channel.BasicPublish("amq.topic", "serviceQueue", true, basicProperties,
                 Encoding.UTF8.GetBytes(messageToPublish));
@@ -243,10 +240,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (messageFromDestinationQueue == string.Empty)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
-            }
+            while (messageFromDestinationQueue == string.Empty) await Task.Delay(TimeSpan.FromMilliseconds(50));
 
             return messageFromDestinationQueue;
         }
@@ -261,10 +255,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 headerFromMessageInDestinationQueue = args.BasicProperties.Headers;
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (headerFromMessageInDestinationQueue == null)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
-            }
+            while (headerFromMessageInDestinationQueue == null) await Task.Delay(TimeSpan.FromMilliseconds(50));
 
             return new RabbitMQHeadersMap(headerFromMessageInDestinationQueue);
             ;

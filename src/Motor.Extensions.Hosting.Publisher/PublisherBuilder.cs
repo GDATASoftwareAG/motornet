@@ -1,26 +1,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Motor.Extensions.Conversion.Abstractions;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Publisher
 {
     public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
-        where TOutput: class
+        where TOutput : class
     {
         private readonly IServiceCollection _serviceCollection;
-        public HostBuilderContext Context { get; }
-        public Type? PublisherImplType { get; private set; }
 
         public PublisherBuilder(IServiceCollection serviceCollection, HostBuilderContext context)
         {
             _serviceCollection = serviceCollection;
             Context = context;
         }
-        
+
+        public Type? PublisherImplType { get; private set; }
+        public HostBuilderContext Context { get; }
+
         public void AddPublisher<TPublisher>() where TPublisher : ITypedMessagePublisher<byte[]>
         {
             _serviceCollection.AddTransient(typeof(TPublisher));
@@ -69,6 +70,7 @@ namespace Motor.Extensions.Hosting.Publisher
 
         public int Count => _serviceCollection.Count;
         public bool IsReadOnly => _serviceCollection.IsReadOnly;
+
         public int IndexOf(ServiceDescriptor item)
         {
             return _serviceCollection.IndexOf(item);

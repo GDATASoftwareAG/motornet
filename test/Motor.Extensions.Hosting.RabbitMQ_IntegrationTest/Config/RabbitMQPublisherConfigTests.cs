@@ -1,5 +1,5 @@
-using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Microsoft.Extensions.Configuration;
+using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
@@ -12,15 +12,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
                 .AddJsonFile($"configs/{configName}.json")
                 .Build();
         }
-        
+
         [Fact]
         public void BindPublisherConfig_ConfigWithoutQueue_ContainsAllValues()
         {
             var config = GetJsonConfig("publisher-no-target");
             var publisherConfig = new RabbitMQPublisherConfig<string>();
-            
-            ConfigurationBinder.Bind(config, publisherConfig);
-            
+
+            config.Bind(publisherConfig);
+
             Assert.Equal("hostname", publisherConfig.Host);
             Assert.Equal(10000, publisherConfig.Port);
             Assert.Equal("username", publisherConfig.User);
@@ -33,8 +33,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         {
             var config = GetJsonConfig("publisher-with-target");
             var publisherConfig = new RabbitMQPublisherConfig<string>();
-            
-            ConfigurationBinder.Bind(config, publisherConfig);
+
+            config.Bind(publisherConfig);
 
             Assert.NotNull(publisherConfig.PublishingTarget);
             Assert.Equal("exchange", publisherConfig.PublishingTarget.Exchange);

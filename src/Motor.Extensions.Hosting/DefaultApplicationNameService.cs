@@ -8,13 +8,6 @@ namespace Motor.Extensions.Hosting
 {
     public class DefaultApplicationNameService : IApplicationNameService
     {
-        public IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> {"Service", "Console"};
-        public IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
-        {
-            {".", ""},
-            {"_", ""}
-        };
-        
         private readonly Assembly _assembly;
 
         public DefaultApplicationNameService(Assembly assembly)
@@ -22,19 +15,24 @@ namespace Motor.Extensions.Hosting
             _assembly = assembly;
         }
 
+        public IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> {"Service", "Console"};
+
+        public IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
+        {
+            {".", ""},
+            {"_", ""}
+        };
+
         public string GetProduct()
         {
-            var assemblyProductAttribute = (AssemblyProductAttribute)Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
+            var assemblyProductAttribute =
+                (AssemblyProductAttribute) Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
             if (assemblyProductAttribute.Product == GetAssemblyName())
             {
                 throw new InvalidProgramException("Product is not set.");
             }
-            return assemblyProductAttribute.Product;
-        }
 
-        public string GetAssemblyName()
-        {
-            return _assembly.GetName().Name;
+            return assemblyProductAttribute.Product;
         }
 
         public string GetVersion()
@@ -57,6 +55,11 @@ namespace Motor.Extensions.Hosting
             return new Uri($"motor://{GetFullName()}");
         }
 
+        public string GetAssemblyName()
+        {
+            return _assembly.GetName().Name;
+        }
+
         private static string PascalCaseToKebabCase(string project)
         {
             return string.Concat(project.Select((x, i) => i > 0 && char.IsUpper(x) ? "-" + x : x.ToString()));
@@ -66,7 +69,7 @@ namespace Motor.Extensions.Hosting
         {
             var project = ToReplace
                 .Aggregate(assembly, (current, replaces) => current.Replace(replaces.Key, replaces.Value));
-            
+
             foreach (var service in ToRemoveEndings.Where(t => project.EndsWith(t)))
             {
                 project = project.Substring(0, project.Length - service.Length);

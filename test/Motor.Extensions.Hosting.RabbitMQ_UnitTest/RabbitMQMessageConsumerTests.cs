@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.RabbitMQ;
+using Motor.Extensions.Hosting.RabbitMQ.Config;
 using OpenTracing.Mock;
 using RabbitMQ.Client;
 using Xunit;
@@ -19,9 +19,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
     public class RabbitMQMessageConsumerTests
     {
         private const int DefaultPrefetchCount = 777;
-        
-        
-        private ILogger<RabbitMQMessageConsumer<string>> FakeLogger => new Mock<ILogger<RabbitMQMessageConsumer<string>>>().Object;
+
+
+        private ILogger<RabbitMQMessageConsumer<string>> FakeLogger =>
+            new Mock<ILogger<RabbitMQMessageConsumer<string>>>().Object;
+
         private MockTracer FakeTracer => new MockTracer();
         private IHostApplicationLifetime FakeApplicationLifetime => new Mock<IHostApplicationLifetime>().Object;
 
@@ -223,14 +225,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             return expectedArguments;
         }
 
-        private IMessageConsumer<string> GetRabbitMQMessageConsumer(IRabbitMQConnectionFactory rabbitMqConnectionFactory = null,
+        private IMessageConsumer<string> GetRabbitMQMessageConsumer(
+            IRabbitMQConnectionFactory rabbitMqConnectionFactory = null,
             RabbitMQConsumerConfig<string> config = null, IHostApplicationLifetime applicationLifetime = null)
         {
             rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock().Object;
             applicationLifetime ??= FakeApplicationLifetime;
             var optionsWrapper = new OptionsWrapper<RabbitMQConsumerConfig<string>>(config ?? GetConfig());
-            
-            return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper, 
+
+            return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
                 applicationLifetime, FakeTracer, GetApplicationNameService(), new JsonEventFormatter());
         }
 

@@ -1,49 +1,24 @@
 using System;
 using System.Collections.Generic;
-using Motor.Extensions.Diagnostics.HealthChecks;
-using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Utilities.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Diagnostics.HealthChecks;
+using Motor.Extensions.Diagnostics.Metrics;
+using Motor.Extensions.Utilities.Abstractions;
 
 namespace Motor.Extensions.Utilities
 {
     public class MotorHostBuilder : IMotorHostBuilder
     {
         private readonly IHostBuilder _builder;
+        private readonly IConfiguration _config;
         private readonly bool _enableConfigureWebDefaults;
-
-        private struct HealthCheckData
-        {
-            public readonly Type Type;
-            public readonly string Name;
-            public readonly HealthStatus? FailureStatus;
-            public readonly IEnumerable<string> Tags;
-            public readonly TimeSpan? Timeout;
-
-            public HealthCheckData(
-                Type type,
-                string name,
-                HealthStatus? failureStatus = null,
-                IEnumerable<string>? tags = null,
-                TimeSpan? timeout = null)
-            {
-                Type = type;
-                Name = name;
-                FailureStatus = failureStatus;
-                Tags = tags ?? new List<string>();
-                Timeout = timeout;
-            }
-
-            
-        }
         private readonly List<HealthCheckData> _healthChecks = new List<HealthCheckData>();
         private Type? _type;
-        private readonly IConfiguration _config;
 
         public MotorHostBuilder(IHostBuilder builder, bool enableConfigureWebDefaults = true)
         {
@@ -51,7 +26,7 @@ namespace Motor.Extensions.Utilities
             _enableConfigureWebDefaults = enableConfigureWebDefaults;
 
             _config = new ConfigurationBuilder()
-                .AddEnvironmentVariables(prefix: MotorHostDefaults.OptionsPrefix)
+                .AddEnvironmentVariables(MotorHostDefaults.OptionsPrefix)
                 .Build();
         }
 
@@ -117,49 +92,33 @@ namespace Motor.Extensions.Utilities
             _builder.ConfigureContainer(configureDelegate);
             return this;
         }
-        
+
         public IHost Build()
         {
             if (_enableConfigureWebDefaults)
-            {
                 _builder
                     .ConfigureWebHostDefaults(builder =>
                     {
                         IMotorStartup? startup = null;
-                        if (_type != null)
-                        {
-                            startup = Activator.CreateInstance(_type) as IMotorStartup;
-                        }
+                        if (_type != null) startup = Activator.CreateInstance(_type) as IMotorStartup;
 
                         var urls = builder.GetSetting(WebHostDefaults.ServerUrlsKey);
                         const string defaultUrl = "http://0.0.0.0:9110";
                         if (string.IsNullOrEmpty(urls))
-                        {
                             builder.UseUrls(defaultUrl);
-                        }
-                        else if(!urls.Contains(defaultUrl))
-                        {
-                            builder.UseUrls($"{urls};{defaultUrl}");
-                        }
+                        else if (!urls.Contains(defaultUrl)) builder.UseUrls($"{urls};{defaultUrl}");
 
                         builder.Configure((context, applicationBuilder) =>
                         {
                             applicationBuilder.UseRouting();
                             var enablePrometheusSetting = GetSetting(MotorHostDefaults.EnablePrometheusEndpointKey);
                             if (string.IsNullOrEmpty(enablePrometheusSetting) || bool.Parse(enablePrometheusSetting))
-                            {
                                 applicationBuilder.UsePrometheusServer();
-                            }
                             startup?.Configure(context, applicationBuilder);
-                            applicationBuilder.UseEndpoints(endpoints =>
-                            {
-                                endpoints.MapHealthChecks("/health");
-                            });
+                            applicationBuilder.UseEndpoints(endpoints => { endpoints.MapHealthChecks("/health"); });
                         });
                         if (_type != null)
-                        {
                             builder.UseSetting(WebHostDefaults.ApplicationKey, _type.Assembly?.GetName()?.Name);
-                        }
 
                         builder.ConfigureServices((context, collection) =>
                         {
@@ -169,20 +128,19 @@ namespace Motor.Extensions.Utilities
                     .ConfigureHealthChecks(builder =>
                     {
                         foreach (var healthCheck in _healthChecks)
-                        {
                             builder.Add(new HealthCheckRegistration(
-                                healthCheck.Name, 
-                                s => (IHealthCheck)ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type), 
-                                healthCheck.FailureStatus, 
-                                healthCheck.Tags, 
+                                healthCheck.Name,
+                                s => (IHealthCheck) ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
+                                healthCheck.FailureStatus,
+                                healthCheck.Tags,
                                 healthCheck.Timeout)
                             );
-                        }
                     });
-            }
 
             return _builder.Build();
         }
+
+        public IDictionary<object, object> Properties => _builder.Properties;
 
         public string? GetSetting(string key)
         {
@@ -195,6 +153,27 @@ namespace Motor.Extensions.Utilities
             return this;
         }
 
-        public IDictionary<object, object> Properties => _builder.Properties;
+        private struct HealthCheckData
+        {
+            public readonly Type Type;
+            public readonly string Name;
+            public readonly HealthStatus? FailureStatus;
+            public readonly IEnumerable<string> Tags;
+            public readonly TimeSpan? Timeout;
+
+            public HealthCheckData(
+                Type type,
+                string name,
+                HealthStatus? failureStatus = null,
+                IEnumerable<string>? tags = null,
+                TimeSpan? timeout = null)
+            {
+                Type = type;
+                Name = name;
+                FailureStatus = failureStatus;
+                Tags = tags ?? new List<string>();
+                Timeout = timeout;
+            }
+        }
     }
 }

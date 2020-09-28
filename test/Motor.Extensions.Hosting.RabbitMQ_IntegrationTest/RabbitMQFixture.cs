@@ -10,20 +10,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 {
     public class RabbitMQFixture : IAsyncLifetime
     {
-        public IConnection Connection => CreateConnection();
-
-        public int Port => Container.GetMappedPublicPort(5672);
-        public string Hostname => Container.Hostname;
-        
-        private IConnection CreateConnection()
+        public RabbitMQFixture()
         {
-            var connectionFactory2 = new ConnectionFactory { Uri = new Uri(Container.ConnectionString) };
-            return connectionFactory2.CreateConnection();
-        }
-
-        RabbitMqTestcontainer Container { get; }
-
-        public RabbitMQFixture() =>
             Container = new TestcontainersBuilder<RabbitMqTestcontainer>()
                 .WithMessageBroker(new RabbitMqTestcontainerConfiguration
                 {
@@ -32,9 +20,29 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                     Password = "guest"
                 })
                 .Build();
+        }
 
-        public Task InitializeAsync() => Container.StartAsync();
+        public IConnection Connection => CreateConnection();
 
-        public Task DisposeAsync() => Container.StopAsync();
+        public int Port => Container.GetMappedPublicPort(5672);
+        public string Hostname => Container.Hostname;
+
+        private RabbitMqTestcontainer Container { get; }
+
+        public Task InitializeAsync()
+        {
+            return Container.StartAsync();
+        }
+
+        public Task DisposeAsync()
+        {
+            return Container.StopAsync();
+        }
+
+        private IConnection CreateConnection()
+        {
+            var connectionFactory2 = new ConnectionFactory {Uri = new Uri(Container.ConnectionString)};
+            return connectionFactory2.CreateConnection();
+        }
     }
 }

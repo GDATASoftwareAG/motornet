@@ -13,7 +13,8 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         [InlineData("", "appsettings.Production.json")]
         [InlineData("Production", "appsettings.Production.json")]
         [InlineData("Development", "appsettings.Development.json")]
-        public void ConfigureDefaultSettingsBehaviour_SetEnv_EnvConfigLoadedAndDefaultValueReplaced(string env, string expected)
+        public void ConfigureDefaultSettingsBehaviour_SetEnv_EnvConfigLoadedAndDefaultValueReplaced(string env,
+            string expected)
         {
             var toOverwriteValue = "";
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
@@ -28,7 +29,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             Assert.Equal(expected, toOverwriteValue);
         }
-        
+
         [Theory]
         [InlineData("local")]
         [InlineData("")]
@@ -49,7 +50,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             Assert.Equal("localhost", unchangedValue);
         }
-        
+
         [Theory]
         [InlineData("local")]
         [InlineData("")]
@@ -71,7 +72,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             Assert.Equal(expectedValue, toOverwriteValue);
         }
-        
+
         [Theory]
         [InlineData("local")]
         [InlineData("")]
@@ -92,7 +93,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             Assert.Equal("localhost", unchangedValue);
         }
-        
+
         [Theory]
         [InlineData("local")]
         [InlineData("")]

@@ -1,7 +1,7 @@
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             builder.Configure<RabbitMQConsumerConfig<T>>(config);
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
         }
-        
+
         public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer")
         {
             builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));

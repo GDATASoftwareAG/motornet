@@ -1,10 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using Motor.Extensions.Conversion.Abstractions;
-using Motor.Extensions.Hosting.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Consumer
 {
@@ -12,13 +11,13 @@ namespace Motor.Extensions.Hosting.Consumer
     {
         private readonly IServiceCollection _serviceCollection;
 
-        public HostBuilderContext Context { get; }
-
         public ConsumerBuilder(IServiceCollection serviceCollection, HostBuilderContext context)
         {
             _serviceCollection = serviceCollection;
             Context = context;
         }
+
+        public HostBuilderContext Context { get; }
 
         public void AddConsumer<TConsumer>() where TConsumer : IMessageConsumer<T>
         {
@@ -67,6 +66,7 @@ namespace Motor.Extensions.Hosting.Consumer
 
         public int Count => _serviceCollection.Count;
         public bool IsReadOnly => _serviceCollection.IsReadOnly;
+
         public int IndexOf(ServiceDescriptor item)
         {
             return _serviceCollection.IndexOf(item);

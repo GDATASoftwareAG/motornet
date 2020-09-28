@@ -6,11 +6,10 @@ namespace Motor.Extensions.Hosting.Abstractions
 {
     public interface IBackgroundTaskQueue<T>
     {
+        int ItemCount { get; }
+        DateTimeOffset LastDequeuedAt { get; }
         Task<ProcessedMessageStatus> QueueBackgroundWorkItem(T item);
 
         Task<QueueItem<T>> DequeueAsync(CancellationToken cancellationToken);
-
-        int ItemCount { get; }
-        DateTimeOffset LastDequeuedAt { get; }
     }
 }

@@ -2,17 +2,15 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Prometheus.Client;
 using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Http
 {
     internal class PrometheusDelegatingHandler : DelegatingHandler
     {
-        private readonly IMetricFamily<ICounter> _requestTotal;
         private readonly IMetricFamily<ISummary> _requestLatency;
+        private readonly IMetricFamily<ICounter> _requestTotal;
 
         public PrometheusDelegatingHandler(IMetricsFactory<PrometheusDelegatingHandler> metricsFactory)
         {

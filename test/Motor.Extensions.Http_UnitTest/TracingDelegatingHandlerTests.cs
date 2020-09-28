@@ -2,13 +2,13 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Moq;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Moq;
 using OpenTracing;
 using OpenTracing.Mock;
 using OpenTracing.Tag;
@@ -22,12 +22,12 @@ namespace Motor.Extensions.Http_UnitTest
         [Fact]
         public async Task GetAsync_RequestFailureAndOkResponse_RequestExceptionIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => throw new HttpRequestException(),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => throw new HttpRequestException(),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -40,16 +40,16 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.False(finishedSpans[0].Tags.ContainsKey(Tags.HttpStatus.Key));
             Assert.Equal(true, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task GetAsync_InternalServerErrorAndOkResponse_InternalServerErrorIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.InternalServerError),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -62,15 +62,15 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(500, finishedSpans[0].Tags[Tags.HttpStatus.Key]);
             Assert.Equal(true, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task GetAsync_OkResponse_OkResponseIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -83,17 +83,17 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(200, finishedSpans[0].Tags[Tags.HttpStatus.Key]);
             Assert.Equal(false, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task GetAsync_RequestFailureAndOkResponse_PipelineTested()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => throw new HttpRequestException(),
-                    (req) => new HttpResponseMessage(HttpStatusCode.InternalServerError),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => throw new HttpRequestException(),
+                    req => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -105,16 +105,16 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(3, finishedSpans.Count);
             Assert.Equal(3, handler.CallCount);
         }
-        
+
         [Fact]
         public async Task GetAsync_ParentSpan_TracesHasParentRef()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
-                },
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
+                }
             };
             var tracer = new MockTracer();
             var httpClient = CreateHttpClient(tracer, handler);
@@ -127,16 +127,16 @@ namespace Motor.Extensions.Http_UnitTest
             var finishedSpans = tracer.FinishedSpans();
             Assert.Equal(finishedSpans[1].Context.SpanId, finishedSpans[0].ParentId);
         }
-        
+
         [Fact]
         public async Task PostAsync_RequestFailureAndOkResponse_RequestExceptionIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => throw new HttpRequestException(),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => throw new HttpRequestException(),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -149,16 +149,16 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.False(finishedSpans[0].Tags.ContainsKey(Tags.HttpStatus.Key));
             Assert.Equal(true, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task PostAsync_InternalServerErrorAndOkResponse_InternalServerErrorIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.InternalServerError),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -171,15 +171,15 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(500, finishedSpans[0].Tags[Tags.HttpStatus.Key]);
             Assert.Equal(true, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task PostAsync_OkResponse_OkResponseIsTraced()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -192,17 +192,17 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(200, finishedSpans[0].Tags[Tags.HttpStatus.Key]);
             Assert.Equal(false, finishedSpans[0].Tags[Tags.Error.Key]);
         }
-        
+
         [Fact]
         public async Task PostAsync_RequestFailureAndInternalServerErrorAndOkResponse_PipelineTested()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => throw new HttpRequestException(),
-                    (req) => new HttpResponseMessage(HttpStatusCode.InternalServerError),
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
+                    req => throw new HttpRequestException(),
+                    req => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
                 }
             };
             var tracer = new MockTracer();
@@ -216,16 +216,16 @@ namespace Motor.Extensions.Http_UnitTest
             Assert.Equal(3, finishedSpans.Count);
             Assert.Equal(3, handler.CallCount);
         }
-        
+
         [Fact]
         public async Task PostAsync_ParentSpan_TracesHasParentRef()
         {
-            var handler = new SequenceMessageHandler()
+            var handler = new SequenceMessageHandler
             {
                 Responses =
                 {
-                    (req) => new HttpResponseMessage(HttpStatusCode.OK),
-                },
+                    req => new HttpResponseMessage(HttpStatusCode.OK)
+                }
             };
             var tracer = new MockTracer();
             var httpClient = CreateHttpClient(tracer, handler);

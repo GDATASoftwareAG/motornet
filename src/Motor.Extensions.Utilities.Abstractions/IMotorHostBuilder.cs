@@ -10,6 +10,7 @@ namespace Motor.Extensions.Utilities.Abstractions
     {
         new IMotorHostBuilder ConfigureServices(Action<HostBuilderContext, IServiceCollection> configureDelegate);
         IMotorHostBuilder UseStartup<T>() where T : IMotorStartup;
+
         IMotorHostBuilder AddHealthCheck<T>(
             string name,
             HealthStatus? failureStatus = null,

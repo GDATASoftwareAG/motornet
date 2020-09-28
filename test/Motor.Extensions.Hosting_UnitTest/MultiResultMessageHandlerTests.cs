@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Hosting;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Prometheus.Client;
+using Motor.Extensions.Hosting;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.TestUtilities;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest
@@ -93,7 +92,8 @@ namespace Motor.Extensions.Hosting_UnitTest
 
             Assert.Equal(ProcessedMessageStatus.Success, actual);
             publisherMock.Verify(
-                x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+                x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
@@ -110,7 +110,8 @@ namespace Motor.Extensions.Hosting_UnitTest
 
             Assert.Equal(ProcessedMessageStatus.Success, actual);
             publisherMock.Verify(
-                x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+                x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]

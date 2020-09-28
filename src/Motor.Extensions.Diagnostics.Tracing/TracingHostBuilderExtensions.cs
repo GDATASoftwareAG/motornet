@@ -1,17 +1,17 @@
 using System;
 using System.Net;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Utilities.Abstractions;
 using Jaeger;
 using Jaeger.Reporters;
 using Jaeger.Samplers;
+using Jaeger.Senders.Thrift;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Diagnostics.Tracing.Config;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Utilities.Abstractions;
 using OpenTracing;
 using OpenTracing.Tag;
-using Jaeger.Senders.Thrift;
 
 namespace Motor.Extensions.Diagnostics.Tracing
 {

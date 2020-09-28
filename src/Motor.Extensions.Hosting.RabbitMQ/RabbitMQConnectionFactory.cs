@@ -10,16 +10,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         IConnectionFactory From<T>(RabbitMQConsumerConfig<T> consumerConfig);
         IConnectionFactory From<T>(RabbitMQPublisherConfig<T> publisherConfig);
     }
-   
+
     public class RabbitMQConnectionFactory : IRabbitMQConnectionFactory
     {
-        
         public IConnectionFactory From<T>(RabbitMQConsumerConfig<T> consumerConfig)
         {
             ThrowIfConfigInvalid(consumerConfig);
             return FromConfig(consumerConfig);
         }
-        
+
         public IConnectionFactory From<T>(RabbitMQPublisherConfig<T> publisherConfig)
         {
             ThrowIfConfigInvalid(publisherConfig);
@@ -90,7 +89,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 VirtualHost = config.VirtualHost,
                 UserName = config.User,
                 Password = config.Password,
-                RequestedHeartbeat = config.RequestedHeartbeat,
+                RequestedHeartbeat = config.RequestedHeartbeat
             };
         }
     }

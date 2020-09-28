@@ -1,7 +1,7 @@
-using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Motor.Extensions.Utilities.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Motor.Extensions.Utilities.Abstractions;
 using Prometheus.Client.AspNetCore;
 
 namespace Motor.Extensions.Diagnostics.Metrics

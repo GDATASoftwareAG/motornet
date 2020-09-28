@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
-using Microsoft.Extensions.Options;
 using Prometheus.Client;
 using Prometheus.Client.Abstractions;
 using Prometheus.Client.AspNetCore;
@@ -16,20 +16,21 @@ namespace Motor.Extensions.Diagnostics.Metrics
         private readonly MetricFactory _metricFactory;
         private readonly HashSet<string> _names = new HashSet<string>();
 
-        public IEnumerable<string> Names => _names;
-
         public MetricsFactory(IOptions<PrometheusOptions> options, IApplicationNameService nameService)
         {
             var prometheusConfig = options?.Value ??
-                                               throw new ArgumentNullException(nameof(options), "Prometheus config doesn't exist.");
+                                   throw new ArgumentNullException(nameof(options), "Prometheus config doesn't exist.");
             prometheusConfig.CollectorRegistryInstance ??= new CollectorRegistry();
             _metricFactory = new MetricFactory(prometheusConfig.CollectorRegistryInstance);
-            
+
             var counter = _metricFactory.CreateCounter("motor_extensions_hosting_build_info",
                 "A metric with a constant '1' value labeled by version, libversion, and framework from which the service was built.",
                 "version", "libversion", "framework");
-            counter.WithLabels(nameService.GetVersion(), nameService.GetLibVersion(), RuntimeInformation.FrameworkDescription).Inc();
+            counter.WithLabels(nameService.GetVersion(), nameService.GetLibVersion(),
+                RuntimeInformation.FrameworkDescription).Inc();
         }
+
+        public IEnumerable<string> Names => _names;
 
         public IMetricFamily<ICounter> CreateCounter(string name, string help, params string[] labels)
         {
@@ -57,7 +58,7 @@ namespace Motor.Extensions.Diagnostics.Metrics
 
         private string PrependNamespace(string name)
         {
-            var metricsName =  $"{typeof(T).Namespace?.Replace(".", "_").ToLower()}_{name}";
+            var metricsName = $"{typeof(T).Namespace?.Replace(".", "_").ToLower()}_{name}";
             _names.Add(metricsName);
             return metricsName;
         }

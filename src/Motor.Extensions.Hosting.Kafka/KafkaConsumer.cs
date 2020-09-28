@@ -4,26 +4,24 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Prometheus.Client;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
     public sealed class KafkaConsumer<T> : IMessageConsumer<T>
     {
-        private readonly ILogger<KafkaConsumer<T>> _logger;
         private readonly IApplicationNameService _applicationNameService;
         private readonly KafkaConsumerConfig<T> _config;
-        private IConsumer<Ignore, byte[]>? _consumer;
-        private readonly IMetricFamily<ISummary>? _consumerLagSummary;
         private readonly IMetricFamily<IGauge>? _consumerLagGauge;
+        private readonly IMetricFamily<ISummary>? _consumerLagSummary;
+        private readonly ILogger<KafkaConsumer<T>> _logger;
+        private IConsumer<Ignore, byte[]>? _consumer;
 
-        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IOptions<KafkaConsumerConfig<T>> config, 
+        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IOptions<KafkaConsumerConfig<T>> config,
             IMetricsFactory<KafkaConsumer<T>>? metricsFactory, IApplicationNameService applicationNameService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -40,20 +38,48 @@ namespace Motor.Extensions.Hosting.Kafka
             get;
             set;
         }
-        
+
         public Task StartAsync(CancellationToken stoppingToken = default)
         {
-            if (ConsumeCallbackAsync == null)
-            {
-                throw new InvalidOperationException("ConsumeCallback is null");
-            }
-            
+            if (ConsumeCallbackAsync == null) throw new InvalidOperationException("ConsumeCallback is null");
+
             var consumerBuilder = new ConsumerBuilder<Ignore, byte[]>(_config)
                 .SetLogHandler((_, logMessage) => WriteLog(logMessage))
                 .SetStatisticsHandler((_, json) => WriteStatistics(json));
-            
+
             _consumer = consumerBuilder.Build();
             _consumer.Subscribe(_config.Topic);
+            return Task.CompletedTask;
+        }
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken = default)
+        {
+            await Task.Run(() =>
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                    try
+                    {
+                        var msg = _consumer?.Consume(stoppingToken);
+                        if (msg != null && !msg.IsPartitionEOF)
+                            SingleMessageHandling(stoppingToken, msg);
+                        else
+                            _logger.LogDebug("No messages received");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogInformation("Terminating Kafka listener...");
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to receive message.", e);
+                    }
+            }, stoppingToken);
+        }
+
+        public Task StopAsync(CancellationToken stoppingToken = default)
+        {
+            _consumer?.Close();
             return Task.CompletedTask;
         }
 
@@ -64,20 +90,25 @@ namespace Motor.Extensions.Hosting.Kafka
                 case SyslogLevel.Emergency:
                 case SyslogLevel.Alert:
                 case SyslogLevel.Critical:
-                    _logger.LogCritical($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    _logger.LogCritical($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                        logMessage.Facility, logMessage.Name);
                     break;
                 case SyslogLevel.Error:
-                    _logger.LogError($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    _logger.LogError($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                        logMessage.Facility, logMessage.Name);
                     break;
                 case SyslogLevel.Warning:
-                    _logger.LogWarning($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    _logger.LogWarning($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                        logMessage.Facility, logMessage.Name);
                     break;
                 case SyslogLevel.Notice:
                 case SyslogLevel.Info:
-                    _logger.LogInformation($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    _logger.LogInformation($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                        logMessage.Facility, logMessage.Name);
                     break;
                 case SyslogLevel.Debug:
-                    _logger.LogDebug($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    _logger.LogDebug($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                        logMessage.Facility, logMessage.Name);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -91,7 +122,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 .Topics.Select(t => t.Value)
                 .SelectMany(t => t.Partitions)
                 .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
-            
+
             foreach (var (partition, consumerLag) in partitionConsumerLags)
             {
                 var lag = consumerLag;
@@ -102,42 +133,12 @@ namespace Motor.Extensions.Hosting.Kafka
             }
         }
 
-        public async Task ExecuteAsync(CancellationToken stoppingToken = default)
-        {
-            await Task.Run( () =>
-            {
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var msg = _consumer?.Consume(stoppingToken);
-                        if (msg != null && !msg.IsPartitionEOF)
-                        {
-                            SingleMessageHandling(stoppingToken, msg);
-                        }
-                        else
-                        {
-                            _logger.LogDebug("No messages received");
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        _logger.LogInformation("Terminating Kafka listener...");
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, "Failed to receive message.", e);
-                    }
-                }
-            }, stoppingToken);
-        }
-
         private void SingleMessageHandling(CancellationToken stoppingToken, ConsumeResult<Ignore, byte[]> msg)
         {
             _logger.LogDebug(
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
-            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Value, typeof(T).Name, new Uri("kafka://notset"));
+            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Value, typeof(T).Name,
+                new Uri("kafka://notset"));
             var taskAwaiter = ConsumeCallbackAsync?.Invoke(data, stoppingToken)?.GetAwaiter();
             taskAwaiter?.OnCompleted(() =>
             {
@@ -155,6 +156,7 @@ namespace Motor.Extensions.Hosting.Kafka
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+
                 if (msg.Offset % _config.CommitPeriod != 0) return;
 
                 try
@@ -168,18 +170,9 @@ namespace Motor.Extensions.Hosting.Kafka
             });
         }
 
-        public Task StopAsync(CancellationToken stoppingToken = default)
-        {
-            _consumer?.Close();
-            return Task.CompletedTask;
-        }
-
         private void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _consumer?.Dispose();
-            }
+            if (disposing) _consumer?.Dispose();
         }
 
         public void Dispose()

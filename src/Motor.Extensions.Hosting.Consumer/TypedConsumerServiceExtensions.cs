@@ -1,8 +1,8 @@
 using System;
-using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Utilities.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Utilities.Abstractions;
 
 namespace Motor.Extensions.Hosting.Consumer
 {
