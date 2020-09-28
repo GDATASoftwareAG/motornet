@@ -1,0 +1,16 @@
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+
+[*.xml]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+insert_final_newline = true

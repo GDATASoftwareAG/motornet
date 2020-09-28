@@ -1,0 +1,191 @@
+using System;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Confluent.Kafka;
+using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Diagnostics.Metrics;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Prometheus.Client;
+using Prometheus.Client.Abstractions;
+
+namespace Motor.Extensions.Hosting.Kafka
+{
+    public sealed class KafkaConsumer<T> : IMessageConsumer<T>
+    {
+        private readonly ILogger<KafkaConsumer<T>> _logger;
+        private readonly IApplicationNameService _applicationNameService;
+        private readonly KafkaConsumerConfig<T> _config;
+        private IConsumer<Ignore, byte[]>? _consumer;
+        private readonly IMetricFamily<ISummary>? _consumerLagSummary;
+        private readonly IMetricFamily<IGauge>? _consumerLagGauge;
+
+        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IOptions<KafkaConsumerConfig<T>> config, 
+            IMetricsFactory<KafkaConsumer<T>>? metricsFactory, IApplicationNameService applicationNameService)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
+            _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
+            _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
+                "Contains a summary of current consumer lag of each partition", "topic", "partition");
+            _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
+                "Contains current number consumer lag of each partition", "topic", "partition");
+        }
+
+        public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
+        {
+            get;
+            set;
+        }
+        
+        public Task StartAsync(CancellationToken stoppingToken = default)
+        {
+            if (ConsumeCallbackAsync == null)
+            {
+                throw new InvalidOperationException("ConsumeCallback is null");
+            }
+            
+            var consumerBuilder = new ConsumerBuilder<Ignore, byte[]>(_config)
+                .SetLogHandler((_, logMessage) => WriteLog(logMessage))
+                .SetStatisticsHandler((_, json) => WriteStatistics(json));
+            
+            _consumer = consumerBuilder.Build();
+            _consumer.Subscribe(_config.Topic);
+            return Task.CompletedTask;
+        }
+
+        private void WriteLog(LogMessage logMessage)
+        {
+            switch (logMessage.Level)
+            {
+                case SyslogLevel.Emergency:
+                case SyslogLevel.Alert:
+                case SyslogLevel.Critical:
+                    _logger.LogCritical($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    break;
+                case SyslogLevel.Error:
+                    _logger.LogError($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    break;
+                case SyslogLevel.Warning:
+                    _logger.LogWarning($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    break;
+                case SyslogLevel.Notice:
+                case SyslogLevel.Info:
+                    _logger.LogInformation($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    break;
+                case SyslogLevel.Debug:
+                    _logger.LogDebug($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})", logMessage.Facility, logMessage.Name);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void WriteStatistics(string json)
+        {
+            var partitionConsumerLags = JsonSerializer
+                .Deserialize<KafkaStatistics>(json)
+                .Topics.Select(t => t.Value)
+                .SelectMany(t => t.Partitions)
+                .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
+            
+            foreach (var (partition, consumerLag) in partitionConsumerLags)
+            {
+                var lag = consumerLag;
+                if (lag == -1) lag = 0;
+
+                _consumerLagSummary?.WithLabels(_config.Topic, partition)?.Observe(lag);
+                _consumerLagGauge?.WithLabels(_config.Topic, partition)?.Set(lag);
+            }
+        }
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken = default)
+        {
+            await Task.Run( () =>
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var msg = _consumer?.Consume(stoppingToken);
+                        if (msg != null && !msg.IsPartitionEOF)
+                        {
+                            SingleMessageHandling(stoppingToken, msg);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("No messages received");
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogInformation("Terminating Kafka listener...");
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to receive message.", e);
+                    }
+                }
+            }, stoppingToken);
+        }
+
+        private void SingleMessageHandling(CancellationToken stoppingToken, ConsumeResult<Ignore, byte[]> msg)
+        {
+            _logger.LogDebug(
+                $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
+            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Value, typeof(T).Name, new Uri("kafka://notset"));
+            var taskAwaiter = ConsumeCallbackAsync?.Invoke(data, stoppingToken)?.GetAwaiter();
+            taskAwaiter?.OnCompleted(() =>
+            {
+                var processedMessageStatus = taskAwaiter?.GetResult();
+                switch (processedMessageStatus)
+                {
+                    case ProcessedMessageStatus.Success:
+                        break;
+                    case ProcessedMessageStatus.TemporaryFailure:
+                        break;
+                    case ProcessedMessageStatus.InvalidInput:
+                        break;
+                    case ProcessedMessageStatus.CriticalFailure:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                if (msg.Offset % _config.CommitPeriod != 0) return;
+
+                try
+                {
+                    _consumer?.Commit(msg);
+                }
+                catch (KafkaException e)
+                {
+                    _logger.LogError($"Commit error: {e.Error.Reason}");
+                }
+            });
+        }
+
+        public Task StopAsync(CancellationToken stoppingToken = default)
+        {
+            _consumer?.Close();
+            return Task.CompletedTask;
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _consumer?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+    }
+}

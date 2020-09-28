@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+package motor.extensions.conversion.protobuf_unittest;
+option csharp_namespace = "Motor.Extensions.Conversion.Protobuf_UnitTest";
+
+message InputMsg {
+    string forename = 1;
+    string surename = 2;
+    int32 age = 3;
+}

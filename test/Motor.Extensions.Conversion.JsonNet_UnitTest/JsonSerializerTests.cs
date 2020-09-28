@@ -1,0 +1,37 @@
+using System;
+using System.Text;
+using Motor.Extensions.Conversion.JsonNet;
+using Newtonsoft.Json;
+using Xunit;
+
+namespace Motor.Extensions.Conversion.JsonNet_UnitTest
+{
+    public class JsonSerializerTests
+    {
+        [Fact]
+        public void Serialize_ValidMessage_SerializedMessage()
+        {
+            var serializer = CreateSerializer();
+            var expected = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ValidMessage));
+
+            var message = serializer.Serialize(ValidMessage);
+
+            Assert.Equal(expected, message);
+        }
+
+        private InputMessage ValidMessage => new InputMessage {Firstname = "Foo", Lastname = "Bar", Age = 42};
+
+        [Fact]
+        public void Serialize_NullMessage_Throw()
+        {
+            var serializer = CreateSerializer();
+
+            Assert.Throws<ArgumentNullException>(() => serializer.Serialize(null));
+        }
+
+        private JsonNetSerializer<InputMessage> CreateSerializer()
+        {
+            return new JsonNetSerializer<InputMessage>();
+        }
+    }
+}

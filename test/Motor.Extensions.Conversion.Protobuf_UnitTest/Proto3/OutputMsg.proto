@@ -1,0 +1,7 @@
+﻿syntax = "proto3";
+package motor.extensions.conversion.protobuf_unittest;
+option csharp_namespace = "Motor.Extensions.Conversion.Protobuf_UnitTest";
+
+message OutputMessage {
+    string greeting = 1;
+}

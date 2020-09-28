@@ -1,0 +1,8 @@
+{
+  "Host": "hostname",
+  "Port": 10000,
+  "User": "username",
+  "Password": "password",
+  "VirtualHost": "vhost",
+  "PrefetchCount": 10000
+}

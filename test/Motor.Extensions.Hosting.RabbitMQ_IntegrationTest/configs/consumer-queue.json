@@ -1,0 +1,13 @@
+{
+  "Queue": {
+    "Name": "test",
+    "Durable": false,
+    "AutoDelete": true,
+    "MaxLength": 10,
+    "MaxPriority": 20,
+    "MessageTtl": 30,
+    "Arguments": {
+      "string": "teststring"
+    }
+  }
+}

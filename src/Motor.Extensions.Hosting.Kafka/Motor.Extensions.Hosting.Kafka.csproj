@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+	</PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Confluent.Kafka" Version="1.5.1" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.8" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.8" />
+		<PackageReference Include="System.Text.Json" Version="4.7.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics.Abstractions\Motor.Extensions.Diagnostics.Metrics.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
+    
+</Project>

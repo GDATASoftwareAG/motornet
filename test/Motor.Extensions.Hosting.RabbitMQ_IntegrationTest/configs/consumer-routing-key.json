@@ -1,0 +1,13 @@
+{
+  "Queue": {
+    "Bindings": [
+      {
+        "Exchange": "exchange",
+        "RoutingKey": "routing",
+        "Arguments": {
+          "string": "teststring"
+        }
+      }
+    ]
+  }
+}

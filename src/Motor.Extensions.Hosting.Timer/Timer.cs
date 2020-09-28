@@ -1,0 +1,79 @@
+﻿using System;
+using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
+using Motor.Extensions.Hosting.Abstractions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Motor.Extensions.Hosting.Timer.Config;
+using Quartz;
+using Quartz.Impl;
+
+namespace Motor.Extensions.Hosting.Timer
+{
+    public class Timer : BackgroundService
+    {
+        private bool _started;
+        private readonly TimerConfig _config;
+        private IScheduler? _scheduler;
+        private readonly IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> _queue;
+        private readonly IApplicationNameService _applicationNameService;
+
+        public Timer(IOptions<TimerConfig> config, 
+            IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue,
+                IApplicationNameService applicationNameService)
+        {
+            _queue = queue;
+            _applicationNameService = applicationNameService;
+            _config = config?.Value ?? throw new ArgumentNullException(nameof(config.Value));
+        }
+        
+        protected override async Task ExecuteAsync(CancellationToken token)
+        {
+            ThrowIfTimerAlreadyStarted();
+            ConfigureTimer();
+            StartTimer(token);
+            // make function async
+            await Task.Delay(1, token);
+            await Task.FromCanceled(token);
+            if (_scheduler != null) await _scheduler.Shutdown(token);
+        }
+
+        private void StartTimer(CancellationToken cancellationToken)
+        {
+            _scheduler?.Start(cancellationToken);
+            _started = true;
+        }
+
+        private void ThrowIfTimerAlreadyStarted()
+        {
+            if (_started)
+                throw new InvalidOperationException("Cannot start timer as the timer was already started!");
+        }
+
+        private async void ConfigureTimer()
+        {
+            var props = new NameValueCollection
+            {
+                {"quartz.serializer.type", "binary"}
+            };
+            var factory = new StdSchedulerFactory(props);
+            var data = new JobDataMap
+            {
+                {"Queue", _queue},
+                {"ApplicationNameService", _applicationNameService}
+            };
+            _scheduler = await factory.GetScheduler().ConfigureAwait(false);
+            var job = JobBuilder.Create<TimerJob>()
+                .SetJobData(data)
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+                .StartNow()
+                .WithCronSchedule(_config.GetCronString())
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger).ConfigureAwait(false);
+        }
+    }
+}

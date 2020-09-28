@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics.Abstractions\Motor.Extensions.Diagnostics.Metrics.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
+
+</Project>

@@ -1,0 +1,14 @@
+{
+  "Host": "hostname",
+  "Port": 10000,
+  "User": "username",
+  "Password": "password",
+  "VirtualHost": "vhost",
+  "PublishingTarget": {
+    "Exchange": "exchange",
+    "RoutingKey": "routing",
+    "Arguments": {
+      "string": "teststring"
+    }
+  }
+}
