@@ -1,6 +1,7 @@
 # Motor.NET
 
 [![license](https://img.shields.io/github/GDATASoftwareAG/motornet/penet.svg)](https://raw.githubusercontent.com/GDATASoftwareAG/motornet/master/LICENSE)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/GDATASoftwareAG/motornet/.NET%20Core)
 
 Motor.NET is a micro-service framework for .NET build on [Microsoft Generic Hosting](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1). It provides easy integration of RabbitMQ, Kafka (WIP), HTTP and helpers like logging and tracing.
 

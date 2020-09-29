@@ -2,9 +2,9 @@ name: .NET Core
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ master ]
+    branches: [ "*" ]
 
 jobs:
   build:
@@ -23,3 +23,10 @@ jobs:
       run: dotnet build --configuration Release --no-restore Motor.NET.sln
     - name: Test
       run: dotnet test --no-restore --verbosity normal Motor.NET.sln
+    - name: Pack
+      run: dotnet pack -v minimal -c Release --no-restore Motor.NET.sln
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: nupkg
+        path: ./src/*/bin/Release/*.nupkg

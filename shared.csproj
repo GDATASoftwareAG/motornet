@@ -19,7 +19,6 @@
 		<Company>G DATA CyberDefense AG</Company>
 		<RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
-		<PackageLicenseUrl>https://raw.githubusercontent.com/GDATASoftwareAG/motornet/master/LICENSE</PackageLicenseUrl>
 		<PackageTags>microservice hosting rabbitmq kafka http logging tracing</PackageTags>
 	</PropertyGroup>
 
