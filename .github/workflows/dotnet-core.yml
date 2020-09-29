@@ -27,8 +27,8 @@ jobs:
       run: dotnet restore Motor.NET.sln
     - name: Build
       run: dotnet build --configuration Release --no-restore Motor.NET.sln
-    #- name: Test
-    #  run: dotnet test --no-restore --verbosity normal Motor.NET.sln
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal Motor.NET.sln
     - name: Pack
       run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
     - name: Upload Artifact
@@ -39,7 +39,7 @@ jobs:
 
   deploy:
     needs: build
-    #if: github.event_name == 'release'
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
