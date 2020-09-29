@@ -5,6 +5,9 @@ on:
     branches: [ "*" ]
   pull_request:
     branches: [ "*" ]
+  release:
+    types:
+      - published
 
 jobs:
   build:
@@ -30,3 +33,13 @@ jobs:
       with:
         name: nupkg
         path: ./src/*/bin/Release/*.nupkg
+
+  deploy:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Push to NuGet Feed
+        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --skip-duplicate --api-key $NUGET_KEY
