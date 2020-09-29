@@ -2,16 +2,18 @@ name: .NET Core
 
 on:
   push:
-    branches: [ "*" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "master" ]
   release:
     types:
       - published
 
+env:
+  NUGET_KEY: ${{ secrets.NUGET_KEY }}
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -36,7 +38,7 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'release'
+    #if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
