@@ -43,6 +43,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: nupkg
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push ./nupkg/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
