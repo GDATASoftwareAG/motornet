@@ -2,16 +2,19 @@ name: .NET Core
 
 on:
   push:
-    branches: [ "*" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "master" ]
   release:
     types:
       - published
 
+env:
+  NUGET_KEY: ${{ secrets.NUGET_KEY }}
+  NUGET_FEED: https://api.nuget.org/v3/index.json
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -27,12 +30,12 @@ jobs:
     - name: Test
       run: dotnet test --no-restore --verbosity normal Motor.NET.sln
     - name: Pack
-      run: dotnet pack -v minimal -c Release --no-restore Motor.NET.sln
+      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: nupkg
-        path: ./src/*/bin/Release/*.nupkg
+        name: artifacts
+        path: ./artifacts/*.nupkg
 
   deploy:
     needs: build
@@ -40,6 +43,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
