@@ -52,4 +52,4 @@ jobs:
         with:
           dotnet-version: 3.1.301
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./artifacts/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
