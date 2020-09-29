@@ -47,7 +47,7 @@ namespace Motor.Extensions.Hosting.Abstractions
 
         public TData TypedData
         {
-            get => Data as TData;
+            get => (TData) Data;
             set => Data = value;
         }
 
@@ -72,7 +72,7 @@ namespace Motor.Extensions.Hosting.Abstractions
             where T : class
         {
             return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource(),
-                extensions: extensions?.ToArray());
+                extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
         }
 
         public MotorCloudEvent<T> CreateNew<T>(T data, bool useOldIdentifier = false)

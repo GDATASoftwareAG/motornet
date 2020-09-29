@@ -23,7 +23,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
             CancellationToken token = default)
         {
             var spanBuilder = _tracer.BuildSpan(nameof(HandleMessageAsync));
-            var extension = dataCloudEvent.GetExtensionOrCreate(() => new JaegerTracingExtension((ISpanContext) null));
+            var extension = dataCloudEvent.GetExtensionOrCreate(() => new JaegerTracingExtension((ISpanContext?) null));
             if (extension.SpanContext != null)
                 spanBuilder = spanBuilder.AddReference(References.FollowsFrom, extension.SpanContext);
 

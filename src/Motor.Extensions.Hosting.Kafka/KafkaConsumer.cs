@@ -137,7 +137,7 @@ namespace Motor.Extensions.Hosting.Kafka
         {
             _logger.LogDebug(
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
-            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Value, typeof(T).Name,
+            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Message.Value, typeof(T).Name,
                 new Uri("kafka://notset"));
             var taskAwaiter = ConsumeCallbackAsync?.Invoke(data, stoppingToken)?.GetAwaiter();
             taskAwaiter?.OnCompleted(() =>

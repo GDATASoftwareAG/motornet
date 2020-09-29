@@ -86,6 +86,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             return false;
         }
 
+        // Disabled null check because CloudEvent SDK doesn't 
+        // implement null-checks
+        #pragma warning disable CS8603
         public Type GetAttributeType(string name)
         {
             return name switch
