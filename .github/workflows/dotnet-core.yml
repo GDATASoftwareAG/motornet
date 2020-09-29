@@ -11,6 +11,7 @@ on:
 
 env:
   NUGET_KEY: ${{ secrets.NUGET_KEY }}
+  NUGET_FEED: https://api.nuget.org/v3/index.json
 
 jobs:
   build:
@@ -26,8 +27,8 @@ jobs:
       run: dotnet restore Motor.NET.sln
     - name: Build
       run: dotnet build --configuration Release --no-restore Motor.NET.sln
-    - name: Test
-      run: dotnet test --no-restore --verbosity normal Motor.NET.sln
+    #- name: Test
+    #  run: dotnet test --no-restore --verbosity normal Motor.NET.sln
     - name: Pack
       run: dotnet pack -v minimal -c Release --no-restore Motor.NET.sln
     - name: Upload Artifact
@@ -44,4 +45,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
