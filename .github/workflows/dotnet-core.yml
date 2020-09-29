@@ -30,12 +30,12 @@ jobs:
     #- name: Test
     #  run: dotnet test --no-restore --verbosity normal Motor.NET.sln
     - name: Pack
-      run: dotnet pack -v minimal -c Release --no-restore Motor.NET.sln
+      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: nupkg
-        path: ./src/*/bin/Release/*.nupkg
+        path: ./artifacts/*.nupkg
 
   deploy:
     needs: build
@@ -52,4 +52,4 @@ jobs:
         with:
           dotnet-version: 3.1.301
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./nupkg/*/bin/Release/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push ./artifacts/*.nupkg --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
