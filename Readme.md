@@ -14,4 +14,4 @@ You find working examples for different use-cases under the [examples](./example
 
 ## License
 
-Motor.NET is provided under the [MIT](./LICENSE).
+Motor.NET is provided under the [MIT](./LICENSE) license.
