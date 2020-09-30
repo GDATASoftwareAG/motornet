@@ -16,12 +16,12 @@ namespace ConsumeAndPublishWithRabbitMQ
         public static Task Main() =>
             MotorHost.CreateDefaultBuilder()
                 // Configure the types of the input and output messages
-                .ConfigureDefaultMessageHandler<InputMessage, OutputMessage>()
+                .ConfigureSingleOutputService<InputMessage, OutputMessage>()
                 .ConfigureServices((hostContext, services) =>
                 {
                     // Add a handler for the input message which returns an output message
                     // This handler is called for every new incoming message
-                    services.AddTransient<IMessageConverter<InputMessage, OutputMessage>, BasicConverter>();
+                    services.AddTransient<ISingleOutputService<InputMessage, OutputMessage>, SingleOutputService>();
                 })
                 // Add the incomming communication module. 
                 .ConfigureConsumer<InputMessage>((context, builder) =>
