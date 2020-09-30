@@ -7,7 +7,7 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace ConsumeAndPublishWithRabbitMQ
 {
-    public class BasicConverter : IMessageConverter<InputMessage, OutputMessage>
+    public class SingleOutputService : ISingleOutputService<InputMessage, OutputMessage>
     {
         // Handle incoming messages
         public Task<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
@@ -18,8 +18,16 @@ namespace ConsumeAndPublishWithRabbitMQ
             var input = inputEvent.TypedData;
 
             // Do your magic here .....
+            var output = MagicFunc(input);
 
-            if(string.IsNullOrEmpty(input.FancyText))
+            // Create a new cloud event from your output message which is automatically published and return a new task.
+            var outputEvent = inputEvent.CreateNew(output);
+            return Task.FromResult(outputEvent);
+        }
+
+        private static OutputMessage MagicFunc(InputMessage input)
+        {
+            if (string.IsNullOrEmpty(input.FancyText))
             {
                 // Reject message in RabbitMQ queue (Any ArgumentException can be used to reject to messages.).
                 throw new ArgumentNullException("FancyText is empty");
@@ -30,10 +38,7 @@ namespace ConsumeAndPublishWithRabbitMQ
                 NotSoFancyText = input.FancyText.Reverse().ToString(),
                 NotSoFancyNumber = input.FancyNumber * -1,
             };
-
-            // Create a new cloud event from your output message which is automatically published and return a new task.
-            var outputEvent = inputEvent.CreateNew(output);
-            return Task.FromResult(outputEvent);
+            return output;
         }
     }
 }
