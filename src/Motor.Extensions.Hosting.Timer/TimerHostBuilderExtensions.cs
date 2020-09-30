@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.Timer
             string configSection = "Timer")
         {
             return hostBuilder
-                .ConfigureDefaultGenericService<IJobExecutionContext>()
+                .ConfigureNoOutputService<IJobExecutionContext>()
                 .ConfigureServices((hostContext, services) =>
                 {
                     var config = hostContext.Configuration.GetSection(configSection);

@@ -4,18 +4,18 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public abstract class DelegatingMessageHandler<TInput> : IMessageHandler<TInput>
+    public abstract class DelegatingMessageHandler<TInput> : INoOutputService<TInput>
         where TInput : class
     {
-        public IMessageHandler<TInput>? InnerMessageHandler { get; set; }
+        public INoOutputService<TInput>? InnerService { get; set; }
 
         public virtual Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {
-            if (InnerMessageHandler == null) {
+            if (InnerService == null) {
                 throw new IndexOutOfRangeException("No message handler was set.");
             }
-            return InnerMessageHandler.HandleMessageAsync(dataCloudEvent, token);
+            return InnerService.HandleMessageAsync(dataCloudEvent, token);
         }
     }
 }

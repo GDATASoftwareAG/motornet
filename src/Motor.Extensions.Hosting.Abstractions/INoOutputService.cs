@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public interface IMessageHandler<TInput>
+    public interface INoOutputService<TInput>
         where TInput : class
     {
         Task<ProcessedMessageStatus>

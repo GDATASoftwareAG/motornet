@@ -162,10 +162,10 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                         mock.Setup(t => t.GetSource()).Returns(new Uri("motor://test"));
                         return mock.Object;
                     });
-                    services.AddTransient<IMessageConverter<string, string>, ReverseStringConverter>();
+                    services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
                     services.AddTransient<IMessageSerializer<string>, StringSerializer>();
                     services.AddTransient<IMessageDeserializer<string>, StringDeserializer>();
-                    services.AddTransient<IMessageHandler<string>, MessageHandler<string, string>>();
+                    services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
                     services.AddTransient<DelegatingMessageHandler<string>, TracingDelegatingMessageHandler<string>>();
                     services.AddQueuedGenericService<string>();
                     services.AddSingleton(provider => tracer);
@@ -261,7 +261,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             ;
         }
 
-        protected class ReverseStringConverter : IMessageConverter<string, string>
+        protected class ReverseStringConverter : ISingleOutputService<string, string>
         {
             private readonly ILogger<ReverseStringConverter> _logger;
             private readonly IMetricFamily<ISummary> _summary;

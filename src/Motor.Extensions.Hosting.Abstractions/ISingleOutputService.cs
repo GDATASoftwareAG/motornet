@@ -1,9 +1,9 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public interface IMessageConverter<TInput, TOutput>
+    public interface ISingleOutputService<TInput, TOutput>
         where TInput : class
         where TOutput : class
     {

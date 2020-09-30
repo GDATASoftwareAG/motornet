@@ -80,13 +80,13 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             await host.StopAsync();
         }
 
-        private IHost GetStringService<TConverter>() where TConverter : class, IMessageConverter<string, string>
+        private IHost GetStringService<TConverter>() where TConverter : class, ISingleOutputService<string, string>
         {
             var host = new MotorHostBuilder(new HostBuilder())
                 .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
                 .ConfigureSerilog()
                 .ConfigurePrometheus()
-                .ConfigureDefaultMessageHandler<string, string>()
+                .ConfigureSingleOutputService<string, string>()
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTransient(provider =>
@@ -98,7 +98,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                         return mock.Object;
                     });
                     services.AddSingleton<ITracer>(provider => new MockTracer());
-                    services.AddTransient<IMessageConverter<string, string>, TConverter>();
+                    services.AddTransient<ISingleOutputService<string, string>, TConverter>();
                 })
                 .ConfigureConsumer<string>((context, builder) =>
                 {
@@ -120,7 +120,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             return host;
         }
 
-        private class TimingOutMessageConverter : IMessageConverter<string, string>
+        private class TimingOutMessageConverter : ISingleOutputService<string, string>
         {
             public async Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)

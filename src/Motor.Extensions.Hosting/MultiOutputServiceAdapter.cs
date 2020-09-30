@@ -12,18 +12,18 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting
 {
-    public class MultiResultMessageHandler<TInput, TOutput> : IMessageHandler<TInput>
+    public class MultiOutputServiceAdapter<TInput, TOutput> : INoOutputService<TInput>
         where TInput : class
         where TOutput : class
     {
-        private readonly IMultiResultMessageConverter<TInput, TOutput> _converter;
-        private readonly ILogger<MessageHandler<TInput, TOutput>> _logger;
+        private readonly IMultiOutputService<TInput, TOutput> _converter;
+        private readonly ILogger<SingleOutputServiceAdapter<TInput, TOutput>> _logger;
         private readonly IMetricFamily<ISummary>? _messageProcessing;
         private readonly ITypedMessagePublisher<TOutput> _publisher;
 
-        public MultiResultMessageHandler(ILogger<MessageHandler<TInput, TOutput>> logger,
-            IMetricsFactory<MessageHandler<TInput, TOutput>> metrics,
-            IMultiResultMessageConverter<TInput, TOutput> converter,
+        public MultiOutputServiceAdapter(ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
+            IMetricsFactory<SingleOutputServiceAdapter<TInput, TOutput>> metrics,
+            IMultiOutputService<TInput, TOutput> converter,
             ITypedMessagePublisher<TOutput> publisher)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

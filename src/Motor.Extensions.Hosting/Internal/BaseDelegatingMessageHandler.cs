@@ -8,18 +8,18 @@ namespace Motor.Extensions.Hosting.Internal
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public BaseDelegatingMessageHandler(PrepareDelegatingMessageHandler<TInput> prepare,
-            IMessageHandler<TInput> messageHandler,
+            INoOutputService<TInput> service,
             IEnumerable<DelegatingMessageHandler<TInput>> delegatingMessageHandlers)
         {
             DelegatingMessageHandler<TInput> currentDelegatingMessageHandler = this;
             foreach (var delegatingMessageHandler in delegatingMessageHandlers)
             {
-                currentDelegatingMessageHandler.InnerMessageHandler = delegatingMessageHandler;
+                currentDelegatingMessageHandler.InnerService = delegatingMessageHandler;
                 currentDelegatingMessageHandler = delegatingMessageHandler;
             }
 
-            prepare.InnerMessageHandler = messageHandler;
-            currentDelegatingMessageHandler.InnerMessageHandler = prepare;
+            prepare.InnerService = service;
+            currentDelegatingMessageHandler.InnerService = prepare;
         }
     }
 }
