@@ -9,7 +9,7 @@ namespace Motor.Extensions.Hosting
         where TOutput : class
     {
         public MessageHandler(ILogger<MessageHandler<TInput, TOutput>> logger,
-            IMetricsFactory<MessageHandler<TInput, TOutput>> metrics, IMessageConverter<TInput, TOutput> converter,
+            IMetricsFactory<MessageHandler<TInput, TOutput>> metrics, ISingleOutputService<TInput, TOutput> converter,
             ITypedMessagePublisher<TOutput> publisher) :
             base(logger, metrics, new SingleToMultiConverterAdapter<TInput, TOutput>(converter), publisher)
         {

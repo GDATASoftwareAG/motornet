@@ -6,13 +6,13 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting
 {
-    public class SingleToMultiConverterAdapter<TInput, TOutput> : IMultiResultMessageConverter<TInput, TOutput>
+    public class SingleToMultiConverterAdapter<TInput, TOutput> : IMultiOutputService<TInput, TOutput>
         where TInput : class
         where TOutput : class
     {
-        private readonly IMessageConverter<TInput, TOutput> _converter;
+        private readonly ISingleOutputService<TInput, TOutput> _converter;
 
-        public SingleToMultiConverterAdapter(IMessageConverter<TInput, TOutput> converter)
+        public SingleToMultiConverterAdapter(ISingleOutputService<TInput, TOutput> converter)
         {
             _converter = converter ?? throw new ArgumentNullException(nameof(converter));
         }

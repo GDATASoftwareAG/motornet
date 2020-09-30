@@ -50,10 +50,10 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         private static IHost GetReverseStringService()
         {
             var host = MotorHost.CreateDefaultBuilder()
-                .ConfigureDefaultMessageHandler<string, string>()
+                .ConfigureSingleOutputService<string, string>()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<IMessageConverter<string, string>, ReverseStringConverter>();
+                    services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
                 })
                 .ConfigureConsumer<string>((context, builder) =>
                 {
@@ -86,7 +86,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             return messageFromDestinationQueue;
         }
 
-        protected class ReverseStringConverter : IMessageConverter<string, string>
+        protected class ReverseStringConverter : ISingleOutputService<string, string>
         {
             private readonly ILogger<ReverseStringConverter> _logger;
             private readonly IMetricFamily<ISummary> _summary;

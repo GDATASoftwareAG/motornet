@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public interface IMultiResultMessageConverter<TInput, TOutput>
+    public interface IMultiOutputService<TInput, TOutput>
         where TInput : class
         where TOutput : class
     {

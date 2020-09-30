@@ -17,7 +17,7 @@ namespace Motor.Extensions.Hosting
         private readonly ILogger<QueuedGenericService<TInput>> _logger;
         private readonly QueuedGenericServiceConfig _options;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
-        private readonly IMessageHandler<TInput> _rootMessageHandler;
+        private readonly INoOutputService<TInput> _rootMessageHandler;
 
         // ReSharper disable once SuggestBaseTypeForParameter
         public QueuedGenericService(

@@ -27,33 +27,33 @@ namespace Motor.Extensions.Utilities
             return hostBuilder;
         }
 
-        public static IMotorHostBuilder ConfigureDefaultMessageHandler<TInput, TOutput>(
+        public static IMotorHostBuilder ConfigureSingleOutputService<TInput, TOutput>(
             this IMotorHostBuilder hostBuilder)
             where TOutput : class
             where TInput : class
         {
             return hostBuilder
-                .ConfigureDefaultGenericService<TInput>()
+                .ConfigureNoOutputService<TInput>()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<IMessageHandler<TInput>, MessageHandler<TInput, TOutput>>();
+                    services.AddTransient<INoOutputService<TInput>, MessageHandler<TInput, TOutput>>();
                 });
         }
 
-        public static IMotorHostBuilder ConfigureDefaultMultiResultMessageHandler<TInput, TOutput>(
+        public static IMotorHostBuilder ConfigureMultiOutputService<TInput, TOutput>(
             this IMotorHostBuilder hostBuilder)
             where TOutput : class
             where TInput : class
         {
             return hostBuilder
-                .ConfigureDefaultGenericService<TInput>()
+                .ConfigureNoOutputService<TInput>()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<IMessageHandler<TInput>, MultiResultMessageHandler<TInput, TOutput>>();
+                    services.AddTransient<INoOutputService<TInput>, MultiResultMessageHandler<TInput, TOutput>>();
                 });
         }
 
-        public static IMotorHostBuilder ConfigureDefaultGenericService<TInput>(this IMotorHostBuilder hostBuilder,
+        public static IMotorHostBuilder ConfigureNoOutputService<TInput>(this IMotorHostBuilder hostBuilder,
             string healthCheckConfigSection = "HealthCheck") where TInput : class
         {
             return hostBuilder

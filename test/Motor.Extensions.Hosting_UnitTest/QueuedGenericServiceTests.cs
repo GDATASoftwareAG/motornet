@@ -30,7 +30,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         [Fact]
         public async Task ExecuteAsync_Messages_HandleMessageAsyncIsCalled()
         {
-            var messageHandler = new Mock<IMessageHandler<string>>();
+            var messageHandler = new Mock<INoOutputService<string>>();
             var queuedGenericService = CreateQueuedGenericService(messageHandler.Object);
 
             await queuedGenericService.StartAsync(CancellationToken.None);
@@ -65,7 +65,7 @@ namespace Motor.Extensions.Hosting_UnitTest
                 taskCompletionSources.Add(source);
             }
 
-            var messageHandler = new Mock<IMessageHandler<string>>();
+            var messageHandler = new Mock<INoOutputService<string>>();
             messageHandler.Setup(t =>
                     t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
@@ -102,7 +102,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var taskCompletionSource = new TaskCompletionSource<ProcessedMessageStatus>();
             var queue = CreateQueue(status: taskCompletionSource);
 
-            var messageHandler = new Mock<IMessageHandler<string>>();
+            var messageHandler = new Mock<INoOutputService<string>>();
             messageHandler
                 .Setup(t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedStatus);
@@ -121,7 +121,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         [Fact]
         public async Task ExecuteAsync_MessagesProcessStatusSuccess_NeverCallStopApplication()
         {
-            var messageHandler = new Mock<IMessageHandler<string>>();
+            var messageHandler = new Mock<INoOutputService<string>>();
             messageHandler
                 .Setup(t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ProcessedMessageStatus.Success);
@@ -140,7 +140,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         [Fact]
         public async Task ExecuteAsync_MessagesProcessStatusCritical_StopApplication()
         {
-            var messageHandler = new Mock<IMessageHandler<string>>();
+            var messageHandler = new Mock<INoOutputService<string>>();
             messageHandler
                 .Setup(t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ProcessedMessageStatus.CriticalFailure);
@@ -169,7 +169,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private static QueuedGenericService<string> CreateQueuedGenericService(
-            IMessageHandler<string> messageHandler = null,
+            INoOutputService<string> messageHandler = null,
             IBackgroundTaskQueue<MotorCloudEvent<string>> backgroundTaskQueue = null,
             IHostApplicationLifetime hostApplicationLifetime = null,
             QueuedGenericServiceConfig config = null)
@@ -177,7 +177,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var logger = new Mock<ILogger<QueuedGenericService<string>>>();
             hostApplicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
             backgroundTaskQueue ??= CreateQueue();
-            messageHandler ??= new Mock<IMessageHandler<string>>().Object;
+            messageHandler ??= new Mock<INoOutputService<string>>().Object;
             var options = new OptionsWrapper<QueuedGenericServiceConfig>(config ?? new QueuedGenericServiceConfig());
             var baseDelegatingMessageHandler = CreateBaseDelegatingMessageHandler(messageHandler);
 
@@ -190,10 +190,10 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private static BaseDelegatingMessageHandler<string> CreateBaseDelegatingMessageHandler(
-            IMessageHandler<string> messageHandler = null)
+            INoOutputService<string> messageHandler = null)
         {
             var loggerPrepare = new Mock<ILogger<PrepareDelegatingMessageHandler<string>>>();
-            messageHandler ??= new Mock<IMessageHandler<string>>().Object;
+            messageHandler ??= new Mock<INoOutputService<string>>().Object;
             return new BaseDelegatingMessageHandler<string>(
                 new PrepareDelegatingMessageHandler<string>(loggerPrepare.Object),
                 messageHandler,

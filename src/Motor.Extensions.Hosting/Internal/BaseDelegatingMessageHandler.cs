@@ -8,7 +8,7 @@ namespace Motor.Extensions.Hosting.Internal
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public BaseDelegatingMessageHandler(PrepareDelegatingMessageHandler<TInput> prepare,
-            IMessageHandler<TInput> messageHandler,
+            INoOutputService<TInput> messageHandler,
             IEnumerable<DelegatingMessageHandler<TInput>> delegatingMessageHandlers)
         {
             DelegatingMessageHandler<TInput> currentDelegatingMessageHandler = this;

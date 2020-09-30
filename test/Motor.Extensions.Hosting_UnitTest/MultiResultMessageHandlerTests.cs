@@ -18,8 +18,8 @@ namespace Motor.Extensions.Hosting_UnitTest
         private static Mock<ILogger<MessageHandler<string, string>>> FakeLogger =>
             new Mock<ILogger<MessageHandler<string, string>>>();
 
-        private static Mock<IMultiResultMessageConverter<string, string>> FakeConverter =>
-            new Mock<IMultiResultMessageConverter<string, string>>();
+        private static Mock<IMultiOutputService<string, string>> FakeConverter =>
+            new Mock<IMultiOutputService<string, string>>();
 
         private static Mock<IMetricsFactory<MessageHandler<string, string>>> FakeMetrics =>
             new Mock<IMetricsFactory<MessageHandler<string, string>>>();
@@ -168,7 +168,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         private MultiResultMessageHandler<string, string> GetMessageHandler(
             ILogger<MessageHandler<string, string>> logger = null,
             IMetricsFactory<MessageHandler<string, string>> metrics = null,
-            IMultiResultMessageConverter<string, string> converter = null,
+            IMultiOutputService<string, string> converter = null,
             ITypedMessagePublisher<string> publisher = null)
         {
             logger ??= FakeLogger.Object;
