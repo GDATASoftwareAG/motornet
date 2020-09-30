@@ -13,6 +13,7 @@ You should be up and running with just a few lines of code.
 You find working examples for different use-cases under the [examples](./examples) folder.
 
 - [Consume and publish to RabbitMQ](./examples/ConsumeAndPublishWithRabbitMQ)
+- [Create a service with metrics](./examples/Metrics)
 
 ## License
 
