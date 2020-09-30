@@ -36,7 +36,7 @@ namespace Motor.Extensions.Utilities
                 .ConfigureNoOutputService<TInput>()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<INoOutputService<TInput>, MessageHandler<TInput, TOutput>>();
+                    services.AddTransient<INoOutputService<TInput>, SingleOutputServiceAdapter<TInput, TOutput>>();
                 });
         }
 
@@ -49,7 +49,7 @@ namespace Motor.Extensions.Utilities
                 .ConfigureNoOutputService<TInput>()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<INoOutputService<TInput>, MultiResultMessageHandler<TInput, TOutput>>();
+                    services.AddTransient<INoOutputService<TInput>, MultiOutputServiceAdapter<TInput, TOutput>>();
                 });
         }
 

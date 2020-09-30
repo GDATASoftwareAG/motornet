@@ -6,21 +6,21 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting
 {
-    public class SingleToMultiConverterAdapter<TInput, TOutput> : IMultiOutputService<TInput, TOutput>
+    public class SingleToMultiOutputAdapter<TInput, TOutput> : IMultiOutputService<TInput, TOutput>
         where TInput : class
         where TOutput : class
     {
-        private readonly ISingleOutputService<TInput, TOutput> _converter;
+        private readonly ISingleOutputService<TInput, TOutput> _service;
 
-        public SingleToMultiConverterAdapter(ISingleOutputService<TInput, TOutput> converter)
+        public SingleToMultiOutputAdapter(ISingleOutputService<TInput, TOutput> service)
         {
-            _converter = converter ?? throw new ArgumentNullException(nameof(converter));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
         public async Task<IEnumerable<MotorCloudEvent<TOutput>>> ConvertMessageAsync(
             MotorCloudEvent<TInput> dataCloudEvent, CancellationToken token)
         {
-            var convertMessage = await _converter.ConvertMessageAsync(dataCloudEvent, token)
+            var convertMessage = await _service.ConvertMessageAsync(dataCloudEvent, token)
                 .ConfigureAwait(false);
             return convertMessage == null ? new MotorCloudEvent<TOutput>[0] : new[] {convertMessage};
         }

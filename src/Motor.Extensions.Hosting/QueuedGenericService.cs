@@ -17,7 +17,7 @@ namespace Motor.Extensions.Hosting
         private readonly ILogger<QueuedGenericService<TInput>> _logger;
         private readonly QueuedGenericServiceConfig _options;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
-        private readonly INoOutputService<TInput> _rootMessageHandler;
+        private readonly INoOutputService<TInput> _rootService;
 
         // ReSharper disable once SuggestBaseTypeForParameter
         public QueuedGenericService(
@@ -25,13 +25,13 @@ namespace Motor.Extensions.Hosting
             IOptions<QueuedGenericServiceConfig>? options,
             IHostApplicationLifetime hostApplicationLifetime,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
-            BaseDelegatingMessageHandler<TInput> rootMessageHandler)
+            BaseDelegatingMessageHandler<TInput> rootService)
         {
             _logger = logger;
             _options = options?.Value ?? new QueuedGenericServiceConfig();
             _hostApplicationLifetime = hostApplicationLifetime;
             _queue = queue;
-            _rootMessageHandler = rootMessageHandler;
+            _rootService = rootService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken token)
@@ -63,7 +63,7 @@ namespace Motor.Extensions.Hosting
             var status = ProcessedMessageStatus.CriticalFailure;
             try
             {
-                status = await _rootMessageHandler.HandleMessageAsync(dataCloudEvent, token)
+                status = await _rootService.HandleMessageAsync(dataCloudEvent, token)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)

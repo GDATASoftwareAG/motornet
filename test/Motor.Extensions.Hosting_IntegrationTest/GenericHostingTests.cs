@@ -165,7 +165,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                     services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
                     services.AddTransient<IMessageSerializer<string>, StringSerializer>();
                     services.AddTransient<IMessageDeserializer<string>, StringDeserializer>();
-                    services.AddTransient<INoOutputService<string>, MessageHandler<string, string>>();
+                    services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
                     services.AddTransient<DelegatingMessageHandler<string>, TracingDelegatingMessageHandler<string>>();
                     services.AddQueuedGenericService<string>();
                     services.AddSingleton(provider => tracer);
