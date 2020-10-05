@@ -96,7 +96,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Equal(2, basicProperties.DeliveryMode);
             Assert.Equal(priority, basicProperties.Priority);
-            var traceparent = Encoding.UTF8.GetString((byte[]) basicProperties.Headers[$"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var traceparent = Encoding.UTF8.GetString((byte[]) basicProperties.Headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
             var activityContext = ActivityContext.Parse(traceparent, null);
             Assert.Equal(activity.Context.TraceId, activityContext.TraceId);
             Assert.Equal(activity.Context.SpanId, activityContext.SpanId);
