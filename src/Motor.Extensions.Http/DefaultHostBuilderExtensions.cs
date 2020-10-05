@@ -18,7 +18,6 @@ namespace Motor.Extensions.Http
                 .ConfigureServices((context, services) =>
                 {
                     services
-                        .AddTransient<TracingDelegatingHandler>()
                         .AddTransient<PrometheusDelegatingHandler>()
                         .Configure<HttpConfig>(context.Configuration.GetSection(configSection))
                         .AddHttpClient(Options.DefaultName);
@@ -54,7 +53,6 @@ namespace Motor.Extensions.Http
                     var config = (IOptions<HttpConfig>) provider.GetService(typeof(IOptions<HttpConfig>));
                     return Policy.TimeoutAsync<HttpResponseMessage>(config.Value.TimeoutInSeconds);
                 })
-                .AddHttpMessageHandler<TracingDelegatingHandler>()
                 .AddHttpMessageHandler<PrometheusDelegatingHandler>();
         }
     }

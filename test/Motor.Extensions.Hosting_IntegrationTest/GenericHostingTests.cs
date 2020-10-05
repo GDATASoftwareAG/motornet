@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,10 +23,9 @@ using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
+using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.TestUtilities;
 using Motor.Extensions.Utilities;
-using OpenTracing;
-using OpenTracing.Mock;
-using OpenTracing.Propagation;
 using Prometheus.Client.Abstractions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -31,6 +33,7 @@ using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Serilog;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Motor.Extensions.Hosting_IntegrationTest
 {
@@ -38,10 +41,25 @@ namespace Motor.Extensions.Hosting_IntegrationTest
     public class GenericHostingTests : IClassFixture<RabbitMQFixture>
     {
         private readonly RabbitMQFixture _fixture;
+        private readonly ITestOutputHelper _outputHelper;
         private readonly Random _random = new Random();
 
-        public GenericHostingTests(RabbitMQFixture fixture)
+        private readonly ActivityListener _listener;
+
+        public GenericHostingTests(RabbitMQFixture fixture, ITestOutputHelper outputHelper)
         {
+            _outputHelper = outputHelper;
+            _listener = new ActivityListener
+            {
+                ShouldListenTo = source => source.Name == typeof(TracingDelegatingMessageHandler<>).FullName,
+                Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                    ActivitySamplingResult.AllDataAndRecorded,
+                ActivityStarted = activity =>
+                {
+                    _outputHelper.WriteLine("test");
+                },
+            };
+            ActivitySource.AddActivityListener(_listener);
             _fixture = fixture;
         }
 
@@ -68,21 +86,26 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         public async Task StartAsync_CreateSpanAsReference_ContextIsReferenced()
         {
             PrepareQueues();
-
-            var tracer = new MockTracer();
-            var host = GetReverseStringService(tracer);
+            
+            var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
 
             await host.StartAsync();
-            var start = tracer.BuildSpan("OtherService").Start();
-            var rabbitMqHeaders = new Dictionary<string, object>();
-            tracer.Inject(start.Context, BuiltinFormats.TextMap, new RabbitMQHeadersMap(rabbitMqHeaders));
-            start.Finish();
-            await PublishMessageIntoQueueOfService(channel, "12345", rabbitMqHeaders);
+            
+            var extensions = new List<ICloudEventExtension>();
+            var randomActivity = CreateRandomActivity();
+            var distributedTracingExtension = new DistributedTracingExtension();
+            distributedTracingExtension.SetActivity(randomActivity);
+            extensions.Add(distributedTracingExtension);
+            var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(new byte[0], extensions: extensions);
 
-            await GetMessageFromDestinationQueue(channel);
-            Assert.Contains(tracer.FinishedSpans(), t => t.ParentId != null);
+            await PublishMessageIntoQueueOfService(channel, "12345", motorCloudEvent);
+
+            var ctx = await GetActivityContextFromDestinationQueue(channel);
+            
+            Assert.Equal(randomActivity.Context.TraceId, ctx.TraceId);
+            Assert.NotEqual(randomActivity.Context.SpanId, ctx.SpanId);
             await host.StopAsync();
         }
 
@@ -91,18 +114,18 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             PrepareQueues();
 
-            var tracer = new MockTracer();
-            var host = GetReverseStringService(tracer);
+            //var tracer = new MockTracer();
+            var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
 
             await host.StartAsync();
-            var start = tracer.BuildSpan("OtherService").Start();
-            start.Finish();
+            //var start = tracer.BuildSpan("OtherService").Start();
+            //start.Finish();
             await PublishMessageIntoQueueOfService(channel, "12345");
 
             await GetMessageFromDestinationQueue(channel);
-            Assert.Contains(tracer.FinishedSpans(), t => t.ParentId == null);
+            //Assert.Contains(tracer.FinishedSpans(), t => t.ParentId == null);
             await host.StopAsync();
         }
 
@@ -118,36 +141,47 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await host.StartAsync();
             await PublishMessageIntoQueueOfService(channel, "12345");
 
-            var dictionary = await GetHeaderFromDestinationQueue(channel);
+            var dictionary = await GetHeadersFromDestinationQueue(channel);
 
             var keyValuePairs = dictionary.ToList();
-            Assert.Equal(2, keyValuePairs.Count);
+            Assert.True(keyValuePairs.Count > 0);
             await host.StopAsync();
-        }
+        } 
 
         [Fact(Timeout = 20000)]
         public async Task StartAsync_CreateSpan_TraceIsPublished()
         {
             PrepareQueues();
+            var traceIsPublished = false;
+            _listener.ActivityStarted = activity =>
+            {
+                traceIsPublished = true;
+            };
 
-            var tracer = new MockTracer();
-            var host = GetReverseStringService(tracer);
+            var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
 
             await host.StartAsync();
             await PublishMessageIntoQueueOfService(channel, "12345");
 
-            await GetMessageFromDestinationQueue(channel);
-            var finishedSpans = tracer.FinishedSpans();
-            Assert.Single(finishedSpans);
+            await GetHeadersFromDestinationQueue(channel);
+            Assert.True(traceIsPublished);
             await host.StopAsync();
         }
 
-        private IHost GetReverseStringService(ITracer tracer = null)
+        public Activity CreateRandomActivity()
         {
-            tracer ??= new MockTracer();
+            var activity = new Activity(nameof(CreateRandomActivity));
+            activity.SetIdFormat(ActivityIdFormat.W3C);
+            activity.Start();
+            return activity;
+        }
+        private readonly string DisAttr = $"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}";
 
+
+        private IHost GetReverseStringService()
+        {
             var host = new MotorHostBuilder(new HostBuilder(), false)
                 .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
                 .ConfigureSerilog()
@@ -168,7 +202,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                     services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
                     services.AddTransient<DelegatingMessageHandler<string>, TracingDelegatingMessageHandler<string>>();
                     services.AddQueuedGenericService<string>();
-                    services.AddSingleton(provider => tracer);
+                    //services.AddSingleton(provider => tracer);
                     services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
                 })
                 .ConfigureConsumer<string>((context, builder) =>
@@ -216,12 +250,13 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
-            IDictionary<string, object> rabbitMqHeaders = null)
+        private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish, MotorCloudEvent<byte[]>? cloudEvent = null)
         {
             var basicProperties = channel.CreateBasicProperties();
-
-            if (rabbitMqHeaders != null) basicProperties.Headers = rabbitMqHeaders;
+            if (cloudEvent != null)
+            {
+                basicProperties.Update(cloudEvent, new RabbitMQPublisherConfig<string>(), new JsonEventFormatter());
+            }
 
             channel.BasicPublish("amq.topic", "serviceQueue", true, basicProperties,
                 Encoding.UTF8.GetBytes(messageToPublish));
@@ -245,7 +280,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             return messageFromDestinationQueue;
         }
 
-        private async Task<ITextMap> GetHeaderFromDestinationQueue(IModel channel)
+        private async Task<IDictionary<string, object>> GetHeadersFromDestinationQueue(IModel channel)
         {
             var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
             var consumer = new EventingBasicConsumer(channel);
@@ -257,8 +292,14 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             channel.BasicConsume(destinationQueueName, false, consumer);
             while (headerFromMessageInDestinationQueue == null) await Task.Delay(TimeSpan.FromMilliseconds(50));
 
-            return new RabbitMQHeadersMap(headerFromMessageInDestinationQueue);
-            ;
+            return headerFromMessageInDestinationQueue;
+        }
+
+        private async Task<ActivityContext> GetActivityContextFromDestinationQueue(IModel channel)
+        {
+            var headers = await GetHeadersFromDestinationQueue(channel);
+            var traceparent = Encoding.UTF8.GetString((byte[]) headers[$"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            return ActivityContext.Parse(traceparent, null);
         }
 
         protected class ReverseStringConverter : ISingleOutputService<string, string>

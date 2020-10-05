@@ -4,14 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Motor.Extensions.Diagnostics.Tracing;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
-using OpenTracing;
-using OpenTracing.Propagation;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -25,20 +23,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private readonly RabbitMQConsumerConfig<T> _config;
         private readonly IRabbitMQConnectionFactory _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
-        private readonly ITracer _tracer;
         private bool _started;
         private CancellationToken StoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
             IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerConfig<T>> config,
-            IHostApplicationLifetime applicationLifetime, ITracer tracer,
-            IApplicationNameService applicationNameService, ICloudEventFormatter cloudEventFormatter)
+            IHostApplicationLifetime applicationLifetime, IApplicationNameService applicationNameService,
+            ICloudEventFormatter cloudEventFormatter)
         {
             _logger = logger;
             _connectionFactory = connectionFactory;
             _config = config.Value;
             _applicationLifetime = applicationLifetime;
-            _tracer = tracer;
             _applicationNameService = applicationNameService;
             _cloudEventFormatter = cloudEventFormatter;
         }
@@ -155,14 +151,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     extensions.Add(new RabbitMQPriorityExtension(priority));
                 }
 
-                if (args.BasicProperties.IsHeadersPresent())
-                    if (args.BasicProperties.Headers.Any(t => t.Key.StartsWith(RabbitMQHeadersMap.Prefix)))
-                    {
-                        var spanContext = _tracer.Extract(BuiltinFormats.TextMap,
-                            new RabbitMQHeadersMap(args.BasicProperties.Headers));
-                        extensions.Add(new JaegerTracingExtension(spanContext));
-                    }
-
                 var cloudEvent = DecodeCloudEventAttributes(args, extensions);
 
                 var task = ConsumeCallbackAsync?.Invoke(cloudEvent, StoppingToken)?
@@ -207,21 +195,25 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             var specVersion = CloudEventsSpecVersion.V1_0;
             var attributes = new Dictionary<string, object>();
+            IDictionary<string, object> headers = new Dictionary<string, object>();
+            if (args.BasicProperties.IsHeadersPresent() && args.BasicProperties.Headers != null)
+            {
+                headers = args.BasicProperties.Headers;
+            }
 
-            if (args.BasicProperties.IsHeadersPresent())
-                foreach (var header in args.BasicProperties.Headers
-                    .Where(t => t.Key.StartsWith(RabbitMQPriorityExtension.CloudEventPrefix))
-                    .Select(t =>
-                        new KeyValuePair<string, object>(
-                            t.Key.Substring(RabbitMQPriorityExtension.CloudEventPrefix.Length + 1),
-                            t.Value)))
-                {
-                    if (string.Equals(header.Key, CloudEventAttributes.DataContentTypeAttributeName(specVersion))
-                        || string.Equals(header.Key, CloudEventAttributes.SpecVersionAttributeName(specVersion)))
-                        continue;
+            foreach (var header in headers
+                .Where(t => t.Key.StartsWith(RabbitMQPriorityExtension.CloudEventPrefix))
+                .Select(t =>
+                    new KeyValuePair<string, object>(
+                        t.Key.Substring(RabbitMQPriorityExtension.CloudEventPrefix.Length + 1),
+                        t.Value)))
+            {
+                if (string.Equals(header.Key, CloudEventAttributes.DataContentTypeAttributeName(specVersion))
+                    || string.Equals(header.Key, CloudEventAttributes.SpecVersionAttributeName(specVersion)))
+                    continue;
 
-                    attributes.Add(header.Key, header.Value);
-                }
+                attributes.Add(header.Key, header.Value);
+            }
 
             if (attributes.Count == 0)
                 return new MotorCloudEvent<byte[]>(_applicationNameService, args.Body.ToArray(), typeof(T).Name,

@@ -10,7 +10,6 @@ using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
-using OpenTracing.Mock;
 using RabbitMQ.Client;
 using Xunit;
 
@@ -24,7 +23,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         private ILogger<RabbitMQMessageConsumer<string>> FakeLogger =>
             new Mock<ILogger<RabbitMQMessageConsumer<string>>>().Object;
 
-        private MockTracer FakeTracer => new MockTracer();
         private IHostApplicationLifetime FakeApplicationLifetime => new Mock<IHostApplicationLifetime>().Object;
 
         [Fact]
@@ -234,7 +232,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var optionsWrapper = new OptionsWrapper<RabbitMQConsumerConfig<string>>(config ?? GetConfig());
 
             return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
-                applicationLifetime, FakeTracer, GetApplicationNameService(), new JsonEventFormatter());
+                applicationLifetime, GetApplicationNameService(), new JsonEventFormatter());
         }
 
         private IApplicationNameService GetApplicationNameService(string source = "test://non")

@@ -8,14 +8,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Motor.Extensions.Diagnostics.Tracing;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Motor.Extensions.TestUtilities;
-using OpenTracing;
-using OpenTracing.Mock;
-using OpenTracing.Propagation;
 using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -25,18 +21,28 @@ using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 {
+    public struct Message
+    {
+        public Message(byte[] body, byte priority)
+        {
+            Body = body;
+            Priority = priority;
+        }
+
+        public byte[] Body { get; }
+        public byte Priority { get; }
+    }
+    
     public class RabbitMQTestBuilder
     {
         public const ushort PrefetchCount = 100;
 
         private static readonly Random _random = new Random();
-        public readonly MockTracer Tracer = new MockTracer();
         private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
         private bool createQueue;
         private RabbitMQFixture Fixture;
         private bool isBuilt;
-        public ISpanContext LastPublishedSpanContext;
-        private readonly IList<Tuple<byte, byte[], bool>> messages = new List<Tuple<byte, byte[], bool>>();
+        private readonly IList<Message> messages = new List<Message>();
         private string QueueName;
         private string RoutingKey;
 
@@ -67,17 +73,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             return this;
         }
 
-        public RabbitMQTestBuilder WithSinglePublishedMessage(byte priority, byte[] message, bool withSpan = true)
+        public RabbitMQTestBuilder WithSinglePublishedMessage(byte priority, byte[] message)
         {
-            messages.Add(new Tuple<byte, byte[], bool>(priority, message, withSpan));
+            messages.Add(new Message(message, priority));
             return this;
         }
 
-        public RabbitMQTestBuilder WithSingleRandomPublishedMessage(bool withSpan = true)
+        public RabbitMQTestBuilder WithSingleRandomPublishedMessage()
         {
             var bytes = new byte[10];
             _random.NextBytes(bytes);
-            return WithSinglePublishedMessage(100, bytes, withSpan);
+            return WithSinglePublishedMessage(100, bytes);
         }
 
         public RabbitMQTestBuilder WithMultipleRandomPublishedMessage(ushort number = PrefetchCount)
@@ -114,28 +120,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             return this;
         }
 
-        private void PublishSingleMessage<T>(IModel channel, Tuple<byte, byte[], bool> message,
+        private void PublishSingleMessage<T>(IModel channel, Message message,
             RabbitMQConsumerConfig<T> config)
         {
             var properties = channel.CreateBasicProperties();
             properties.DeliveryMode = 2;
-            properties.Priority = message.Item1;
+            properties.Priority = message.Priority;
             properties.Headers = new Dictionary<string, object>();
 
-            if (message.Item3)
-            {
-                var span = Tracer.BuildSpan("test").Start();
-                span.Finish();
-                LastPublishedSpanContext = span.Context;
-                properties.Headers = new Dictionary<string, object>
-                {
-                    {"x-open-tracing-spanid", span.Context.SpanId},
-                    {"x-open-tracing-traceid", span.Context.TraceId}
-                };
-            }
-
             var bindings = config.Queue.Bindings[0];
-            channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Item2);
+            channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
         }
 
         private void DeclareQueue<T>(RabbitMQConsumerConfig<T> config, IModel channel)
@@ -199,7 +193,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var loggerMock = new Mock<ILogger<RabbitMQMessageConsumer<T>>>();
 
             var consumer = new RabbitMQMessageConsumer<T>(loggerMock.Object, rabbitConnectionFactoryMock.Object,
-                optionsMock.Object, applicationLifetime, Tracer, null, new JsonEventFormatter())
+                optionsMock.Object, applicationLifetime, null, new JsonEventFormatter())
             {
                 ConsumeCallbackAsync = Callback
             };
@@ -234,7 +228,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var optionsMock = new Mock<IOptions<RabbitMQPublisherConfig<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
             return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
-                new JsonEventFormatter(), Tracer);
+                new JsonEventFormatter());
         }
 
         private RabbitMQPublisherConfig<T> GetPublisherConfig<T>()
@@ -255,7 +249,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue()
         {
-            ISpanContext spanContext = null;
             var message = (byte[]) null;
             var priority = (byte) 0;
             using (var channel = Fixture.Connection.CreateModel())
@@ -263,8 +256,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (sender, args) =>
                 {
-                    spanContext = Tracer.Extract(BuiltinFormats.TextMap,
-                        new RabbitMQHeadersMap(args.BasicProperties.Headers));
                     priority = args.BasicProperties.Priority;
                     message = args.Body.ToArray();
                 };
@@ -275,7 +266,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
             var extensions = new List<ICloudEventExtension>
             {
-                new JaegerTracingExtension(spanContext),
                 new RabbitMQPriorityExtension(priority)
             };
 

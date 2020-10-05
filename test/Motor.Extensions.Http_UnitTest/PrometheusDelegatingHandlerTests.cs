@@ -6,8 +6,6 @@ using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
-using OpenTracing;
-using OpenTracing.Mock;
 using Xunit;
 
 namespace Motor.Extensions.Http_UnitTest
@@ -18,7 +16,6 @@ namespace Motor.Extensions.Http_UnitTest
         [Fact]
         public void GetHttpClient_GetTwoDifferentHttpClients()
         {
-            var tracer = new MockTracer();
             var hostBuilder = new MotorHostBuilder(new HostBuilder())
                 .ConfigurePrometheus()
                 .ConfigureDefaultHttpClient()
@@ -31,7 +28,6 @@ namespace Motor.Extensions.Http_UnitTest
                         mock.Setup(t => t.GetLibVersion()).Returns("test");
                         return mock.Object;
                     });
-                    services.AddSingleton<ITracer>(provider => tracer);
                     services.AddDefaultHttpClient("test1");
                     services.AddDefaultHttpClient("test2");
                 });

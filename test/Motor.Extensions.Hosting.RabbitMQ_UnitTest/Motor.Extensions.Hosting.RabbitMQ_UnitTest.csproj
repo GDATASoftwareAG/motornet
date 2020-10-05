@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Motor.Extensions.Diagnostics.Tracing\Motor.Extensions.Diagnostics.Tracing.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.TestUtilities\Motor.Extensions.TestUtilities.csproj" />
     </ItemGroup>
