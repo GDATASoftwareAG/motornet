@@ -1,76 +1,86 @@
 using System;
+using System.Linq;
 using System.Net;
-using Jaeger;
-using Jaeger.Reporters;
-using Jaeger.Samplers;
-using Jaeger.Senders.Thrift;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Motor.Extensions.Diagnostics.Tracing.Config;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Utilities.Abstractions;
-using OpenTracing;
-using OpenTracing.Tag;
+using OpenTelemetry.Exporter.Jaeger;
+using OpenTelemetry.Trace;
 
 namespace Motor.Extensions.Diagnostics.Tracing
 {
     public static class TracingHostBuilderExtensions
     {
+        public const string JaegerExporter = "JaegerExporter";
+        public const string OpenTelemetry = "OpenTelemetry";
+        public const string AttributeMotorProduct = "motor.product";
+        public const string AttributeMotorEnvironment = "motor.environment";
+
         public static IMotorHostBuilder ConfigureJaegerTracing(this IMotorHostBuilder hostBuilder)
         {
             hostBuilder
                 .ConfigureServices((hostContext, services) =>
                 {
-                    var tracingConfig = new TracingConfig();
-                    hostContext.Configuration.GetSection("Tracing").Bind(tracingConfig);
-                    services.AddSingleton<ITracer>(provider =>
+                    services.Configure<JaegerExporterOptions>(hostContext.Configuration.GetSection(JaegerExporter));
+                    services.Configure<OpenTelemetryOptions>(hostContext.Configuration.GetSection(OpenTelemetry));
+                    services.AddOpenTelemetryTracing((provider, builder) =>
                     {
-                        var loggerFactory = provider.GetService<ILoggerFactory>();
+                        var jaegerOptions = provider.GetService<IOptions<JaegerExporterOptions>>();
+                        var openTelemetryOptions = provider.GetService<IOptions<OpenTelemetryOptions>>();
                         var applicationNameService = provider.GetService<IApplicationNameService>();
+                        var logger = provider.GetService<ILogger<OpenTelemetryOptions>>();
 
-                        var sampler = CreateSampler(tracingConfig);
-                        var reporter = CreateReporter(loggerFactory, tracingConfig);
-
-                        var serviceName = applicationNameService.GetFullName();
-
-                        return new Tracer.Builder(serviceName)
-                            .WithLoggerFactory(loggerFactory)
-                            .WithReporter(reporter)
-                            .WithSampler(sampler)
-                            .WithTag(Tags.Component.Key, applicationNameService.GetProduct())
-                            .WithTag("environment", hostContext.HostingEnvironment.EnvironmentName.ToLower())
-                            .Build();
+                        builder
+                            .AddAspNetCoreInstrumentation()
+                            .AddSource(typeof(TracingDelegatingMessageHandler<>).FullName!)
+                            .SetMotorSampler(openTelemetryOptions.Value)
+                            .AddExporter(logger, jaegerOptions.Value, applicationNameService, hostContext);
                     });
                 });
             return hostBuilder;
         }
 
-        private static ISampler CreateSampler(TracingConfig tracingConfig)
+        private static TracerProviderBuilder SetMotorSampler(this TracerProviderBuilder builder,
+            OpenTelemetryOptions options)
         {
-            if (Math.Abs(tracingConfig.SamplingProbability - 1.0) < 0.0001)
-            {
-                return new ConstSampler(true);
-            }
+            Sampler sampler = (Math.Abs(options.SamplingProbability - 1.0) < 0.0001)
+                ? (Sampler) new AlwaysOnSampler()
+                : new TraceIdRatioBasedSampler(options.SamplingProbability);
 
-            return new ProbabilisticSampler(tracingConfig.SamplingProbability);
+            builder.SetSampler(new ParentBasedSampler(sampler));
+            return builder;
         }
 
-        private static IReporter CreateReporter(ILoggerFactory loggerFactory, TracingConfig tracingConfig)
+        private static TracerProviderBuilder AddExporter(this TracerProviderBuilder builder, ILogger logger,
+            JaegerExporterOptions options, IApplicationNameService applicationNameService,
+            HostBuilderContext hostContext)
         {
             try
             {
-                Dns.GetHostEntry(tracingConfig.AgentHost);
-                return new RemoteReporter.Builder()
-                    .WithLoggerFactory(loggerFactory)
-                    .WithSender(new UdpSender(tracingConfig.AgentHost, tracingConfig.AgentPort,
-                        tracingConfig.ReporterMaxPacketSize))
-                    .Build();
+                Dns.GetHostEntry(options.AgentHost);
+                builder.AddJaegerExporter(internalOptions =>
+                {
+                    var dictionary = options.ProcessTags.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    dictionary.Add(AttributeMotorProduct, applicationNameService.GetProduct());
+                    dictionary.Add(AttributeMotorEnvironment, hostContext.HostingEnvironment.EnvironmentName.ToLower());
+                    internalOptions.ProcessTags = dictionary.ToList();
+                    internalOptions.ServiceName = options.ServiceName == internalOptions.ServiceName
+                        ? applicationNameService.GetFullName()
+                        : options.ServiceName;
+                    internalOptions.AgentHost = options.AgentHost;
+                    internalOptions.AgentPort = options.AgentPort;
+                });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return new LoggingReporter(loggerFactory);
+                logger.LogWarning(LogEvents.JaegerConfigurationFailed, ex, "Jaeger configuration failed, fallback to console.");
+                builder.AddConsoleExporter();
             }
+
+            return builder;
         }
     }
 }

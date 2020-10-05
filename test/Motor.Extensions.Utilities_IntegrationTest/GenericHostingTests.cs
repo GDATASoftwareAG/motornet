@@ -17,8 +17,6 @@ using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
-using OpenTracing;
-using OpenTracing.Mock;
 using Xunit;
 
 namespace Motor.Extensions.Utilities_IntegrationTest
@@ -97,7 +95,6 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                         mock.Setup(t => t.GetSource()).Returns(new Uri("motor://test"));
                         return mock.Object;
                     });
-                    services.AddSingleton<ITracer>(provider => new MockTracer());
                     services.AddTransient<ISingleOutputService<string, string>, TConverter>();
                 })
                 .ConfigureConsumer<string>((context, builder) =>

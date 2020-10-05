@@ -1,9 +1,11 @@
+using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
-using OpenTracing;
-using OpenTracing.Tag;
+using OpenTelemetry.Trace;
 
 namespace Motor.Extensions.Diagnostics.Tracing
 {
@@ -11,37 +13,59 @@ namespace Motor.Extensions.Diagnostics.Tracing
         where TInput : class
     {
         private readonly ILogger<TracingDelegatingMessageHandler<TInput>> _logger;
-        private readonly ITracer _tracer;
 
-        public TracingDelegatingMessageHandler(ILogger<TracingDelegatingMessageHandler<TInput>> logger, ITracer tracer)
+        private static readonly ActivitySource _activitySource =
+            new ActivitySource(typeof(TracingDelegatingMessageHandler<>).FullName!);
+
+        public TracingDelegatingMessageHandler(ILogger<TracingDelegatingMessageHandler<TInput>> logger)
         {
+            Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+            Activity.ForceDefaultIdFormat = true;
             _logger = logger;
-            _tracer = tracer;
         }
 
         public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {
-            var spanBuilder = _tracer.BuildSpan(nameof(HandleMessageAsync));
-            var extension = dataCloudEvent.GetExtensionOrCreate(() => new JaegerTracingExtension((ISpanContext?) null));
-            if (extension.SpanContext != null)
-                spanBuilder = spanBuilder.AddReference(References.FollowsFrom, extension.SpanContext);
+            ActivityContext parentContext = default;
+            var extension = dataCloudEvent.GetExtensionOrCreate(() => new DistributedTracingExtension());
+            if (extension.TraceParent != null)
+            {
+                parentContext = extension.GetActivityContext();
+            }
+            using var activity = _activitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
+            if (activity == null) return await base.HandleMessageAsync(dataCloudEvent, token);
 
-            using var scope = spanBuilder.StartActive(true);
+            using (activity.Start())
             using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",
-                scope.Span.Context.TraceId, scope.Span.Context.SpanId, scope.Span.Context.TraceId))
+                activity.TraceId, activity.SpanId))
             {
                 var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
                 try
                 {
-                    extension.Span = scope.Span;
+                    extension.SetActivity(activity);
                     processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
                 }
                 finally
                 {
-                    scope.Span
-                        .SetTag(nameof(ProcessedMessageStatus), processedMessageStatus.ToString())
-                        .SetTag(Tags.Error.Key, processedMessageStatus != ProcessedMessageStatus.Success);
+                    activity.SetTag(nameof(ProcessedMessageStatus), processedMessageStatus.ToString());
+                    switch (processedMessageStatus)
+                    {
+                        case ProcessedMessageStatus.Success:
+                            activity.SetStatus(Status.Ok);
+                            break;
+                        case ProcessedMessageStatus.TemporaryFailure:
+                            activity.SetStatus(Status.Aborted);
+                            break;
+                        case ProcessedMessageStatus.InvalidInput:
+                            activity.SetStatus(Status.InvalidArgument);
+                            break;
+                        case ProcessedMessageStatus.CriticalFailure:
+                            activity.SetStatus(Status.Unknown);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
 
                 return processedMessageStatus;

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Diagnostics.Tracing;
@@ -9,8 +11,6 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Config;
 using Motor.Extensions.TestUtilities;
-using OpenTracing;
-using OpenTracing.Mock;
 using RabbitMQ.Client;
 using Xunit;
 
@@ -18,16 +18,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 {
     public class RabbitMQMessagePublisherTests
     {
-        private MockTracer FakeTracer => new MockTracer();
-
 
         [Fact]
         public async Task PublishMessageAsync_WithConfig_ConnectionFactoryIsSet()
         {
             var mock = GetDefaultConnectionFactoryMock();
             var config = GetConfig();
-            var tracer = FakeTracer;
-            var publisher = GetPublisher(tracer, mock.Object, config);
+            var publisher = GetPublisher(mock.Object, config);
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte [0]));
 
@@ -39,8 +36,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var connectionFactoryMock = new Mock<IConnectionFactory>();
             var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(connectionFactoryMock);
-            var tracer = FakeTracer;
-            var publisher = GetPublisher(tracer, rabbitConnectionFactoryMock.Object, GetConfig());
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
@@ -52,8 +48,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var connectionMock = new Mock<IConnection>();
             var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(connectionMock: connectionMock);
-            var tracer = FakeTracer;
-            var publisher = GetPublisher(tracer, rabbitConnectionFactoryMock.Object, GetConfig());
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
@@ -65,8 +60,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var modelMock = new Mock<IModel>();
             var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
-            var tracer = FakeTracer;
-            var publisher = GetPublisher(tracer, rabbitConnectionFactoryMock.Object, GetConfig());
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
@@ -81,24 +75,32 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
                 GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
-            var tracer = FakeTracer;
-            var start = tracer.BuildSpan(nameof(PublishMessageAsync_WithConfig_ConnectionFactoryIsSet)).Start();
-            var publisher = GetPublisher(tracer, rabbitConnectionFactoryMock.Object, GetConfig());
+            
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
             const byte priority = 1;
+
+            var openTelemetryExtension = new DistributedTracingExtension();
+
+            var activity = new Activity(nameof(RabbitMQMessagePublisherTests));
+            activity.SetIdFormat(ActivityIdFormat.W3C);
+            activity.Start();
+            openTelemetryExtension.SetActivity(activity);
+            
             var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(new byte[0],
                 extensions: new List<ICloudEventExtension>
                 {
-                    new RabbitMQPriorityExtension(priority), new JaegerTracingExtension(start.Context)
+                    new RabbitMQPriorityExtension(priority), openTelemetryExtension
                 }.ToArray());
 
             await publisher.PublishMessageAsync(motorCloudEvent);
 
             Assert.Equal(2, basicProperties.DeliveryMode);
             Assert.Equal(priority, basicProperties.Priority);
-            Assert.Equal(start.Context.SpanId,
-                Encoding.UTF8.GetString((byte[]) basicProperties.Headers["x-open-tracing-spanid"]));
-            Assert.Equal(start.Context.TraceId,
-                Encoding.UTF8.GetString((byte[]) basicProperties.Headers["x-open-tracing-traceid"]));
+            var traceparent = Encoding.UTF8.GetString((byte[]) basicProperties.Headers[$"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var activityContext = ActivityContext.Parse(traceparent, null);
+            Assert.Equal(activity.Context.TraceId, activityContext.TraceId);
+            Assert.Equal(activity.Context.SpanId, activityContext.SpanId);
+            Assert.Equal(activity.Context.TraceFlags, activityContext.TraceFlags);
         }
 
         [Fact]
@@ -109,8 +111,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
                 GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
-            var tracer = FakeTracer;
-            var publisher = GetPublisher(tracer, rabbitConnectionFactoryMock.Object, GetConfig());
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
             var message = new byte[0];
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(message));
@@ -128,7 +129,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var modelMock = new Mock<IModel>();
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
             var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
-            var publisher = GetPublisher(FakeTracer, rabbitConnectionFactoryMock.Object);
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object);
             var extensions = new List<ICloudEventExtension>
             {
                 new RabbitMQBindingConfigExtension(customExchange, customRoutingKey)
@@ -141,7 +142,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 customRoutingKey, true, It.IsAny<IBasicProperties>(), It.IsAny<byte[]>()));
         }
 
-        private ITypedMessagePublisher<byte[]> GetPublisher(ITracer tracer,
+        private ITypedMessagePublisher<byte[]> GetPublisher(
             IRabbitMQConnectionFactory connectionFactory = null,
             RabbitMQPublisherConfig<string> config = null)
         {
@@ -150,8 +151,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             var configMock = new Mock<IOptions<RabbitMQPublisherConfig<string>>>();
             configMock.Setup(x => x.Value).Returns(config);
-            return new RabbitMQMessagePublisher<string>(connectionFactory, configMock.Object, new JsonEventFormatter(),
-                tracer);
+            return new RabbitMQMessagePublisher<string>(connectionFactory, configMock.Object, new JsonEventFormatter());
         }
 
         private RabbitMQPublisherConfig<string> GetConfig()

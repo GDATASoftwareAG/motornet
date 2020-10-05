@@ -78,10 +78,19 @@ namespace Motor.Extensions.Hosting.Abstractions
         public MotorCloudEvent<T> CreateNew<T>(T data, bool useOldIdentifier = false)
             where T : class
         {
-            return useOldIdentifier
+            var cloudEvent = useOldIdentifier
                 ? new MotorCloudEvent<T>(_applicationNameService, data, Type, Source, Id, Time,
                     Extensions.Select(t => t.Value).ToArray())
                 : CreateCloudEvent(_applicationNameService, data, Extensions.Select(t => t.Value));
+            var newAttributes = cloudEvent.GetAttributes();
+            foreach (var attribute in GetAttributes())
+            {
+                if (!newAttributes.ContainsKey(attribute.Key))
+                {
+                    newAttributes.Add(attribute.Key, attribute.Value);
+                }
+            }
+            return cloudEvent;
         }
     }
 }
