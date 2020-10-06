@@ -20,6 +20,11 @@
 		<RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
 		<PackageTags>microservice hosting rabbitmq kafka http logging tracing</PackageTags>
+		<PackageIcon>Icon_Motor_NET_128.png</PackageIcon>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="../../rsc/Icon_Motor_NET_128.png" Pack="true" PackagePath="/" />
+	</ItemGroup>
 
 </Project>
