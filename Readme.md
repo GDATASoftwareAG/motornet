@@ -15,6 +15,14 @@ You find working examples for different use-cases under the [examples](./example
 - [Consume and publish to RabbitMQ](./examples/ConsumeAndPublishWithRabbitMQ)
 - [Create a service with metrics](./examples/Metrics)
 
+## Support Matrix
+
+| Component | Consume | Publish | CloudEvents | Metrics | Custom |
+| --- | --- | --- | --- | --- | --- |
+| RabbitMQ | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing |
+| Kafka | :heavy_check_mark: | :x: | :x: |:heavy_check_mark:| |
+| Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark:| |
+
 ## License
 
 Motor.NET is provided under the [MIT](./LICENSE) license.

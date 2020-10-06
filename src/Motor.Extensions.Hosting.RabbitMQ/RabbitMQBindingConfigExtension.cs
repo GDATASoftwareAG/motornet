@@ -7,8 +7,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public class RabbitMQBindingConfigExtension : ICloudEventExtension
     {
-        public const string RoutingKeyAttributeName = "binding-routing-key";
-        public const string ExchangeAttributeName = "binding-exchange";
+        public const string RoutingKeyAttributeName = "bindingRoutingKey";
+        public const string ExchangeAttributeName = "bindingExchange";
         private IDictionary<string, object> _attributes = new Dictionary<string, object>();
 
 

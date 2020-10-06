@@ -7,7 +7,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ
     public class RabbitMQPriorityExtension : ICloudEventExtension
     {
         public const string PriorityAttributeName = "priority";
-        public static string CloudEventPrefix = "x-cloud-event";
         private IDictionary<string, object> attributes = new Dictionary<string, object>();
 
         public RabbitMQPriorityExtension(byte priority)

@@ -151,7 +151,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     extensions.Add(new RabbitMQPriorityExtension(priority));
                 }
 
-                var cloudEvent = DecodeCloudEventAttributes(args, extensions);
+                var cloudEvent = args.BasicProperties.ExtractCloudEvent<T>(_applicationNameService,
+                    _cloudEventFormatter, args.Body, extensions);
 
                 var task = ConsumeCallbackAsync?.Invoke(cloudEvent, StoppingToken)?
                     .ConfigureAwait(false)
@@ -188,44 +189,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume.");
                 _applicationLifetime.StopApplication();
             }
-        }
-
-        private MotorCloudEvent<byte[]> DecodeCloudEventAttributes(BasicDeliverEventArgs args,
-            IReadOnlyCollection<ICloudEventExtension> extensions)
-        {
-            var specVersion = CloudEventsSpecVersion.V1_0;
-            var attributes = new Dictionary<string, object>();
-            IDictionary<string, object> headers = new Dictionary<string, object>();
-            if (args.BasicProperties.IsHeadersPresent() && args.BasicProperties.Headers != null)
-            {
-                headers = args.BasicProperties.Headers;
-            }
-
-            foreach (var header in headers
-                .Where(t => t.Key.StartsWith(RabbitMQPriorityExtension.CloudEventPrefix))
-                .Select(t =>
-                    new KeyValuePair<string, object>(
-                        t.Key.Substring(RabbitMQPriorityExtension.CloudEventPrefix.Length + 1),
-                        t.Value)))
-            {
-                if (string.Equals(header.Key, CloudEventAttributes.DataContentTypeAttributeName(specVersion))
-                    || string.Equals(header.Key, CloudEventAttributes.SpecVersionAttributeName(specVersion)))
-                    continue;
-
-                attributes.Add(header.Key, header.Value);
-            }
-
-            if (attributes.Count == 0)
-                return new MotorCloudEvent<byte[]>(_applicationNameService, args.Body.ToArray(), typeof(T).Name,
-                    new Uri("rabbitmq://notset"), extensions: extensions.ToArray());
-
-            var cloudEvent = new MotorCloudEvent<byte[]>(_applicationNameService, args.Body.ToArray(), extensions);
-
-            foreach (var attribute in attributes)
-                cloudEvent.GetAttributes().Add(attribute.Key, _cloudEventFormatter.DecodeAttribute(
-                    cloudEvent.SpecVersion, attribute.Key, (byte[]) attribute.Value, extensions));
-
-            return cloudEvent;
         }
     }
 }

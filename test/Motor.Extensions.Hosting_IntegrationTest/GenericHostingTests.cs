@@ -177,8 +177,6 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             activity.Start();
             return activity;
         }
-        private readonly string DisAttr = $"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}";
-
 
         private IHost GetReverseStringService()
         {
@@ -298,7 +296,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         private async Task<ActivityContext> GetActivityContextFromDestinationQueue(IModel channel)
         {
             var headers = await GetHeadersFromDestinationQueue(channel);
-            var traceparent = Encoding.UTF8.GetString((byte[]) headers[$"x-cloud-event-{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var traceparent = Encoding.UTF8.GetString((byte[]) headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
             return ActivityContext.Parse(traceparent, null);
         }
 
