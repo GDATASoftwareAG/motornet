@@ -55,13 +55,13 @@ namespace Motor.Extensions.Diagnostics.Tracing
                             activity.SetStatus(Status.Ok);
                             break;
                         case ProcessedMessageStatus.TemporaryFailure:
-                            activity.SetStatus(Status.Aborted);
+                            activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.TemporaryFailure)));
                             break;
                         case ProcessedMessageStatus.InvalidInput:
-                            activity.SetStatus(Status.InvalidArgument);
+                            activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.InvalidInput)));
                             break;
                         case ProcessedMessageStatus.CriticalFailure:
-                            activity.SetStatus(Status.Unknown);
+                            activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.CriticalFailure)));
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
