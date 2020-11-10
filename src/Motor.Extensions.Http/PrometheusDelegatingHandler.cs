@@ -26,8 +26,10 @@ namespace Motor.Extensions.Http
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var response = await base.SendAsync(request, cancellationToken);
-            _requestTotal.WithLabels(request.RequestUri.Host, response.StatusCode.ToString()).Inc();
-            _requestLatency.WithLabels(request.RequestUri.Host).Observe(stopwatch.ElapsedMilliseconds);
+            var uri = request.RequestUri;
+            if (uri == null) return response;
+            _requestTotal.WithLabels(uri.Host, response.StatusCode.ToString()).Inc();
+            _requestLatency.WithLabels(uri.Host).Observe(stopwatch.ElapsedMilliseconds);
             return response;
         }
     }

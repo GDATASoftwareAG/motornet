@@ -12,7 +12,7 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
-    public sealed class KafkaConsumer<T> : IMessageConsumer<T>
+    public sealed class KafkaConsumer<T> : IMessageConsumer<T>, IDisposable
     {
         private readonly IApplicationNameService _applicationNameService;
         private readonly KafkaConsumerConfig<T> _config;
@@ -118,11 +118,12 @@ namespace Motor.Extensions.Hosting.Kafka
         private void WriteStatistics(string json)
         {
             var partitionConsumerLags = JsonSerializer
-                .Deserialize<KafkaStatistics>(json)
-                .Topics.Select(t => t.Value)
+                .Deserialize<KafkaStatistics>(json)?
+                .Topics?
+                .Select(t => t.Value)
                 .SelectMany(t => t.Partitions)
                 .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
-
+            if(partitionConsumerLags == null) return;
             foreach (var (partition, consumerLag) in partitionConsumerLags)
             {
                 var lag = consumerLag;

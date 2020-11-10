@@ -26,23 +26,23 @@ namespace Motor.Extensions.Hosting
         public string GetProduct()
         {
             var assemblyProductAttribute =
-                (AssemblyProductAttribute) Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
-            if (assemblyProductAttribute.Product == GetAssemblyName())
+                (AssemblyProductAttribute?) Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
+            if (assemblyProductAttribute?.Product == GetAssemblyName())
             {
                 throw new InvalidProgramException("Product is not set.");
             }
 
-            return assemblyProductAttribute.Product;
+            return assemblyProductAttribute!.Product;
         }
 
         public string GetVersion()
         {
-            return _assembly.GetName().Version.ToString();
+            return _assembly.GetName().Version?.ToString() ?? "debug";
         }
 
         public string GetLibVersion()
         {
-            return Assembly.GetAssembly(typeof(DefaultApplicationNameService)).GetName().Version.ToString();
+            return Assembly.GetAssembly(typeof(DefaultApplicationNameService))?.GetName()?.Version?.ToString() ?? "debug";
         }
 
         public string GetFullName()

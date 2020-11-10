@@ -2,7 +2,9 @@ namespace Motor.Extensions.Http
 {
     public class HttpConfig
     {
-        public int NumberOfRetries { get; set; } = 2;
-        public int TimeoutInSeconds { get; set; } = 30;
+        public const int DefaultNumberOfRetries = 2;
+        public const int DefaultTimeoutInSeconds = 30;
+        public int NumberOfRetries { get; set; } = DefaultNumberOfRetries;
+        public int TimeoutInSeconds { get; set; } = DefaultTimeoutInSeconds;
     }
 }

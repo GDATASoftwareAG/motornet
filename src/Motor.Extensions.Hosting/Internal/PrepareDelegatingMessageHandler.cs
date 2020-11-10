@@ -29,7 +29,7 @@ namespace Motor.Extensions.Hosting.Internal
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(LogEvents.InvalidInput, ex, "Invalid input (first 100 chars): {message}",
-                    dataCloudEvent.Data.ToString().Take(100));
+                    dataCloudEvent.Data.ToString()?.Take(100));
                 processedMessageStatus = ProcessedMessageStatus.InvalidInput;
             }
             catch (TemporaryFailureException ex)

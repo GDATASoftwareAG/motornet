@@ -16,6 +16,10 @@ namespace Motor.Extensions.Hosting.Publisher
             {
                 var consumerBuilder = new PublisherBuilder<TOutput>(collection, context);
                 action.Invoke(context, consumerBuilder);
+                if (consumerBuilder.PublisherImplType == null)
+                {
+                    throw new ArgumentNullException(nameof(consumerBuilder.PublisherImplType));
+                }
                 collection.AddTransient(typeof(ITypedMessagePublisher<TOutput>), consumerBuilder.PublisherImplType);
             });
             return hostBuilder;
