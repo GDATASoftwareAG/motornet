@@ -118,7 +118,7 @@ namespace Motor.Extensions.Utilities
                             applicationBuilder.UseEndpoints(endpoints => { endpoints.MapHealthChecks("/health"); });
                         });
                         if (_type != null)
-                            builder.UseSetting(WebHostDefaults.ApplicationKey, _type.Assembly?.GetName()?.Name);
+                            builder.UseSetting(WebHostDefaults.ApplicationKey, _type.Assembly.GetName().Name);
 
                         builder.ConfigureServices((context, collection) =>
                         {

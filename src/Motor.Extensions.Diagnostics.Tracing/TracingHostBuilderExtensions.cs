@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,15 +29,19 @@ namespace Motor.Extensions.Diagnostics.Tracing
                     services.Configure<OpenTelemetryOptions>(hostContext.Configuration.GetSection(OpenTelemetry));
                     services.AddOpenTelemetryTracing((provider, builder) =>
                     {
-                        var jaegerOptions = provider.GetService<IOptions<JaegerExporterOptions>>();
-                        var openTelemetryOptions = provider.GetService<IOptions<OpenTelemetryOptions>>();
-                        var applicationNameService = provider.GetService<IApplicationNameService>();
-                        var logger = provider.GetService<ILogger<OpenTelemetryOptions>>();
+                        var jaegerOptions = provider.GetService<IOptions<JaegerExporterOptions>>()
+                                            ?? throw new InvalidConstraintException($"{nameof(JaegerExporterOptions)} is not configured.");
+                        var openTelemetryOptions = provider.GetService<IOptions<OpenTelemetryOptions>>()?.Value 
+                                                   ?? new OpenTelemetryOptions();
+                        var applicationNameService = provider.GetService<IApplicationNameService>() 
+                                                     ?? throw new InvalidConstraintException($"{nameof(IApplicationNameService)} is not configured.");
+                        var logger = provider.GetService<ILogger<OpenTelemetryOptions>>()
+                                     ?? throw new InvalidConstraintException($"{nameof(ILogger<OpenTelemetryOptions>)} is not configured.");
 
                         builder
                             .AddAspNetCoreInstrumentation()
                             .AddSource(typeof(TracingDelegatingMessageHandler<>).FullName!)
-                            .SetMotorSampler(openTelemetryOptions.Value)
+                            .SetMotorSampler(openTelemetryOptions)
                             .AddExporter(logger, jaegerOptions.Value, applicationNameService, hostContext);
                     });
                 });
@@ -54,7 +59,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
             return builder;
         }
 
-        private static TracerProviderBuilder AddExporter(this TracerProviderBuilder builder, ILogger logger,
+        private static void AddExporter(this TracerProviderBuilder builder, ILogger logger,
             JaegerExporterOptions options, IApplicationNameService applicationNameService,
             HostBuilderContext hostContext)
         {
@@ -67,9 +72,6 @@ namespace Motor.Extensions.Diagnostics.Tracing
                     dictionary.Add(AttributeMotorProduct, applicationNameService.GetProduct());
                     dictionary.Add(AttributeMotorEnvironment, hostContext.HostingEnvironment.EnvironmentName.ToLower());
                     internalOptions.ProcessTags = dictionary.ToList();
-                    internalOptions.ServiceName = options.ServiceName == internalOptions.ServiceName
-                        ? applicationNameService.GetFullName()
-                        : options.ServiceName;
                     internalOptions.AgentHost = options.AgentHost;
                     internalOptions.AgentPort = options.AgentPort;
                 });
@@ -79,8 +81,6 @@ namespace Motor.Extensions.Diagnostics.Tracing
                 logger.LogWarning(LogEvents.JaegerConfigurationFailed, ex, "Jaeger configuration failed, fallback to console.");
                 builder.AddConsoleExporter();
             }
-
-            return builder;
         }
     }
 }

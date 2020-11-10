@@ -42,16 +42,19 @@ namespace Motor.Extensions.Http
             return clientBuilder
                 .AddPolicyHandler((provider, message) =>
                 {
-                    var config = (IOptions<HttpConfig>) provider.GetService(typeof(IOptions<HttpConfig>));
+                    var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
                     return HttpPolicyExtensions
                         .HandleTransientHttpError()
                         .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
-                        .WaitAndRetryAsync(config.Value.NumberOfRetries, i => TimeSpan.FromSeconds(Math.Pow(2, i)));
+                        .WaitAndRetryAsync(
+                            config?.Value.NumberOfRetries ?? HttpConfig.DefaultNumberOfRetries,
+                            i => TimeSpan.FromSeconds(Math.Pow(2, i)));
                 })
                 .AddPolicyHandler((provider, message) =>
                 {
-                    var config = (IOptions<HttpConfig>) provider.GetService(typeof(IOptions<HttpConfig>));
-                    return Policy.TimeoutAsync<HttpResponseMessage>(config.Value.TimeoutInSeconds);
+                    var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
+                    return Policy.TimeoutAsync<HttpResponseMessage>(config?.Value.TimeoutInSeconds ??
+                                                                    HttpConfig.DefaultTimeoutInSeconds);
                 })
                 .AddHttpMessageHandler<PrometheusDelegatingHandler>();
         }
