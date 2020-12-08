@@ -21,8 +21,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             _fixture = fixture;
         }
 
-        //[Fact(Timeout = 50000)]
-        [Fact(Skip = "Times out")]
+        [Fact(Timeout = 50000)]
         public async Task Consume_PublishIntoKafkaAndConsume_ConsumedEqualsPublished()
         {
             const string topic = "test_topic_123";
