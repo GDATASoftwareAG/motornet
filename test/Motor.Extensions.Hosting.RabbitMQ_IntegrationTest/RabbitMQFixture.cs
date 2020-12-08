@@ -1,9 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Containers.Builders;
-using DotNet.Testcontainers.Containers.Configurations.MessageBrokers;
-using DotNet.Testcontainers.Containers.Modules.MessageBrokers;
+using Polly;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
+using TestContainers.Container.Abstractions;
+using TestContainers.Container.Abstractions.Hosting;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
@@ -12,26 +13,31 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
     {
         public RabbitMQFixture()
         {
-            Container = new TestcontainersBuilder<RabbitMqTestcontainer>()
-                .WithMessageBroker(new RabbitMqTestcontainerConfiguration
+            Container = new ContainerBuilder<GenericContainer>()
+                .ConfigureDockerImageName("rabbitmq:3.7.21")
+                .ConfigureContainer((_ctx, container) =>
                 {
-                    Username = "guest",
-                    Port = new Random().Next(20000, 22000),
-                    Password = "guest"
+                    container.Env["RABBITMQ_DEFAULT_USER"] = "guest";
+                    container.Env["RABBITMQ_DEFAULT_PASS"] = "guest";
+                    container.ExposedPorts.Add(5672);
                 })
                 .Build();
         }
 
         public IConnection Connection => CreateConnection();
 
-        public int Port => Container.GetMappedPublicPort(5672);
-        public string Hostname => Container.Hostname;
+        public int Port => Container.GetMappedPort(5672);
+        public string Hostname => Container.GetDockerHostIpAddress();
 
-        private RabbitMqTestcontainer Container { get; }
+        private GenericContainer Container { get; }
 
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
-            return Container.StartAsync();
+            await Container.StartAsync();
+            Policy
+                .Handle<BrokerUnreachableException>()
+                .WaitAndRetry(10, i => TimeSpan.FromSeconds(Math.Pow(2, i)))
+                .Execute(CreateConnection);
         }
 
         public Task DisposeAsync()
@@ -41,7 +47,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         private IConnection CreateConnection()
         {
-            var connectionFactory2 = new ConnectionFactory {Uri = new Uri(Container.ConnectionString)};
+            var connectionString = $"amqp://guest:guest@{this.Hostname}:{this.Port}";
+            var connectionFactory2 = new ConnectionFactory {Uri = new Uri(connectionString)};
             return connectionFactory2.CreateConnection();
         }
     }
