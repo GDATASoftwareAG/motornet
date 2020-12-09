@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using CloudNative.CloudEvents;
 
 namespace Motor.Extensions.Hosting.Abstractions
@@ -33,6 +34,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         {
             _applicationNameService = applicationNameService;
             TypedData = data;
+            DataContentType = new ContentType();
         }
 
         public MotorCloudEvent(
@@ -71,7 +73,7 @@ namespace Motor.Extensions.Hosting.Abstractions
             IEnumerable<ICloudEventExtension>? extensions = null)
             where T : class
         {
-            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource(),
+            return new(applicationNameService, data, applicationNameService.GetSource(),
                 extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
         }
 
