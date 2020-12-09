@@ -16,7 +16,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
     public class RabbitMQTests : IClassFixture<RabbitMQFixture>
     {
         private readonly RabbitMQFixture _fixture;
-        private readonly Random _random = new Random();
 
         public RabbitMQTests(RabbitMQFixture fixture)
         {

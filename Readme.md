@@ -22,7 +22,7 @@ You find working examples for different use-cases under the [examples](./example
 | Component | Consume | Publish | CloudEvents | Metrics | Custom |
 | --- | --- | --- | --- | --- | --- |
 | RabbitMQ | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing |
-| Kafka | :heavy_check_mark: | :x: | :x: |:heavy_check_mark:| |
+| Kafka | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
 | Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark:| |
 
 ## License

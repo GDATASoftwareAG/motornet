@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,20 +13,25 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
-    public sealed class KafkaConsumer<T> : IMessageConsumer<T>, IDisposable
+    public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable
     {
         private readonly IApplicationNameService _applicationNameService;
-        private readonly KafkaConsumerConfig<T> _config;
+        private readonly ICloudEventFormatter _cloudEventFormatter;
+        private readonly KafkaConsumerConfig<TData> _config;
         private readonly IMetricFamily<IGauge>? _consumerLagGauge;
         private readonly IMetricFamily<ISummary>? _consumerLagSummary;
-        private readonly ILogger<KafkaConsumer<T>> _logger;
-        private IConsumer<Ignore, byte[]>? _consumer;
+        private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
+        private IConsumer<string, byte[]>? _consumer;
 
-        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IOptions<KafkaConsumerConfig<T>> config,
-            IMetricsFactory<KafkaConsumer<T>>? metricsFactory, IApplicationNameService applicationNameService)
+        public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
+            IOptions<KafkaConsumerConfig<TData>> config,
+            IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
+            IApplicationNameService applicationNameService,
+            ICloudEventFormatter cloudEventFormatter)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
+            _cloudEventFormatter = cloudEventFormatter;
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
             _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
                 "Contains a summary of current consumer lag of each partition", "topic", "partition");
@@ -43,7 +49,7 @@ namespace Motor.Extensions.Hosting.Kafka
         {
             if (ConsumeCallbackAsync == null) throw new InvalidOperationException("ConsumeCallback is null");
 
-            var consumerBuilder = new ConsumerBuilder<Ignore, byte[]>(_config)
+            var consumerBuilder = new ConsumerBuilder<string, byte[]>(_config)
                 .SetLogHandler((_, logMessage) => WriteLog(logMessage))
                 .SetStatisticsHandler((_, json) => WriteStatistics(json));
 
@@ -123,7 +129,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 .Select(t => t.Value)
                 .SelectMany(t => t.Partitions)
                 .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
-            if(partitionConsumerLags == null) return;
+            if (partitionConsumerLags == null) return;
             foreach (var (partition, consumerLag) in partitionConsumerLags)
             {
                 var lag = consumerLag;
@@ -134,13 +140,13 @@ namespace Motor.Extensions.Hosting.Kafka
             }
         }
 
-        private void SingleMessageHandling(CancellationToken stoppingToken, ConsumeResult<Ignore, byte[]> msg)
+        private void SingleMessageHandling(CancellationToken stoppingToken, ConsumeResult<string, byte[]> msg)
         {
             _logger.LogDebug(
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
-            var data = new MotorCloudEvent<byte[]>(_applicationNameService, msg.Message.Value, typeof(T).Name,
-                new Uri("kafka://notset"));
-            var taskAwaiter = ConsumeCallbackAsync?.Invoke(data, stoppingToken)?.GetAwaiter();
+            var cloudEvent = msg.ToMotorCloudEvent<TData>(_applicationNameService, _cloudEventFormatter);
+
+            var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, stoppingToken)?.GetAwaiter();
             taskAwaiter?.OnCompleted(() =>
             {
                 var processedMessageStatus = taskAwaiter?.GetResult();

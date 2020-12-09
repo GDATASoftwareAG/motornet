@@ -37,7 +37,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
     {
         public const ushort PrefetchCount = 100;
 
-        private static readonly Random _random = new Random();
+        private static readonly Random _random = new();
         private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
         private bool createQueue;
         private RabbitMQFixture Fixture;
