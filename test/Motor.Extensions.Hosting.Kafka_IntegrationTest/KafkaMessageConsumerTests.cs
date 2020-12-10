@@ -20,7 +20,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
     public class KafkaMessageConsumerTests : IClassFixture<KafkaFixture>
     {
         private readonly KafkaFixture _fixture;
-        private IRandomizerString randomizerString;
+        private readonly IRandomizerString randomizerString;
 
         public KafkaMessageConsumerTests(KafkaFixture fixture)
         {
@@ -131,7 +131,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             return new()
             {
                 Topic = topic,
-                BootstrapServers = $"{_fixture.Hostname}:9092",
+                BootstrapServers = $"{_fixture.Hostname}:{_fixture.Port}",
             };
         }
 
@@ -149,7 +149,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
                 Topic = topic,
                 GroupId = groupId,
                 CommitPeriod = 1,
-                BootstrapServers = $"{_fixture.Hostname}:9092",
+                BootstrapServers = $"{_fixture.Hostname}:{_fixture.Port}",
                 EnableAutoCommit = false,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
