@@ -17,14 +17,14 @@ namespace ConsumeAndPublishWithRabbitMQ
             MotorHost.CreateDefaultBuilder()
                 // Configure the types of the input and output messages
                 .ConfigureSingleOutputService<InputMessage, OutputMessage>()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     // Add a handler for the input message which returns an output message
                     // This handler is called for every new incoming message
                     services.AddTransient<ISingleOutputService<InputMessage, OutputMessage>, SingleOutputService>();
                 })
                 // Add the incomming communication module. 
-                .ConfigureConsumer<InputMessage>((context, builder) =>
+                .ConfigureConsumer<InputMessage>((_, builder) =>
                 {
                     // In this case the messages are received from RabbitMQ
                     builder.AddRabbitMQ();
@@ -32,7 +32,7 @@ namespace ConsumeAndPublishWithRabbitMQ
                     builder.AddSystemJson();
                 })
                 // Add the outgoing communication module.
-                .ConfigurePublisher<OutputMessage>((context, builder) =>
+                .ConfigurePublisher<OutputMessage>((_, builder) =>
                 {
                     // In this case the messages are send to RabbitMQ
                     builder.AddRabbitMQ();
