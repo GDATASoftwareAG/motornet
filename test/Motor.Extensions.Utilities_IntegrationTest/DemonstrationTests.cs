@@ -51,16 +51,16 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         {
             var host = MotorHost.CreateDefaultBuilder()
                 .ConfigureSingleOutputService<string, string>()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
                 })
-                .ConfigureConsumer<string>((context, builder) =>
+                .ConfigureConsumer<string>((_, builder) =>
                 {
                     builder.AddRabbitMQ();
                     builder.AddDeserializer<StringDeserializer>();
                 })
-                .ConfigurePublisher<string>((context, builder) =>
+                .ConfigurePublisher<string>((_, builder) =>
                 {
                     builder.AddRabbitMQ();
                     builder.AddSerializer<StringSerializer>();

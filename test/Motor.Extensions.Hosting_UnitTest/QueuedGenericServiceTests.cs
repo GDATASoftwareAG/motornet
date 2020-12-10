@@ -51,7 +51,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             int? parallelProcessesOrProcessorCount)
         {
             parallelProcessesOrProcessorCount ??= Environment.ProcessorCount;
-            var waitTimeInMs = 100;
+            var waitTimeInMs = 200;
             var taskCompletionSources = new List<TaskCompletionSource<ProcessedMessageStatus>>();
             var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             var setupSequentialResult = queue.SetupSequence(t => t.DequeueAsync(It.IsAny<CancellationToken>()));
