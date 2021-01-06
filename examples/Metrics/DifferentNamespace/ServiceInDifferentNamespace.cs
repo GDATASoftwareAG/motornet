@@ -11,7 +11,7 @@ namespace Metrics.DifferentNamespace
 
     public class ServiceInDifferentNamespace : IServiceInDifferentNamespace
     {
-        private readonly IMetricFamily<ICounter>? _counter;
+        private readonly ICounter? _counter;
 
         public ServiceInDifferentNamespace(IMetricsFactory<ServiceInDifferentNamespace>? metricsFactory)
         {

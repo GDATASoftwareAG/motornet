@@ -36,9 +36,9 @@ namespace Motor.Extensions.Hosting.Internal
             return taskCompletionStatus.Task;
         }
 
-        public async Task<QueueItem<T>> DequeueAsync(CancellationToken cancellationToken)
+        public async Task<QueueItem<T>> DequeueAsync(CancellationToken token)
         {
-            await _signal.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _signal.WaitAsync(token).ConfigureAwait(false);
             _workItems.TryDequeue(out var workItem);
             _elementsInQueue?.Dec();
             LastDequeuedAt = DateTimeOffset.UtcNow;

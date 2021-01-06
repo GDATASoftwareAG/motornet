@@ -29,20 +29,20 @@ namespace Motor.Extensions.Hosting.Consumer
             _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
         }
 
-        public override async Task StartAsync(CancellationToken cancellationToken)
+        public override async Task StartAsync(CancellationToken token)
         {
-            await _consumer.StartAsync(cancellationToken);
-            await base.StartAsync(cancellationToken);
+            await _consumer.StartAsync(token);
+            await base.StartAsync(token);
         }
 
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopAsync(CancellationToken token)
         {
-            await base.StopAsync(cancellationToken);
-            await _consumer.StopAsync(cancellationToken);
+            await base.StopAsync(token);
+            await _consumer.StopAsync(token);
         }
 
         private async Task<ProcessedMessageStatus> SingleMessageConsumeAsync(MotorCloudEvent<byte[]> dataCloudEvent,
-            CancellationToken stoppingToken)
+            CancellationToken token)
         {
             try
             {
@@ -63,15 +63,10 @@ namespace Motor.Extensions.Hosting.Consumer
             }
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken token)
         {
             _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
-            return _consumer.ExecuteAsync(stoppingToken);
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
+            return _consumer.ExecuteAsync(token);
         }
     }
 }

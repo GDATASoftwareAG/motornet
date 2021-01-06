@@ -24,7 +24,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private readonly IRabbitMQConnectionFactory _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
-        private CancellationToken StoppingToken;
+        private CancellationToken _stoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
             IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerConfig<T>> config,
@@ -47,7 +47,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public async Task ExecuteAsync(CancellationToken token = default)
         {
-            StoppingToken = token;
+            _stoppingToken = token;
             while (token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token);
         }
 
@@ -154,12 +154,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 var cloudEvent = args.BasicProperties.ExtractCloudEvent<T>(_applicationNameService,
                     _cloudEventFormatter, args.Body, extensions);
 
-                var task = ConsumeCallbackAsync?.Invoke(cloudEvent, StoppingToken)?
+                var task = ConsumeCallbackAsync?.Invoke(cloudEvent, _stoppingToken)?
                     .ConfigureAwait(false)
                     .GetAwaiter();
                 task?.OnCompleted(() =>
                 {
-                    if (StoppingToken.IsCancellationRequested) return;
+                    if (_stoppingToken.IsCancellationRequested) return;
 
                     var processedMessageStatus = task?.GetResult();
                     switch (processedMessageStatus)

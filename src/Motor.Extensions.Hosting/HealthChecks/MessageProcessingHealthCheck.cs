@@ -25,7 +25,7 @@ namespace Motor.Extensions.Hosting.HealthChecks
         }
 
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
-            CancellationToken cancellationToken = new CancellationToken())
+            CancellationToken token = default)
         {
             if (_queue.ItemCount == 0) return Task.FromResult(HealthCheckResult.Healthy());
 
