@@ -15,8 +15,8 @@ namespace Motor.Extensions.Http
         public PrometheusDelegatingHandler(IMetricsFactory<PrometheusDelegatingHandler> metricsFactory)
         {
             _requestTotal =
-                metricsFactory.CreateCounter("request_total", "number of external request", "host", "status");
-            _requestLatency = metricsFactory.CreateSummary("request_latency", "request duration in ms", "host");
+                metricsFactory.CreateCounter("request_total", "number of external request", false, "host", "status");
+            _requestLatency = metricsFactory.CreateSummary("request_latency", "request duration in ms", new[] {"host"});
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(

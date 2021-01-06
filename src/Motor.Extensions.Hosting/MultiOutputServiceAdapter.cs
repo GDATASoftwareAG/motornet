@@ -18,7 +18,7 @@ namespace Motor.Extensions.Hosting
     {
         private readonly IMultiOutputService<TInput, TOutput> _converter;
         private readonly ILogger<SingleOutputServiceAdapter<TInput, TOutput>> _logger;
-        private readonly IMetricFamily<ISummary>? _messageProcessing;
+        private readonly ISummary? _messageProcessing;
         private readonly ITypedMessagePublisher<TOutput> _publisher;
 
         public MultiOutputServiceAdapter(ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,

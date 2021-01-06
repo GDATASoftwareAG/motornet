@@ -15,7 +15,7 @@ namespace Motor.Extensions.Diagnostics.Metrics
             IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
         {
             _messageProcessingTotal =
-                metricsFactory.CreateCounter("message_processing_total", "Message processing status total", "status");
+                metricsFactory.CreateCounter("message_processing_total", "Message processing status total", false, "status");
         }
 
         public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
