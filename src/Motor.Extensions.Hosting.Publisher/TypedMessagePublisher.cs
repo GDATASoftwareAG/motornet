@@ -14,7 +14,7 @@ namespace Motor.Extensions.Hosting.Publisher
         where TOutput : class
     {
         private readonly TPublisher _bytesMessagePublisher;
-        private readonly IMetricFamily<ISummary>? _messageSerialization;
+        private readonly ISummary? _messageSerialization;
         private readonly IMessageSerializer<TOutput> _messageSerializer;
 
         public TypedMessagePublisher(IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,

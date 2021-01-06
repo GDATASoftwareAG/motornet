@@ -9,6 +9,7 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.TestUtilities;
+using Prometheus.Client;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest
@@ -16,15 +17,15 @@ namespace Motor.Extensions.Hosting_UnitTest
     public class MultiOutputServiceAdapterTests
     {
         private static Mock<ILogger<SingleOutputServiceAdapter<string, string>>> FakeLogger =>
-            new Mock<ILogger<SingleOutputServiceAdapter<string, string>>>();
+            new();
 
         private static Mock<IMultiOutputService<string, string>> FakeService =>
-            new Mock<IMultiOutputService<string, string>>();
+            new();
 
         private static Mock<IMetricsFactory<SingleOutputServiceAdapter<string, string>>> FakeMetrics =>
-            new Mock<IMetricsFactory<SingleOutputServiceAdapter<string, string>>>();
+            new();
 
-        private static Mock<ITypedMessagePublisher<string>> FakePublisher => new Mock<ITypedMessagePublisher<string>>();
+        private static Mock<ITypedMessagePublisher<string>> FakePublisher => new();
 
 
         [Fact]
@@ -35,7 +36,9 @@ namespace Motor.Extensions.Hosting_UnitTest
             GetMessageHandler(metrics: metricsFactoryMock.Object);
 
             metricsFactoryMock.Verify(x =>
-                x.CreateSummary("message_processing", "Message processing duration in ms"));
+                x.CreateSummary("message_processing", "Message processing duration in ms", 
+                    false, null,
+                    null, null, null));
         }
 
         [Fact]

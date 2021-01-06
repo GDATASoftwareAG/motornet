@@ -30,7 +30,7 @@ namespace Metrics
         }
 
         public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<InputMessage> inputEvent,
-            CancellationToken token = new CancellationToken())
+            CancellationToken token = new())
         {
             // Handle incoming messages
             // Get the input message from the cloud event

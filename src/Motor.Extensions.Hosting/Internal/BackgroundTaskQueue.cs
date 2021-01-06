@@ -17,9 +17,9 @@ namespace Motor.Extensions.Hosting.Internal
 
         public BackgroundTaskQueue(IMetricsFactory<BackgroundTaskQueue<T>>? metricsFactory)
         {
-            _elementsInQueue = metricsFactory?.CreateGauge("task_queue_enqueued_elements", "", "type")
+            _elementsInQueue = metricsFactory?.CreateGauge("task_queue_enqueued_elements", "", false, "type")
                 ?.WithLabels(typeof(T).Name);
-            _totalMessages = metricsFactory?.CreateCounter("total_messages", "", "type")?.WithLabels(typeof(T).Name);
+            _totalMessages = metricsFactory?.CreateCounter("total_messages", "", false, "type")?.WithLabels(typeof(T).Name);
         }
 
         public Task<ProcessedMessageStatus> QueueBackgroundWorkItem(T item)

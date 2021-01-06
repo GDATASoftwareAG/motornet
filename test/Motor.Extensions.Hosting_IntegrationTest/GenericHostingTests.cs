@@ -54,10 +54,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 ShouldListenTo = source => source.Name == typeof(TracingDelegatingMessageHandler<>).FullName,
                 Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
                     ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = activity =>
-                {
-                    _outputHelper.WriteLine("test");
-                },
+                ActivityStarted = activity => { _outputHelper.WriteLine("test"); },
             };
             ActivitySource.AddActivityListener(_listener);
             _fixture = fixture;
@@ -86,13 +83,13 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         public async Task StartAsync_CreateSpanAsReference_ContextIsReferenced()
         {
             PrepareQueues();
-            
+
             var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
 
             await host.StartAsync();
-            
+
             var extensions = new List<ICloudEventExtension>();
             var randomActivity = CreateRandomActivity();
             var distributedTracingExtension = new DistributedTracingExtension();
@@ -103,7 +100,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await PublishMessageIntoQueueOfService(channel, "12345", motorCloudEvent);
 
             var ctx = await GetActivityContextFromDestinationQueue(channel);
-            
+
             Assert.Equal(randomActivity.Context.TraceId, ctx.TraceId);
             Assert.NotEqual(randomActivity.Context.SpanId, ctx.SpanId);
             await host.StopAsync();
@@ -146,17 +143,14 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             var keyValuePairs = dictionary.ToList();
             Assert.True(keyValuePairs.Count > 0);
             await host.StopAsync();
-        } 
+        }
 
         [Fact(Timeout = 20000)]
         public async Task StartAsync_CreateSpan_TraceIsPublished()
         {
             PrepareQueues();
             var traceIsPublished = false;
-            _listener.ActivityStarted = activity =>
-            {
-                traceIsPublished = true;
-            };
+            _listener.ActivityStarted = activity => { traceIsPublished = true; };
 
             var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
@@ -248,7 +242,8 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish, MotorCloudEvent<byte[]>? cloudEvent = null)
+        private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
+            MotorCloudEvent<byte[]>? cloudEvent = null)
         {
             var basicProperties = channel.CreateBasicProperties();
             if (cloudEvent != null)
@@ -296,7 +291,10 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         private async Task<ActivityContext> GetActivityContextFromDestinationQueue(IModel channel)
         {
             var headers = await GetHeadersFromDestinationQueue(channel);
-            var traceparent = Encoding.UTF8.GetString((byte[]) headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var traceparent = Encoding.UTF8
+                .GetString((byte[]) headers[
+                    $"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"])
+                .Trim('"');
             return ActivityContext.Parse(traceparent, null);
         }
 
@@ -309,7 +307,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 IMetricsFactory<ReverseStringConverter> metricsFactory)
             {
                 _logger = logger;
-                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", "someLabel");
+                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] {"someLabel"});
             }
 
             public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,

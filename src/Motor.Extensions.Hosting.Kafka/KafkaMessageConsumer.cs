@@ -34,9 +34,9 @@ namespace Motor.Extensions.Hosting.Kafka
             _cloudEventFormatter = cloudEventFormatter;
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
             _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
-                "Contains a summary of current consumer lag of each partition", "topic", "partition");
+                "Contains a summary of current consumer lag of each partition", new [] {"topic", "partition"});
             _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
-                "Contains current number consumer lag of each partition", "topic", "partition");
+                "Contains current number consumer lag of each partition", false, "topic", "partition");
         }
 
         public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
