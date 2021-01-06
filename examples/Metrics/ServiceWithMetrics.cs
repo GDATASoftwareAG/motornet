@@ -12,8 +12,8 @@ namespace Metrics
     public class ServiceWithMetrics : INoOutputService<InputMessage>
     {
         private readonly IServiceInDifferentNamespace _serviceInDifferentNamespace;
-        private readonly IMetricFamily<ICounter>? _counter;
-        private readonly IMetricFamily<ISummary>? _summary;
+        private readonly ICounter? _counter;
+        private readonly ISummary? _summary;
 
         public ServiceWithMetrics(IMetricsFactory<ServiceWithMetrics> metricFactory,
             IServiceInDifferentNamespace serviceInDifferentNamespace)
@@ -30,7 +30,7 @@ namespace Metrics
         }
 
         public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<InputMessage> inputEvent,
-            CancellationToken token = new())
+            CancellationToken token = default)
         {
             // Handle incoming messages
             // Get the input message from the cloud event

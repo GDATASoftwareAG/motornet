@@ -45,7 +45,7 @@ namespace Motor.Extensions.Hosting.Kafka
             set;
         }
 
-        public Task StartAsync(CancellationToken stoppingToken = default)
+        public Task StartAsync(CancellationToken token = default)
         {
             if (ConsumeCallbackAsync == null) throw new InvalidOperationException("ConsumeCallback is null");
 
@@ -58,16 +58,16 @@ namespace Motor.Extensions.Hosting.Kafka
             return Task.CompletedTask;
         }
 
-        public async Task ExecuteAsync(CancellationToken stoppingToken = default)
+        public async Task ExecuteAsync(CancellationToken token = default)
         {
             await Task.Run(() =>
             {
-                while (!stoppingToken.IsCancellationRequested)
+                while (!token.IsCancellationRequested)
                     try
                     {
-                        var msg = _consumer?.Consume(stoppingToken);
+                        var msg = _consumer?.Consume(token);
                         if (msg != null && !msg.IsPartitionEOF)
-                            SingleMessageHandling(stoppingToken, msg);
+                            SingleMessageHandling(token, msg);
                         else
                             _logger.LogDebug("No messages received");
                     }
@@ -80,10 +80,10 @@ namespace Motor.Extensions.Hosting.Kafka
                     {
                         _logger.LogError(e, "Failed to receive message.", e);
                     }
-            }, stoppingToken);
+            }, token);
         }
 
-        public Task StopAsync(CancellationToken stoppingToken = default)
+        public Task StopAsync(CancellationToken token = default)
         {
             _consumer?.Close();
             return Task.CompletedTask;
@@ -140,13 +140,13 @@ namespace Motor.Extensions.Hosting.Kafka
             }
         }
 
-        private void SingleMessageHandling(CancellationToken stoppingToken, ConsumeResult<string, byte[]> msg)
+        private void SingleMessageHandling(CancellationToken token, ConsumeResult<string, byte[]> msg)
         {
             _logger.LogDebug(
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
             var cloudEvent = msg.ToMotorCloudEvent<TData>(_applicationNameService, _cloudEventFormatter);
 
-            var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, stoppingToken)?.GetAwaiter();
+            var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, token)?.GetAwaiter();
             taskAwaiter?.OnCompleted(() =>
             {
                 var processedMessageStatus = taskAwaiter?.GetResult();

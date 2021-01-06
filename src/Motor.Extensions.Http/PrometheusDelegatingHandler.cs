@@ -21,11 +21,11 @@ namespace Motor.Extensions.Http
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var response = await base.SendAsync(request, cancellationToken);
+            var response = await base.SendAsync(request, token);
             var uri = request.RequestUri;
             if (uri == null) return response;
             _requestTotal.WithLabels(uri.Host, response.StatusCode.ToString()).Inc();

@@ -10,6 +10,6 @@ namespace Motor.Extensions.Hosting.Abstractions
         DateTimeOffset LastDequeuedAt { get; }
         Task<ProcessedMessageStatus> QueueBackgroundWorkItem(T item);
 
-        Task<QueueItem<T>> DequeueAsync(CancellationToken cancellationToken);
+        Task<QueueItem<T>> DequeueAsync(CancellationToken token);
     }
 }

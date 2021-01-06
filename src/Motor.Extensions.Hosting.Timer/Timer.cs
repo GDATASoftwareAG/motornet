@@ -39,9 +39,9 @@ namespace Motor.Extensions.Hosting.Timer
             if (_scheduler != null) await _scheduler.Shutdown(token);
         }
 
-        private void StartTimer(CancellationToken cancellationToken)
+        private void StartTimer(CancellationToken token)
         {
-            _scheduler?.Start(cancellationToken);
+            _scheduler?.Start(token);
             _started = true;
         }
 

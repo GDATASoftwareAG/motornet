@@ -14,7 +14,7 @@ namespace Motor.Extensions.Http_UnitTest
             new List<Func<HttpRequestMessage, HttpResponseMessage>>();
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             var func = Responses[CallCount++ % Responses.Count];
             return Task.FromResult(func(request));

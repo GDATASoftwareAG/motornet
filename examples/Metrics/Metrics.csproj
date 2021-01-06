@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <Product>Motor.NET</Product>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Motor.Extensions.Utilities" Version="0.*" />
-    <PackageReference Include="Motor.Extensions.Hosting.RabbitMQ" Version="0.*" />
-    <PackageReference Include="Motor.Extensions.Conversion.SystemJson" Version="0.*" />
+    <ProjectReference Include="..\..\src\Motor.Extensions.Conversion.SystemJson\Motor.Extensions.Conversion.SystemJson.csproj" />
+    <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
