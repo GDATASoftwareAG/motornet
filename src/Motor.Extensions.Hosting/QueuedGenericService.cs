@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -36,14 +37,9 @@ namespace Motor.Extensions.Hosting
 
         protected override async Task ExecuteAsync(CancellationToken token)
         {
-            var tasks = new List<Task>();
             var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
-            for (var i = 0; i < optionsParallelProcesses; i++)
-            {
-                tasks.Add(CreateRunnerTaskAsync(token));
-            }
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(Enumerable.Repeat(0, optionsParallelProcesses)
+                .Select(_ => CreateRunnerTaskAsync(token))).ConfigureAwait(false);
         }
 
         private Task CreateRunnerTaskAsync(CancellationToken token)
@@ -58,6 +54,7 @@ namespace Motor.Extensions.Hosting
                     {
                         continue;
                     }
+
                     await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
                         .ConfigureAwait(false);
                 }
