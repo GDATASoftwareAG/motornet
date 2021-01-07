@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
-using Prometheus.Client;
 using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Publisher

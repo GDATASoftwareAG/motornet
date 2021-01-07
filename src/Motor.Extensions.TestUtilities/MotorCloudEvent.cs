@@ -14,7 +14,7 @@ namespace Motor.Extensions.TestUtilities
         {
             var applicationNameService = new TestApplicationNameService(source);
             return new MotorCloudEvent<T>(applicationNameService, data, typeof(T).Name,
-                applicationNameService.GetSource(), extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
+                applicationNameService.GetSource(), extensions: extensions?.ToArray() ?? Array.Empty<ICloudEventExtension>());
         }
 
         private class TestApplicationNameService : IApplicationNameService

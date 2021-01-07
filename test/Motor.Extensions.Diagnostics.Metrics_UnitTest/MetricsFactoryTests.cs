@@ -1,11 +1,8 @@
 using System.Linq;
-using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client;
-using Prometheus.Client.AspNetCore;
 using Prometheus.Client.Collectors;
 using Xunit;
 

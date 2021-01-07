@@ -8,7 +8,7 @@ namespace Motor.Extensions.Conversion.JsonNet_UnitTest
 {
     public class JsonSerializerTests
     {
-        private InputMessage ValidMessage => new InputMessage {Firstname = "Foo", Lastname = "Bar", Age = 42};
+        private InputMessage ValidMessage => new() {Firstname = "Foo", Lastname = "Bar", Age = 42};
 
         [Fact]
         public void Serialize_ValidMessage_SerializedMessage()
@@ -31,7 +31,7 @@ namespace Motor.Extensions.Conversion.JsonNet_UnitTest
 
         private JsonNetSerializer<InputMessage> CreateSerializer()
         {
-            return new JsonNetSerializer<InputMessage>();
+            return new();
         }
     }
 }

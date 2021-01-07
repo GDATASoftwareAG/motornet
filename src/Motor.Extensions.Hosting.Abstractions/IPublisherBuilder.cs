@@ -4,7 +4,7 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public interface IPublisherBuilder<T> : IServiceCollection
+    public interface IPublisherBuilder<T> : IServiceCollection where T : notnull
     {
         HostBuilderContext Context { get; }
 

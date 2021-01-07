@@ -30,7 +30,7 @@ namespace Motor.Extensions.Hosting.Timer_IntegrationTest
         [Fact]
         public async Task TimerStartAsync_EveryMinute_CallbackNotCalled()
         {
-            var config = GetTimerConfig("0", "0", "*/1", "0"); //every minute
+            var config = GetTimerConfig("*", "0", "*/1", "0"); //every minute
             var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>>>();
             var timer = CreateTimerService(config, queue.Object);
             await timer.StartAsync(CancellationToken.None);

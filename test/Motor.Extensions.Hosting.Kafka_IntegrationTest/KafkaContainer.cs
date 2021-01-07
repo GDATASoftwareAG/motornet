@@ -11,26 +11,26 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 {
     public class KafkaContainer : GenericContainer
     {
-        private const string STARTER_SCRIPT = "/testcontainers_start.sh";
+        private static readonly string STARTER_SCRIPT = "/testcontainers_start.sh";
 
         /// <summary>
         /// Default image name
         /// </summary>
-        public new const string DefaultImage = "confluentinc/cp-kafka";
+        private static readonly string KafkaDefaultImage = "confluentinc/cp-kafka";
 
         /// <summary>
         /// Default image tag
         /// </summary>
-        public new const string DefaultTag = "5.4.3";
+        private static readonly string KafkaDefaultTag = "5.4.3";
 
         private static IImage CreateDefaultImage(IDockerClient dockerClient, ILoggerFactory loggerFactory)
         {
-            return new GenericImage(dockerClient, loggerFactory) {ImageName = $"{DefaultImage}:{DefaultTag}"};
+            return new GenericImage(dockerClient, loggerFactory) {ImageName = $"{KafkaDefaultImage}:{KafkaDefaultTag}"};
         }
 
         public const int KAFKA_PORT = 9093;
-        public const int ZOOKEEPER_PORT = 2181;
-        private IDockerClient _dockerClient;
+        private const int ZOOKEEPER_PORT = 2181;
+        private readonly IDockerClient _dockerClient;
         private ContainerInspectResponse _containerInfo;
 
         /// <inheritdoc />

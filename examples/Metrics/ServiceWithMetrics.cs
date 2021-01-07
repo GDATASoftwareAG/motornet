@@ -4,7 +4,6 @@ using Metrics.DifferentNamespace;
 using Metrics.Model;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
-using Prometheus.Client;
 using Prometheus.Client.Abstractions;
 
 namespace Metrics

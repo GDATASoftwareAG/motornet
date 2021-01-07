@@ -25,17 +25,17 @@ namespace Motor.Extensions.Hosting.Timer
         {
             _queue = queue;
             _applicationNameService = applicationNameService;
-            _config = config?.Value ?? throw new ArgumentNullException(nameof(config.Value));
+            _config = config.Value ?? throw new ArgumentNullException(nameof(config));
         }
 
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             ThrowIfTimerAlreadyStarted();
-            ConfigureTimer();
+            await ConfigureTimer().ConfigureAwait(false);
             StartTimer(token);
             // make function async
-            await Task.Delay(1, token);
-            await Task.FromCanceled(token);
+            await Task.Delay(1, token).ConfigureAwait(false);
+            await Task.FromCanceled(token).ConfigureAwait(false);
             if (_scheduler != null) await _scheduler.Shutdown(token);
         }
 
@@ -51,7 +51,7 @@ namespace Motor.Extensions.Hosting.Timer
                 throw new InvalidOperationException("Cannot start timer as the timer was already started!");
         }
 
-        private async void ConfigureTimer()
+        private async Task ConfigureTimer()
         {
             var props = new NameValueCollection
             {

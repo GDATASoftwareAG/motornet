@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {
-    public interface IMessageConsumer<TInput>
+    public interface IMessageConsumer<TInput> where TInput : notnull
     {
         Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
         {
@@ -16,7 +16,7 @@ namespace Motor.Extensions.Hosting.Abstractions
 
         async Task ExecuteAsync(CancellationToken token = default)
         {
-            while (!token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token);
+            while (!token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token).ConfigureAwait(false);
         }
 
         Task StopAsync(CancellationToken token = default);

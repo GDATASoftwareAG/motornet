@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Utilities;
 using Motor.Extensions.Utilities.Abstractions;
 using Xunit;
@@ -16,7 +14,7 @@ namespace Motor.Extensions.TestUtilities
     {
         private TestServer? server;
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
             var useSetting = new Dictionary<string, string>
             {
@@ -31,13 +29,15 @@ namespace Motor.Extensions.TestUtilities
             });
             
             server = new TestServer(webHostBuilder);
+            return Task.CompletedTask;
         }
 
         public HttpClient CreateClient() => server?.CreateClient()!;
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
             server?.Dispose();
+            return Task.CompletedTask;
         }
     }
 }

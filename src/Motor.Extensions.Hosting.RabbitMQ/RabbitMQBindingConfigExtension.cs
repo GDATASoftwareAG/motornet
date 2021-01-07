@@ -49,8 +49,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             var eventAttributes = cloudEvent.GetAttributes();
             if (_attributes == eventAttributes)
+            {
                 // already done
                 return;
+            }
 
             foreach (var attr in _attributes) eventAttributes[attr.Key] = attr.Value;
 

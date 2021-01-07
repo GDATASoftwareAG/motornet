@@ -11,11 +11,11 @@ namespace Motor.Extensions.Hosting.Timer
         {
             var dataMap = context.JobDetail.JobDataMap;
             var job = dataMap["Queue"] as IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> ??
-                      throw new ArgumentNullException();
+                      throw new ArgumentNullException("context.JobDetail.JobDataMap[\"Queue\"]");
             var applicationNameService = dataMap["ApplicationNameService"] as IApplicationNameService ??
-                                         throw new ArgumentNullException();
+                                         throw new ArgumentNullException("context.JobDetail.JobDataMap[\"ApplicationNameService\"]");
             await job.QueueBackgroundWorkItem(new MotorCloudEvent<IJobExecutionContext>(applicationNameService, context,
-                typeof(IJobExecutionContext).Name, new Uri("timer://notset")));
+                nameof(IJobExecutionContext), new Uri("timer://notset")));
         }
     }
 }

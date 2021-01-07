@@ -57,7 +57,7 @@ namespace Motor.Extensions.Hosting
 
         public string GetAssemblyName()
         {
-            return _assembly.GetName().Name;
+            return _assembly.GetName().Name!;
         }
 
         private static string PascalCaseToKebabCase(string project)

@@ -4,11 +4,11 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.SystemJson
 {
-    public class SystemJsonSerializer<T> : IMessageSerializer<T>
+    public class SystemJsonSerializer<T> : IMessageSerializer<T> where T : notnull
     {
         public byte[] Serialize(T message)
         {
-            if (message == null)
+            if(Equals(message, default(T)))
                 throw new ArgumentNullException(nameof(message));
 
             return JsonSerializer.SerializeToUtf8Bytes(message);

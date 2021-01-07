@@ -243,7 +243,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         }
 
         private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
-            MotorCloudEvent<byte[]>? cloudEvent = null)
+            MotorCloudEvent<byte[]> cloudEvent = null)
         {
             var basicProperties = channel.CreateBasicProperties();
             if (cloudEvent != null)

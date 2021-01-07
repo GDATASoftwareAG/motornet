@@ -8,12 +8,12 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Internal
 {
-    public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>
+    public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where T: notnull
     {
         private readonly IGauge? _elementsInQueue;
-        private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);
+        private readonly SemaphoreSlim _signal = new(0);
         private readonly ICounter? _totalMessages;
-        private readonly ConcurrentQueue<QueueItem<T>> _workItems = new ConcurrentQueue<QueueItem<T>>();
+        private readonly ConcurrentQueue<QueueItem<T>> _workItems = new();
 
         public BackgroundTaskQueue(IMetricsFactory<BackgroundTaskQueue<T>>? metricsFactory)
         {
@@ -36,7 +36,7 @@ namespace Motor.Extensions.Hosting.Internal
             return taskCompletionStatus.Task;
         }
 
-        public async Task<QueueItem<T>> DequeueAsync(CancellationToken token)
+        public async Task<QueueItem<T>?> DequeueAsync(CancellationToken token)
         {
             await _signal.WaitAsync(token).ConfigureAwait(false);
             _workItems.TryDequeue(out var workItem);
@@ -48,5 +48,10 @@ namespace Motor.Extensions.Hosting.Internal
 
         public int ItemCount { get; private set; }
         public DateTimeOffset LastDequeuedAt { get; private set; }
+
+        public void Dispose()
+        {
+            _signal.Dispose();
+        }
     }
 }

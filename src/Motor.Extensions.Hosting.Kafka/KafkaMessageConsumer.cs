@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -13,7 +14,7 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
-    public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable
+    public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
     {
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
@@ -32,7 +33,7 @@ namespace Motor.Extensions.Hosting.Kafka
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
             _cloudEventFormatter = cloudEventFormatter;
-            _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
+            _config = config.Value ?? throw new ArgumentNullException(nameof(config));
             _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
                 "Contains a summary of current consumer lag of each partition", new [] {"topic", "partition"});
             _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
@@ -80,7 +81,7 @@ namespace Motor.Extensions.Hosting.Kafka
                     {
                         _logger.LogError(e, "Failed to receive message.", e);
                     }
-            }, token);
+            }, token).ConfigureAwait(false);
         }
 
         public Task StopAsync(CancellationToken token = default)
@@ -117,7 +118,7 @@ namespace Motor.Extensions.Hosting.Kafka
                         logMessage.Facility, logMessage.Name);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(logMessage.Level));
             }
         }
 
@@ -127,7 +128,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 .Deserialize<KafkaStatistics>(json)?
                 .Topics?
                 .Select(t => t.Value)
-                .SelectMany(t => t.Partitions)
+                .SelectMany(t => t.Partitions ?? new Dictionary<string, KafkaStatisticsPartition>())
                 .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
             if (partitionConsumerLags == null) return;
             foreach (var (partition, consumerLag) in partitionConsumerLags)
@@ -146,7 +147,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
             var cloudEvent = msg.ToMotorCloudEvent<TData>(_applicationNameService, _cloudEventFormatter);
 
-            var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, token)?.GetAwaiter();
+            var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, token).GetAwaiter();
             taskAwaiter?.OnCompleted(() =>
             {
                 var processedMessageStatus = taskAwaiter?.GetResult();
@@ -185,7 +186,6 @@ namespace Motor.Extensions.Hosting.Kafka
         public void Dispose()
         {
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }

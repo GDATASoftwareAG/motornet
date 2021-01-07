@@ -15,7 +15,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
         private readonly ILogger<TracingDelegatingMessageHandler<TInput>> _logger;
 
         private static readonly ActivitySource _activitySource =
-            new ActivitySource(typeof(TracingDelegatingMessageHandler<>).FullName!);
+            new(typeof(TracingDelegatingMessageHandler<>).FullName!);
 
         public TracingDelegatingMessageHandler(ILogger<TracingDelegatingMessageHandler<TInput>> logger)
         {
