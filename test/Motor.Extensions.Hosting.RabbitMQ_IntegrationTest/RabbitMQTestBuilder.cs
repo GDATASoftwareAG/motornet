@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using Polly;
 using RabbitMQ.Client;
@@ -121,53 +121,53 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         }
 
         private void PublishSingleMessage<T>(IModel channel, Message message,
-            RabbitMQConsumerConfig<T> config)
+            RabbitMQConsumerOptions<T> options)
         {
             var properties = channel.CreateBasicProperties();
             properties.DeliveryMode = 2;
             properties.Priority = message.Priority;
             properties.Headers = new Dictionary<string, object>();
 
-            var bindings = config.Queue.Bindings[0];
+            var bindings = options.Queue.Bindings[0];
             channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
         }
 
-        private void DeclareQueue<T>(RabbitMQConsumerConfig<T> config, IModel channel)
+        private void DeclareQueue<T>(RabbitMQConsumerOptions<T> options, IModel channel)
         {
-            var arguments = config.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            arguments.Add("x-max-priority", config.Queue.MaxPriority);
-            arguments.Add("x-max-length", config.Queue.MaxLength);
-            arguments.Add("x-max-length-bytes", config.Queue.MaxLengthBytes);
-            arguments.Add("x-message-ttl", config.Queue.MessageTtl);
+            var arguments = options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
+            arguments.Add("x-max-priority", options.Queue.MaxPriority);
+            arguments.Add("x-max-length", options.Queue.MaxLength);
+            arguments.Add("x-max-length-bytes", options.Queue.MaxLengthBytes);
+            arguments.Add("x-message-ttl", options.Queue.MessageTtl);
             channel.QueueDeclare(
-                config.Queue.Name,
-                config.Queue.Durable,
+                options.Queue.Name,
+                options.Queue.Durable,
                 false,
-                config.Queue.AutoDelete,
+                options.Queue.AutoDelete,
                 arguments
             );
-            foreach (var routingKeyConfig in config.Queue.Bindings)
+            foreach (var routingKeyConfig in options.Queue.Bindings)
                 channel.QueueBind(
-                    config.Queue.Name,
+                    options.Queue.Name,
                     routingKeyConfig.Exchange,
                     routingKeyConfig.RoutingKey,
                     routingKeyConfig.Arguments);
         }
 
-        private RabbitMQConsumerConfig<T> GetConsumerConfig<T>()
+        private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
         {
-            return new RabbitMQConsumerConfig<T>
+            return new RabbitMQConsumerOptions<T>
             {
                 Host = "host",
                 User = "guest",
                 Password = "guest",
                 VirtualHost = "/",
-                Queue = new RabbitMQQueueConfig
+                Queue = new RabbitMQQueueOptions
                 {
                     Name = QueueName,
                     Bindings = new[]
                     {
-                        new RabbitMQBindingConfig
+                        new RabbitMQBindingOptions
                         {
                             Exchange = "amq.topic",
                             RoutingKey = RoutingKey
@@ -184,10 +184,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 throw new InvalidOperationException();
             var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
             var connectionFactoryMock = new Mock<IConnectionFactory>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerConfig<T>>()))
+            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<T>>()))
                 .Returns(connectionFactoryMock.Object);
             connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
-            var optionsMock = new Mock<IOptions<RabbitMQConsumerConfig<T>>>();
+            var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetConsumerConfig<T>());
             applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
             var loggerMock = new Mock<ILogger<RabbitMQMessageConsumer<T>>>();
@@ -222,24 +222,24 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 throw new InvalidOperationException();
             var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
             var connectionFactoryMock = new Mock<IConnectionFactory>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherConfig<T>>()))
+            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherOptions<T>>()))
                 .Returns(connectionFactoryMock.Object);
             connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
-            var optionsMock = new Mock<IOptions<RabbitMQPublisherConfig<T>>>();
+            var optionsMock = new Mock<IOptions<RabbitMQPublisherOptions<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
             return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
                 new JsonEventFormatter());
         }
 
-        private RabbitMQPublisherConfig<T> GetPublisherConfig<T>()
+        private RabbitMQPublisherOptions<T> GetPublisherConfig<T>()
         {
-            return new RabbitMQPublisherConfig<T>
+            return new RabbitMQPublisherOptions<T>
             {
                 Host = "host",
                 User = "guest",
                 Password = "guest",
                 VirtualHost = "/",
-                PublishingTarget = new RabbitMQBindingConfig
+                PublishingTarget = new RabbitMQBindingOptions
                 {
                     Exchange = "amq.topic",
                     RoutingKey = RoutingKey

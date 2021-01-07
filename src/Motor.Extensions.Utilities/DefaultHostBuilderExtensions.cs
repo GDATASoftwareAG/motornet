@@ -62,7 +62,7 @@ namespace Motor.Extensions.Utilities
                 {
                     services.AddQueuedGenericService<TInput>();
                     services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
-                    services.Configure<MessageProcessingHealthCheckConfig>(
+                    services.Configure<MessageProcessingHealthCheckOptions>(
                         hostContext.Configuration.GetSection(healthCheckConfigSection));
                     services
                         .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();

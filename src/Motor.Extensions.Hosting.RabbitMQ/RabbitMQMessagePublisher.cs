@@ -4,23 +4,23 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public class RabbitMQMessagePublisher<T> : RabbitMQConnectionHandler, ITypedMessagePublisher<byte[]>
     {
         private readonly ICloudEventFormatter _cloudEventFormatter;
-        private readonly RabbitMQPublisherConfig<T> _config;
+        private readonly RabbitMQPublisherOptions<T> _options;
         private readonly IRabbitMQConnectionFactory _connectionFactory;
         private bool _connected;
 
         public RabbitMQMessagePublisher(IRabbitMQConnectionFactory connectionFactory,
-            IOptions<RabbitMQPublisherConfig<T>> config, ICloudEventFormatter cloudEventFormatter)
+            IOptions<RabbitMQPublisherOptions<T>> config, ICloudEventFormatter cloudEventFormatter)
         {
             _connectionFactory = connectionFactory;
             _cloudEventFormatter = cloudEventFormatter;
-            _config = config.Value;
+            _options = config.Value;
         }
 
         public async Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
@@ -29,10 +29,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             if (Channel == null) throw new InvalidOperationException("Channel is not created.");
             var properties = Channel.CreateBasicProperties();
             properties.DeliveryMode = 2;
-            properties.Update(cloudEvent, _config, _cloudEventFormatter);
+            properties.Update(cloudEvent, _options, _cloudEventFormatter);
 
-            var publishingTarget = cloudEvent.Extension<RabbitMQBindingConfigExtension>()?.BindingConfig ??
-                                   _config.PublishingTarget;
+            var publishingTarget = cloudEvent.Extension<RabbitMQBindingExtension>()?.BindingOptions ??
+                                   _options.PublishingTarget;
 
             Channel.BasicPublish(publishingTarget.Exchange, publishingTarget.RoutingKey, true, properties,
                 cloudEvent.TypedData);
@@ -49,7 +49,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void SetConnectionFactory()
         {
-            ConnectionFactory = _connectionFactory.From(_config);
+            ConnectionFactory = _connectionFactory.From(_options);
         }
     }
 }

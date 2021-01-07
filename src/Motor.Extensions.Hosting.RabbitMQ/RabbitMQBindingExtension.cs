@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public class RabbitMQBindingConfigExtension : ICloudEventExtension
+    public class RabbitMQBindingExtension : ICloudEventExtension
     {
         public const string RoutingKeyAttributeName = "bindingRoutingKey";
         public const string ExchangeAttributeName = "bindingExchange";
         private IDictionary<string, object> _attributes = new Dictionary<string, object>();
 
 
-        public RabbitMQBindingConfigExtension(string exchange, string routingKey)
+        public RabbitMQBindingExtension(string exchange, string routingKey)
         {
             Exchange = exchange;
             RoutingKey = routingKey;
@@ -37,8 +37,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
         }
 
-        public RabbitMQBindingConfig? BindingConfig => Exchange != null && RoutingKey != null
-            ? new RabbitMQBindingConfig
+        public RabbitMQBindingOptions? BindingOptions => Exchange != null && RoutingKey != null
+            ? new RabbitMQBindingOptions
             {
                 Exchange = Exchange,
                 RoutingKey = RoutingKey

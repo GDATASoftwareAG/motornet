@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -19,20 +19,20 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
-        private readonly RabbitMQConsumerConfig<T> _config;
+        private readonly RabbitMQConsumerOptions<T> _options;
         private readonly IRabbitMQConnectionFactory _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
         private CancellationToken _stoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
-            IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerConfig<T>> config,
+            IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerOptions<T>> config,
             IHostApplicationLifetime applicationLifetime, IApplicationNameService applicationNameService,
             ICloudEventFormatter cloudEventFormatter)
         {
             _logger = logger;
             _connectionFactory = connectionFactory;
-            _config = config.Value;
+            _options = config.Value;
             _applicationLifetime = applicationLifetime;
             _applicationNameService = applicationNameService;
             _cloudEventFormatter = cloudEventFormatter;
@@ -85,26 +85,26 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void SetConnectionFactory()
         {
-            ConnectionFactory = _connectionFactory.From(_config);
+            ConnectionFactory = _connectionFactory.From(_options);
         }
 
         private void ConfigureChannel()
         {
-            Channel?.BasicQos(0, _config.PrefetchCount, false);
+            Channel?.BasicQos(0, _options.PrefetchCount, false);
         }
 
         private void DeclareQueue()
         {
-            var arguments = _config.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            if (_config.Queue.MaxPriority != null) arguments.Add("x-max-priority", _config.Queue.MaxPriority);
+            var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
+            if (_options.Queue.MaxPriority != null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
 
-            if (_config.Queue.MaxLength != null) arguments.Add("x-max-length", _config.Queue.MaxLength);
+            if (_options.Queue.MaxLength != null) arguments.Add("x-max-length", _options.Queue.MaxLength);
 
-            if (_config.Queue.MaxLengthBytes != null) arguments.Add("x-max-length-bytes", _config.Queue.MaxLengthBytes);
+            if (_options.Queue.MaxLengthBytes != null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
 
-            if (_config.Queue.MessageTtl != null) arguments.Add("x-message-ttl", _config.Queue.MessageTtl);
+            if (_options.Queue.MessageTtl != null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
 
-            switch (_config.Queue.Mode)
+            switch (_options.Queue.Mode)
             {
                 case QueueMode.Default:
                     break;
@@ -116,15 +116,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
 
             Channel?.QueueDeclare(
-                _config.Queue.Name,
-                _config.Queue.Durable,
+                _options.Queue.Name,
+                _options.Queue.Durable,
                 false,
-                _config.Queue.AutoDelete,
+                _options.Queue.AutoDelete,
                 arguments
             );
-            foreach (var routingKeyConfig in _config.Queue.Bindings)
+            foreach (var routingKeyConfig in _options.Queue.Bindings)
                 Channel?.QueueBind(
-                    _config.Queue.Name,
+                    _options.Queue.Name,
                     routingKeyConfig.Exchange,
                     routingKeyConfig.RoutingKey,
                     routingKeyConfig.Arguments);
@@ -135,7 +135,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var consumer = new EventingBasicConsumer(Channel);
             consumer.Received += (_, args) => ConsumerCallback(args);
             _started = true;
-            Channel.BasicConsume(_config.Queue.Name, false, consumer);
+            Channel.BasicConsume(_options.Queue.Name, false, consumer);
         }
 
         private void ConsumerCallback(BasicDeliverEventArgs args)

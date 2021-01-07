@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.Timer.Config;
+using Motor.Extensions.Hosting.Timer;
 using Quartz;
 using Xunit;
 
@@ -42,7 +42,7 @@ namespace Motor.Extensions.Hosting.Timer_IntegrationTest
                 Times.Never);
         }
 
-        private Timer.Timer CreateTimerService(IOptions<TimerConfig> config,
+        private Timer.Timer CreateTimerService(IOptions<TimerOptions> config,
             IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue)
         {
             var timer = new Timer.Timer(config, queue, GetApplicationNameService());
@@ -56,9 +56,9 @@ namespace Motor.Extensions.Hosting.Timer_IntegrationTest
             return mock.Object;
         }
 
-        private IOptions<TimerConfig> GetTimerConfig(string days, string hours, string minutes, string seconds)
+        private IOptions<TimerOptions> GetTimerConfig(string days, string hours, string minutes, string seconds)
         {
-            var timerConfig = Options.Create(new TimerConfig
+            var timerConfig = Options.Create(new TimerOptions
             {
                 Days = days,
                 Hours = hours,

@@ -1,11 +1,11 @@
 using System;
 using Microsoft.Extensions.Configuration;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
+namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Options
 {
-    public class RabbitMQConsumerConfigTests
+    public class RabbitMQConsumerOptionsTests
     {
         private IConfiguration GetJsonConfig(string configName)
         {
@@ -15,10 +15,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         }
 
         [Fact]
-        public void BindConsumerConfig_ConfigWithoutQueue_ContainsAllValues()
+        public void BindConsumerOptions_ConfigWithoutQueue_ContainsAllValues()
         {
             var config = GetJsonConfig("consumer-no-queue");
-            var consumerOptions = new RabbitMQConsumerConfig<string>();
+            var consumerOptions = new RabbitMQConsumerOptions<string>();
 
             config.Bind(consumerOptions);
 
@@ -31,12 +31,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         }
 
         [Fact]
-        public void BindConsumerConfig_ConfigWithQueueWithNoBindings_ContainsQueue()
+        public void BindConsumerOptions_ConfigWithQueueWithNoBindings_ContainsQueue()
         {
-            var config = GetJsonConfig("consumer-queue");
-            var consumerOptions = new RabbitMQConsumerConfig<string>();
+            var jsonConfig = GetJsonConfig("consumer-queue");
+            var consumerOptions = new RabbitMQConsumerOptions<string>();
 
-            config.Bind(consumerOptions);
+            jsonConfig.Bind(consumerOptions);
 
             Assert.NotNull(consumerOptions.Queue);
             Assert.Empty(consumerOptions.Queue.Bindings);
@@ -50,10 +50,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         }
 
         [Fact]
-        public void BindConsumerConfig_ConfigWithRoutingKey_ContainsRoutingKey()
+        public void BindConsumerOptions_ConfigWithRoutingKey_ContainsRoutingKey()
         {
             var config = GetJsonConfig("consumer-routing-key");
-            var consumerOptions = new RabbitMQConsumerConfig<string>();
+            var consumerOptions = new RabbitMQConsumerOptions<string>();
 
             config.Bind(consumerOptions);
 
@@ -64,10 +64,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Config
         }
 
         [Fact]
-        public void BindConsumerConfig_ConfigWithDefaultValues_ContainDefaultValues()
+        public void BindConsumerOptions_ConfigWithDefaultValues_ContainDefaultValues()
         {
             var config = GetJsonConfig("consumer-default-values");
-            var consumerOptions = new RabbitMQConsumerConfig<string>();
+            var consumerOptions = new RabbitMQConsumerOptions<string>();
 
             config.Bind(consumerOptions);
 

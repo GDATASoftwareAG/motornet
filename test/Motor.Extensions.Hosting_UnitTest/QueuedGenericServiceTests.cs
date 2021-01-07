@@ -74,7 +74,7 @@ namespace Motor.Extensions.Hosting_UnitTest
                     return ProcessedMessageStatus.Success;
                 });
             var queuedGenericService = CreateQueuedGenericService(service.Object, queue.Object,
-                config: new QueuedGenericServiceConfig
+                config: new QueuedGenericServiceOptions
                 {
                     ParallelProcesses = parallelProcessesOrProcessorCount
                 });
@@ -172,13 +172,13 @@ namespace Motor.Extensions.Hosting_UnitTest
             INoOutputService<string> service = null,
             IBackgroundTaskQueue<MotorCloudEvent<string>> backgroundTaskQueue = null,
             IHostApplicationLifetime hostApplicationLifetime = null,
-            QueuedGenericServiceConfig config = null)
+            QueuedGenericServiceOptions config = null)
         {
             var logger = new Mock<ILogger<QueuedGenericService<string>>>();
             hostApplicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
             backgroundTaskQueue ??= CreateQueue();
             service ??= new Mock<INoOutputService<string>>().Object;
-            var options = new OptionsWrapper<QueuedGenericServiceConfig>(config ?? new QueuedGenericServiceConfig());
+            var options = new OptionsWrapper<QueuedGenericServiceOptions>(config ?? new QueuedGenericServiceOptions());
             var baseDelegatingMessageHandler = CreateBaseDelegatingMessageHandler(service);
 
             return new QueuedGenericService<string>(

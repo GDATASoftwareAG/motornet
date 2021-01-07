@@ -1,6 +1,6 @@
 namespace Motor.Extensions.Http
 {
-    public class HttpConfig
+    public class HttpOptions
     {
         public const int DefaultNumberOfRetries = 2;
         public const int DefaultTimeoutInSeconds = 30;

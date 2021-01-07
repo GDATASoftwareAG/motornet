@@ -1,8 +1,8 @@
 using System;
 
-namespace Motor.Extensions.Hosting.RabbitMQ.Config
+namespace Motor.Extensions.Hosting.RabbitMQ.Options
 {
-    public abstract class RabbitMQConfig
+    public abstract record RabbitMQBaseOptions
     {
         public string Host { get; set; } = string.Empty;
         public int Port { get; set; } = 5672;

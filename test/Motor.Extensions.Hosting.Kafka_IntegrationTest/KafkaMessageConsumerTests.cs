@@ -114,7 +114,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 
         private KafkaMessageConsumer<T> GetConsumer<T>(string topic)
         {
-            var options = new OptionsWrapper<KafkaConsumerConfig<T>>(GetConsumerConfig<T>(topic));
+            var options = new OptionsWrapper<KafkaConsumerOptions<T>>(GetConsumerConfig<T>(topic));
             var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
             return new KafkaMessageConsumer<T>(fakeLoggerMock, options, null, GetApplicationNameService(),
                 new JsonEventFormatter());
@@ -122,11 +122,11 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 
         private KafkaMessagePublisher<T> GetPublisher<T>(string topic)
         {
-            var options = new OptionsWrapper<KafkaPublisherConfig<T>>(GetPublisherConfig<T>(topic));
+            var options = new OptionsWrapper<KafkaPublisherOptions<T>>(GetPublisherConfig<T>(topic));
             return new KafkaMessagePublisher<T>(options, new JsonEventFormatter());
         }
 
-        private KafkaPublisherConfig<T> GetPublisherConfig<T>(string topic)
+        private KafkaPublisherOptions<T> GetPublisherConfig<T>(string topic)
         {
             return new()
             {
@@ -142,7 +142,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             return mock.Object;
         }
 
-        private KafkaConsumerConfig<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")
+        private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")
         {
             return new()
             {

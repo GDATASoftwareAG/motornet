@@ -9,7 +9,7 @@ using Moq;
 using Motor.Extensions.Diagnostics.Tracing;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using RabbitMQ.Client;
 using Xunit;
@@ -132,7 +132,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object);
             var extensions = new List<ICloudEventExtension>
             {
-                new RabbitMQBindingConfigExtension(customExchange, customRoutingKey)
+                new RabbitMQBindingExtension(customExchange, customRoutingKey)
             };
 
             await publisher.PublishMessageAsync(
@@ -144,25 +144,25 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
         private ITypedMessagePublisher<byte[]> GetPublisher(
             IRabbitMQConnectionFactory connectionFactory = null,
-            RabbitMQPublisherConfig<string> config = null)
+            RabbitMQPublisherOptions<string> options = null)
         {
             connectionFactory ??= GetDefaultConnectionFactoryMock().Object;
-            config ??= GetConfig();
+            options ??= GetConfig();
 
-            var configMock = new Mock<IOptions<RabbitMQPublisherConfig<string>>>();
-            configMock.Setup(x => x.Value).Returns(config);
+            var configMock = new Mock<IOptions<RabbitMQPublisherOptions<string>>>();
+            configMock.Setup(x => x.Value).Returns(options);
             return new RabbitMQMessagePublisher<string>(connectionFactory, configMock.Object, new JsonEventFormatter());
         }
 
-        private RabbitMQPublisherConfig<string> GetConfig()
+        private RabbitMQPublisherOptions<string> GetConfig()
         {
-            return new RabbitMQPublisherConfig<string>
+            return new RabbitMQPublisherOptions<string>
             {
                 Host = "host",
                 VirtualHost = "vHost",
                 User = "user",
                 Password = "pw",
-                PublishingTarget = new RabbitMQBindingConfig
+                PublishingTarget = new RabbitMQBindingOptions
                 {
                     Exchange = "exchange",
                     RoutingKey = "routingKey"
@@ -178,7 +178,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             connectionFactoryMock ??= new Mock<IConnectionFactory>();
             connectionMock ??= new Mock<IConnection>();
             modelMock ??= new Mock<IModel>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherConfig<string>>()))
+            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherOptions<string>>()))
                 .Returns(connectionFactoryMock.Object);
             connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(connectionMock.Object);
             connectionMock.Setup(x => x.CreateModel()).Returns(modelMock.Object);

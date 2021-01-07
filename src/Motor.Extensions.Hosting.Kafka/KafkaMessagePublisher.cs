@@ -13,19 +13,19 @@ namespace Motor.Extensions.Hosting.Kafka
     {
         private readonly ICloudEventFormatter _cloudEventFormatter;
         private readonly IProducer<string, byte[]> producer;
-        private readonly KafkaPublisherConfig<T> config;
+        private readonly KafkaPublisherOptions<T> _options;
 
-        public KafkaMessagePublisher(IOptions<KafkaPublisherConfig<T>> options,
+        public KafkaMessagePublisher(IOptions<KafkaPublisherOptions<T>> options,
             ICloudEventFormatter cloudEventFormatter)
         {
             _cloudEventFormatter = cloudEventFormatter;
-            config = options.Value ?? throw new ArgumentNullException(nameof(options));
-            producer = new ProducerBuilder<string, byte[]>(config).Build();
+            _options = options.Value ?? throw new ArgumentNullException(nameof(options));
+            producer = new ProducerBuilder<string, byte[]>(_options).Build();
         }
 
         public async Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
         {
-            var topic = cloudEvent.Extension<KafkaTopicExtension>()?.Topic ?? config.Topic;
+            var topic = cloudEvent.Extension<KafkaTopicExtension>()?.Topic ?? _options.Topic;
             await producer.ProduceAsync(topic,
                 new KafkaCloudEventMessage(cloudEvent, ContentMode.Binary, _cloudEventFormatter), token);
         }

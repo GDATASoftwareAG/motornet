@@ -23,7 +23,7 @@ using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using Motor.Extensions.Utilities;
 using Prometheus.Client.Abstractions;
@@ -248,7 +248,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             var basicProperties = channel.CreateBasicProperties();
             if (cloudEvent != null)
             {
-                basicProperties.Update(cloudEvent, new RabbitMQPublisherConfig<string>(), new JsonEventFormatter());
+                basicProperties.Update(cloudEvent, new RabbitMQPublisherOptions<string>(), new JsonEventFormatter());
             }
 
             channel.BasicPublish("amq.topic", "serviceQueue", true, basicProperties,

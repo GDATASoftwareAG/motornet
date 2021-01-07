@@ -1,6 +1,6 @@
 namespace Motor.Extensions.Diagnostics.Tracing
 {
-    public class OpenTelemetryOptions
+    public record OpenTelemetryOptions
     {
         public double SamplingProbability { get; set; } = 0.0001;
     }

@@ -15,20 +15,20 @@ namespace Motor.Extensions.Hosting
     {
         private readonly IHostApplicationLifetime _hostApplicationLifetime;
         private readonly ILogger<QueuedGenericService<TInput>> _logger;
-        private readonly QueuedGenericServiceConfig _options;
+        private readonly QueuedGenericServiceOptions _options;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
         private readonly INoOutputService<TInput> _rootService;
 
         // ReSharper disable once SuggestBaseTypeForParameter
         public QueuedGenericService(
             ILogger<QueuedGenericService<TInput>> logger,
-            IOptions<QueuedGenericServiceConfig>? options,
+            IOptions<QueuedGenericServiceOptions>? options,
             IHostApplicationLifetime hostApplicationLifetime,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
             BaseDelegatingMessageHandler<TInput> rootService)
         {
             _logger = logger;
-            _options = options?.Value ?? new QueuedGenericServiceConfig();
+            _options = options?.Value ?? new QueuedGenericServiceOptions();
             _hostApplicationLifetime = hostApplicationLifetime;
             _queue = queue;
             _rootService = rootService;

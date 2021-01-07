@@ -2,7 +2,7 @@ using CloudNative.CloudEvents;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
-            builder.Configure<RabbitMQConsumerConfig<T>>(config);
+            builder.Configure<RabbitMQConsumerOptions<T>>(config);
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
         }
 
@@ -26,7 +26,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
             builder.AddPublisher<RabbitMQMessagePublisher<T>>();
-            builder.Configure<RabbitMQPublisherConfig<T>>(config);
+            builder.Configure<RabbitMQPublisherOptions<T>>(config);
         }
 
         public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher") where T : notnull

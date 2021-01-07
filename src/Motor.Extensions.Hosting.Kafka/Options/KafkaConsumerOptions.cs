@@ -2,9 +2,9 @@ using Confluent.Kafka;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
-    public class KafkaConsumerConfig<T> : ConsumerConfig
+    public class KafkaConsumerOptions<T> : ConsumerConfig
     {
-        public KafkaConsumerConfig()
+        public KafkaConsumerOptions()
         {
             EnableAutoCommit = false;
         }
