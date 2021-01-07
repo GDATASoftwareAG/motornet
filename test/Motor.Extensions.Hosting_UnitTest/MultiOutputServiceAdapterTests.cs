@@ -9,7 +9,6 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.TestUtilities;
-using Prometheus.Client;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest
@@ -48,7 +47,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var context = CreateMotorEvent("message");
             var messageHandler = GetMessageHandler(service: converterMock.Object);
 
-            await messageHandler.HandleMessageAsync(context);
+            await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
 
             converterMock.Verify(x => x.ConvertMessageAsync(context, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
@@ -63,7 +62,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var messageHandler = GetMessageHandler(service: converterMock.Object);
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                messageHandler.HandleMessageAsync(CreateMotorEvent("message_1")));
+                messageHandler.HandleMessageAsync(CreateMotorEvent("message_1"))).ConfigureAwait(false);
         }
 
         [Fact]
@@ -75,7 +74,7 @@ namespace Motor.Extensions.Hosting_UnitTest
                 .Throws(new Exception("someException"));
             var messageHandler = GetMessageHandler(service: converterMock.Object);
 
-            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_3"));
+            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_3")).ConfigureAwait(false);
 
             Assert.Equal(ProcessedMessageStatus.TemporaryFailure, actual);
         }
@@ -91,7 +90,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var messageHandler = GetMessageHandler(service: converterMock.Object,
                 publisher: publisherMock.Object);
 
-            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5"));
+            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5")).ConfigureAwait(false);
 
             Assert.Equal(ProcessedMessageStatus.Success, actual);
             publisherMock.Verify(
@@ -109,7 +108,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var publisherMock = FakePublisher;
             var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
 
-            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5"));
+            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5")).ConfigureAwait(false);
 
             Assert.Equal(ProcessedMessageStatus.Success, actual);
             publisherMock.Verify(

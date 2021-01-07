@@ -40,7 +40,7 @@ namespace Motor.Extensions.Http
         private static IHttpClientBuilder AddDefaultBehaviour(this IHttpClientBuilder clientBuilder)
         {
             return clientBuilder
-                .AddPolicyHandler((provider, message) =>
+                .AddPolicyHandler((provider, _) =>
                 {
                     var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
                     return HttpPolicyExtensions
@@ -50,7 +50,7 @@ namespace Motor.Extensions.Http
                             config?.Value.NumberOfRetries ?? HttpConfig.DefaultNumberOfRetries,
                             i => TimeSpan.FromSeconds(Math.Pow(2, i)));
                 })
-                .AddPolicyHandler((provider, message) =>
+                .AddPolicyHandler((provider, _) =>
                 {
                     var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
                     return Policy.TimeoutAsync<HttpResponseMessage>(config?.Value.TimeoutInSeconds ??

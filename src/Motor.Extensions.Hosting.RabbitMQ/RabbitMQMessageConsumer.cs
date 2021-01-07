@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,7 +14,7 @@ using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public class RabbitMQMessageConsumer<T> : RabbitMQConnectionHandler, IMessageConsumer<T>
+    public class RabbitMQMessageConsumer<T> : RabbitMQConnectionHandler, IMessageConsumer<T> where T : notnull
     {
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;

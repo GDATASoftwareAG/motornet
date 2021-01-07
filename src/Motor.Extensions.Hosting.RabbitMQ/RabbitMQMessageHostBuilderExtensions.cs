@@ -8,7 +8,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public static class RabbitMQMessageHostBuilderExtensions
     {
-        public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+        public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config) where T : notnull
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
@@ -16,12 +16,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
         }
 
-        public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer")
+        public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer") where T : notnull
         {
             builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
         }
 
-        public static void AddRabbitMQWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config)
+        public static void AddRabbitMQWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config) where T : notnull
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
@@ -29,7 +29,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             builder.Configure<RabbitMQPublisherConfig<T>>(config);
         }
 
-        public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher")
+        public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher") where T : notnull
         {
             builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
         }

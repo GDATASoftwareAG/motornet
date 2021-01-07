@@ -18,11 +18,11 @@ namespace Motor.Extensions.Hosting.Kafka
             var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[]) cloudEvent.Data,
                 cloudEvent.Type, cloudEvent.Source, cloudEvent.Id, cloudEvent.Time);
             var newAttributes = motorCloudEvent.GetAttributes();
-            foreach (var attribute in cloudEvent.GetAttributes())
+            foreach (var (key, value) in cloudEvent.GetAttributes())
             {
-                if (!newAttributes.ContainsKey(attribute.Key))
+                if (!newAttributes.ContainsKey(key))
                 {
-                    newAttributes.Add(attribute.Key, attribute.Value);
+                    newAttributes.Add(key, value);
                 }
             }
 

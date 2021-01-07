@@ -44,7 +44,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var emptyArguments = new Dictionary<string, object>();
             channel.QueueDeclare(destinationQueueName, true, false, false, emptyArguments);
             channel.QueueBind(destinationQueueName, destinationExchange, destinationRoutingKey, emptyArguments);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         }
 
         protected static void PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,

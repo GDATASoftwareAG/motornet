@@ -70,14 +70,14 @@ namespace Motor.Extensions.Utilities
         }
 
         public IHostBuilder UseServiceProviderFactory<TContainerBuilder>(
-            IServiceProviderFactory<TContainerBuilder> factory)
+            IServiceProviderFactory<TContainerBuilder> factory) where TContainerBuilder : notnull
         {
             _builder.UseServiceProviderFactory(factory);
             return this;
         }
 
         public IHostBuilder UseServiceProviderFactory<TContainerBuilder>(
-            Func<HostBuilderContext, IServiceProviderFactory<TContainerBuilder>> factory)
+            Func<HostBuilderContext, IServiceProviderFactory<TContainerBuilder>> factory) where TContainerBuilder : notnull
         {
             _builder.UseServiceProviderFactory(factory);
             return this;

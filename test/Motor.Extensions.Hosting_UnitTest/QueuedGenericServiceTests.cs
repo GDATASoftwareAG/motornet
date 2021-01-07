@@ -22,9 +22,9 @@ namespace Motor.Extensions.Hosting_UnitTest
         {
             var queuedGenericService = CreateQueuedGenericService();
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
 
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -33,9 +33,9 @@ namespace Motor.Extensions.Hosting_UnitTest
             var service = new Mock<INoOutputService<string>>();
             var queuedGenericService = CreateQueuedGenericService(service.Object);
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
-            await Task.Delay(100);
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+            await Task.Delay(100).ConfigureAwait(false);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
             service.Verify(
                 t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
@@ -70,7 +70,7 @@ namespace Motor.Extensions.Hosting_UnitTest
                     t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
-                    await Task.Delay(waitTimeInMs);
+                    await Task.Delay(waitTimeInMs).ConfigureAwait(false);
                     return ProcessedMessageStatus.Success;
                 });
             var queuedGenericService = CreateQueuedGenericService(service.Object, queue.Object,
@@ -79,9 +79,9 @@ namespace Motor.Extensions.Hosting_UnitTest
                     ParallelProcesses = parallelProcessesOrProcessorCount
                 });
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
-            await Task.Delay(Convert.ToInt32(Math.Floor(waitTimeInMs * 0.5)));
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+            await Task.Delay(Convert.ToInt32(Math.Floor(waitTimeInMs * 0.5))).ConfigureAwait(false);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
             service.Verify(t => t
                     .HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
@@ -109,13 +109,13 @@ namespace Motor.Extensions.Hosting_UnitTest
 
             var queuedGenericService = CreateQueuedGenericService(service.Object, queue);
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
-            await Task.Delay(100);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+            await Task.Delay(100).ConfigureAwait(false);
 
-            var actualStatus = await taskCompletionSource.Task;
+            var actualStatus = await taskCompletionSource.Task.ConfigureAwait(false);
             Assert.Equal(expectedStatus, actualStatus);
 
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -130,9 +130,9 @@ namespace Motor.Extensions.Hosting_UnitTest
             var queuedGenericService = CreateQueuedGenericService(service.Object,
                 hostApplicationLifetime: hostApplicationLifetime.Object);
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
-            await Task.Delay(100);
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+            await Task.Delay(100).ConfigureAwait(false);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
             hostApplicationLifetime.Verify(t => t.StopApplication(), Times.Never);
         }
@@ -149,9 +149,9 @@ namespace Motor.Extensions.Hosting_UnitTest
             var queuedGenericService = CreateQueuedGenericService(service.Object,
                 hostApplicationLifetime: hostApplicationLifetime.Object);
 
-            await queuedGenericService.StartAsync(CancellationToken.None);
-            await Task.Delay(100);
-            await queuedGenericService.StopAsync(CancellationToken.None);
+            await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+            await Task.Delay(100).ConfigureAwait(false);
+            await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
             hostApplicationLifetime.Verify(t => t.StopApplication(), Times.AtLeastOnce);
         }

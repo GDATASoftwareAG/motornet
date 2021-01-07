@@ -37,14 +37,14 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             const string message = "12345";
             var host = GetReverseStringService();
             var channel = Fixture.Connection.CreateModel();
-            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
 
-            await host.StartAsync();
+            await host.StartAsync().ConfigureAwait(false);
             PublishMessageIntoQueueOfService(channel, message);
 
             var actual = await GetMessageFromDestinationQueue(channel);
             Assert.Equal("54321", actual);
-            await host.StopAsync();
+            await host.StopAsync().ConfigureAwait(false);
         }
 
         private static IHost GetReverseStringService()
@@ -81,7 +81,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (messageFromDestinationQueue == string.Empty) await Task.Delay(TimeSpan.FromMilliseconds(50));
+            while (messageFromDestinationQueue == string.Empty) await Task.Delay(TimeSpan.FromMilliseconds(50)).ConfigureAwait(false);
 
             return messageFromDestinationQueue;
         }

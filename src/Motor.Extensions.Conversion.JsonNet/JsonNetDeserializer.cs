@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Motor.Extensions.Conversion.JsonNet
 {
-    public class JsonNetDeserializer<T> : IMessageDeserializer<T>
+    public class JsonNetDeserializer<T> : IMessageDeserializer<T> where T : notnull
     {
         public T Deserialize(byte[] message)
         {
@@ -13,7 +13,6 @@ namespace Motor.Extensions.Conversion.JsonNet
                 throw new ArgumentNullException(nameof(message));
 
             var json = Encoding.UTF8.GetString(message);
-
             try
             {
                 return JsonConvert.DeserializeObject<T>(json);

@@ -6,7 +6,7 @@ namespace Motor.Extensions.Conversion.Protobuf
 {
     public class ProtobufDeserializer<T> : IMessageDeserializer<T> where T : IMessage<T>, new()
     {
-        private readonly MessageParser<T> _messageParser = new MessageParser<T>(() => new T());
+        private readonly MessageParser<T> _messageParser = new(() => new T());
 
         public T Deserialize(byte[] inMessage)
         {

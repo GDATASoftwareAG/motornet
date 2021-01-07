@@ -38,9 +38,12 @@ namespace Motor.Extensions.Hosting
         {
             var tasks = new List<Task>();
             var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
-            for (var i = 0; i < optionsParallelProcesses; i++) tasks.Add(CreateRunnerTaskAsync(token));
+            for (var i = 0; i < optionsParallelProcesses; i++)
+            {
+                tasks.Add(CreateRunnerTaskAsync(token));
+            }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         private Task CreateRunnerTaskAsync(CancellationToken token)
@@ -51,6 +54,10 @@ namespace Motor.Extensions.Hosting
                 {
                     var queueItem = await _queue.DequeueAsync(token)
                         .ConfigureAwait(false);
+                    if (queueItem == null)
+                    {
+                        continue;
+                    }
                     await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
                         .ConfigureAwait(false);
                 }
@@ -73,8 +80,11 @@ namespace Motor.Extensions.Hosting
             }
             finally
             {
-                taskCompletionSource?.TrySetResult(status);
-                if (status == ProcessedMessageStatus.CriticalFailure) _hostApplicationLifetime.StopApplication();
+                taskCompletionSource.TrySetResult(status);
+                if (status == ProcessedMessageStatus.CriticalFailure)
+                {
+                    _hostApplicationLifetime.StopApplication();
+                }
             }
         }
     }

@@ -10,7 +10,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public static class BasicPropertiesExtensions
     {
-        public static string CloudEventPrefix = "cloudEvents:";
+        public static readonly string CloudEventPrefix = "cloudEvents:";
 
         public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
             RabbitMQPublisherConfig<T> config, ICloudEventFormatter cloudEventFormatter)

@@ -4,7 +4,7 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.SystemJson
 {
-    public class SystemJsonDeserializer<T> : IMessageDeserializer<T>
+    public class SystemJsonDeserializer<T> : IMessageDeserializer<T> where T : notnull
     {
         public T Deserialize(byte[] message)
         {
@@ -12,7 +12,7 @@ namespace Motor.Extensions.Conversion.SystemJson
                 throw new ArgumentNullException(nameof(message));
             try
             {
-                return JsonSerializer.Deserialize<T>(message);
+                return JsonSerializer.Deserialize<T>(message) ?? throw new ArgumentNullException(nameof(message));
             }
             catch (JsonException e)
             {

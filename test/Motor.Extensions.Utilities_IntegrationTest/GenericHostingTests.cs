@@ -41,17 +41,17 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             const string message = "somestring";
             using var host = GetStringService<TimingOutMessageConverter>();
             var channel = Fixture.Connection.CreateModel();
-            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
-            await host.StartAsync();
+            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
+            await host.StartAsync().ConfigureAwait(false);
             for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
             var httpClient = new HttpClient();
 
-            await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 2);
+            await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 2).ConfigureAwait(false);
             var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
             Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
             Assert.Equal(HealthStatus.Unhealthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-            await host.StopAsync();
+            await host.StopAsync().ConfigureAwait(false);
         }
 
         [Fact(Timeout = 60000)]
@@ -66,8 +66,8 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             const string message = "somestring";
             using var host = GetStringService<TimingOutMessageConverter>();
             var channel = Fixture.Connection.CreateModel();
-            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
-            await host.StartAsync();
+            await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
+            await host.StartAsync().ConfigureAwait(false);
             for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
             var httpClient = new HttpClient();
 
@@ -75,7 +75,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
             Assert.Equal(HealthStatus.Healthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-            await host.StopAsync();
+            await host.StopAsync().ConfigureAwait(false);
         }
 
         private IHost GetStringService<TConverter>() where TConverter : class, ISingleOutputService<string, string>
@@ -122,7 +122,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             public async Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
-                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
                 return dataCloudEvent;
             }
         }

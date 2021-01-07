@@ -15,10 +15,10 @@ namespace Motor.Extensions.Diagnostics.Tracing
 {
     public static class TracingHostBuilderExtensions
     {
-        public const string JaegerExporter = "JaegerExporter";
-        public const string OpenTelemetry = "OpenTelemetry";
-        public const string AttributeMotorProduct = "motor.product";
-        public const string AttributeMotorEnvironment = "motor.environment";
+        public static readonly string JaegerExporter = "JaegerExporter";
+        public static readonly string OpenTelemetry = "OpenTelemetry";
+        public static readonly string AttributeMotorProduct = "motor.product";
+        public static readonly string AttributeMotorEnvironment = "motor.environment";
 
         public static IMotorHostBuilder ConfigureJaegerTracing(this IMotorHostBuilder hostBuilder)
         {
