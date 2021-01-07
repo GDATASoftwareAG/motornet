@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.Timer.Config;
 using Quartz;
 using Quartz.Impl;
 
@@ -14,18 +13,18 @@ namespace Motor.Extensions.Hosting.Timer
     public class Timer : BackgroundService
     {
         private readonly IApplicationNameService _applicationNameService;
-        private readonly TimerConfig _config;
+        private readonly TimerOptions _options;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> _queue;
         private IScheduler? _scheduler;
         private bool _started;
 
-        public Timer(IOptions<TimerConfig> config,
+        public Timer(IOptions<TimerOptions> config,
             IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue,
             IApplicationNameService applicationNameService)
         {
             _queue = queue;
             _applicationNameService = applicationNameService;
-            _config = config.Value ?? throw new ArgumentNullException(nameof(config));
+            _options = config.Value ?? throw new ArgumentNullException(nameof(config));
         }
 
         protected override async Task ExecuteAsync(CancellationToken token)
@@ -70,7 +69,7 @@ namespace Motor.Extensions.Hosting.Timer
 
             var trigger = TriggerBuilder.Create()
                 .StartNow()
-                .WithCronSchedule(_config.GetCronString())
+                .WithCronSchedule(_options.GetCronString())
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger).ConfigureAwait(false);

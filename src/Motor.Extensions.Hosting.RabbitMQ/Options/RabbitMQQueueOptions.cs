@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-namespace Motor.Extensions.Hosting.RabbitMQ.Config
+namespace Motor.Extensions.Hosting.RabbitMQ.Options
 {
-    public class RabbitMQQueueConfig
+    public record RabbitMQQueueOptions
     {
         public string Name { get; set; } = string.Empty;
         public bool Durable { get; set; } = true;
@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ.Config
         public int? MaxPriority { get; set; } = 255;
         public int? MessageTtl { get; set; } = 86_400_000;
         public QueueMode Mode { get; set; } = QueueMode.Default;
-        public RabbitMQBindingConfig[] Bindings { get; set; } = new RabbitMQBindingConfig[0];
+        public RabbitMQBindingOptions[] Bindings { get; set; } = new RabbitMQBindingOptions[0];
         public IDictionary<string, object> Arguments { get; set; } = new Dictionary<string, object>();
     }
 }

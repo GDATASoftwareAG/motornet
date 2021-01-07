@@ -1,6 +1,6 @@
-﻿namespace Motor.Extensions.Hosting.Timer.Config
+﻿namespace Motor.Extensions.Hosting.Timer
 {
-    public class TimerConfig
+    public record TimerOptions
     {
         public string Days { get; set; } = "*";
         public string Hours { get; set; } = "0";

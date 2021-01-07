@@ -19,7 +19,7 @@ namespace Motor.Extensions.Http
                 {
                     services
                         .AddTransient<PrometheusDelegatingHandler>()
-                        .Configure<HttpConfig>(context.Configuration.GetSection(configSection))
+                        .Configure<HttpOptions>(context.Configuration.GetSection(configSection))
                         .AddHttpClient(Options.DefaultName);
                 });
         }
@@ -42,19 +42,19 @@ namespace Motor.Extensions.Http
             return clientBuilder
                 .AddPolicyHandler((provider, _) =>
                 {
-                    var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
+                    var config = (IOptions<HttpOptions>?) provider.GetService(typeof(IOptions<HttpOptions>));
                     return HttpPolicyExtensions
                         .HandleTransientHttpError()
                         .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
                         .WaitAndRetryAsync(
-                            config?.Value.NumberOfRetries ?? HttpConfig.DefaultNumberOfRetries,
+                            config?.Value.NumberOfRetries ?? HttpOptions.DefaultNumberOfRetries,
                             i => TimeSpan.FromSeconds(Math.Pow(2, i)));
                 })
                 .AddPolicyHandler((provider, _) =>
                 {
-                    var config = (IOptions<HttpConfig>?) provider.GetService(typeof(IOptions<HttpConfig>));
+                    var config = (IOptions<HttpOptions>?) provider.GetService(typeof(IOptions<HttpOptions>));
                     return Policy.TimeoutAsync<HttpResponseMessage>(config?.Value.TimeoutInSeconds ??
-                                                                    HttpConfig.DefaultTimeoutInSeconds);
+                                                                    HttpOptions.DefaultTimeoutInSeconds);
                 })
                 .AddHttpMessageHandler<PrometheusDelegatingHandler>();
         }

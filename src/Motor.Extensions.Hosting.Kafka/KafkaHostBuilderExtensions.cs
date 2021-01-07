@@ -10,7 +10,7 @@ namespace Motor.Extensions.Hosting.Kafka
         public static void AddKafkaWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config) where T : notnull
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
-            builder.Configure<KafkaConsumerConfig<T>>(config);
+            builder.Configure<KafkaConsumerOptions<T>>(config);
             builder.AddConsumer<KafkaMessageConsumer<T>>();
         }
 
@@ -23,7 +23,7 @@ namespace Motor.Extensions.Hosting.Kafka
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddPublisher<KafkaMessagePublisher<T>>();
-            builder.Configure<KafkaPublisherConfig<T>>(config);
+            builder.Configure<KafkaPublisherOptions<T>>(config);
         }
 
         public static void AddKafka<T>(this IPublisherBuilder<T> builder, string configSection = "KafkaPublisher") where T : notnull

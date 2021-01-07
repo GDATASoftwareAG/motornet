@@ -1,6 +1,6 @@
 namespace Motor.Extensions.Hosting
 {
-    public class QueuedGenericServiceConfig
+    public record QueuedGenericServiceOptions
     {
         public int? ParallelProcesses { get; set; } = null;
     }

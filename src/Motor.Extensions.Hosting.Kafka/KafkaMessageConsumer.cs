@@ -18,14 +18,14 @@ namespace Motor.Extensions.Hosting.Kafka
     {
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
-        private readonly KafkaConsumerConfig<TData> _config;
+        private readonly KafkaConsumerOptions<TData> _options;
         private readonly IMetricFamily<IGauge>? _consumerLagGauge;
         private readonly IMetricFamily<ISummary>? _consumerLagSummary;
         private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
         private IConsumer<string, byte[]>? _consumer;
 
         public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
-            IOptions<KafkaConsumerConfig<TData>> config,
+            IOptions<KafkaConsumerOptions<TData>> config,
             IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
             IApplicationNameService applicationNameService,
             ICloudEventFormatter cloudEventFormatter)
@@ -33,7 +33,7 @@ namespace Motor.Extensions.Hosting.Kafka
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
             _cloudEventFormatter = cloudEventFormatter;
-            _config = config.Value ?? throw new ArgumentNullException(nameof(config));
+            _options = config.Value ?? throw new ArgumentNullException(nameof(config));
             _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
                 "Contains a summary of current consumer lag of each partition", new [] {"topic", "partition"});
             _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
@@ -50,12 +50,12 @@ namespace Motor.Extensions.Hosting.Kafka
         {
             if (ConsumeCallbackAsync == null) throw new InvalidOperationException("ConsumeCallback is null");
 
-            var consumerBuilder = new ConsumerBuilder<string, byte[]>(_config)
+            var consumerBuilder = new ConsumerBuilder<string, byte[]>(_options)
                 .SetLogHandler((_, logMessage) => WriteLog(logMessage))
                 .SetStatisticsHandler((_, json) => WriteStatistics(json));
 
             _consumer = consumerBuilder.Build();
-            _consumer.Subscribe(_config.Topic);
+            _consumer.Subscribe(_options.Topic);
             return Task.CompletedTask;
         }
 
@@ -136,8 +136,8 @@ namespace Motor.Extensions.Hosting.Kafka
                 var lag = consumerLag;
                 if (lag == -1) lag = 0;
 
-                _consumerLagSummary?.WithLabels(_config.Topic, partition)?.Observe(lag);
-                _consumerLagGauge?.WithLabels(_config.Topic, partition)?.Set(lag);
+                _consumerLagSummary?.WithLabels(_options.Topic, partition)?.Observe(lag);
+                _consumerLagGauge?.WithLabels(_options.Topic, partition)?.Set(lag);
             }
         }
 
@@ -165,7 +165,7 @@ namespace Motor.Extensions.Hosting.Kafka
                         throw new ArgumentOutOfRangeException();
                 }
 
-                if (msg.Offset % _config.CommitPeriod != 0) return;
+                if (msg.Offset % _options.CommitPeriod != 0) return;
 
                 try
                 {

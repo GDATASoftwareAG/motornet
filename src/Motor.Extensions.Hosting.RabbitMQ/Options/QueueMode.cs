@@ -1,4 +1,4 @@
-namespace Motor.Extensions.Hosting.RabbitMQ.Config
+namespace Motor.Extensions.Hosting.RabbitMQ.Options
 {
     public enum QueueMode
     {

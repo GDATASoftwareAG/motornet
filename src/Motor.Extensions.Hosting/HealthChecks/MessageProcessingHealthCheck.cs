@@ -7,20 +7,15 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.HealthChecks
 {
-    public class MessageProcessingHealthCheckConfig
-    {
-        public TimeSpan MaxTimeSinceLastProcessedMessage { get; set; } = TimeSpan.FromMinutes(5);
-    }
-
     public class MessageProcessingHealthCheck<TInput> : IHealthCheck where TInput : class
     {
         private readonly TimeSpan _maxTimeWithoutAcknowledgedMessage;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
 
-        public MessageProcessingHealthCheck(IOptions<MessageProcessingHealthCheckConfig> config,
+        public MessageProcessingHealthCheck(IOptions<MessageProcessingHealthCheckOptions> options,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue)
         {
-            _maxTimeWithoutAcknowledgedMessage = config.Value.MaxTimeSinceLastProcessedMessage;
+            _maxTimeWithoutAcknowledgedMessage = options.Value.MaxTimeSinceLastProcessedMessage;
             _queue = queue;
         }
 

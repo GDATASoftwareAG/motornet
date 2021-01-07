@@ -1,67 +1,67 @@
 using System;
 using System.Linq;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public interface IRabbitMQConnectionFactory
     {
-        IConnectionFactory From<T>(RabbitMQConsumerConfig<T> consumerConfig);
-        IConnectionFactory From<T>(RabbitMQPublisherConfig<T> publisherConfig);
+        IConnectionFactory From<T>(RabbitMQConsumerOptions<T> consumerOptions);
+        IConnectionFactory From<T>(RabbitMQPublisherOptions<T> publisherOptions);
     }
 
     public class RabbitMQConnectionFactory : IRabbitMQConnectionFactory
     {
-        public IConnectionFactory From<T>(RabbitMQConsumerConfig<T> consumerConfig)
+        public IConnectionFactory From<T>(RabbitMQConsumerOptions<T> consumerOptions)
         {
-            ThrowIfConfigInvalid(consumerConfig);
-            return FromConfig(consumerConfig);
+            ThrowIfConfigInvalid(consumerOptions);
+            return FromConfig(consumerOptions);
         }
 
-        public IConnectionFactory From<T>(RabbitMQPublisherConfig<T> publisherConfig)
+        public IConnectionFactory From<T>(RabbitMQPublisherOptions<T> publisherOptions)
         {
-            ThrowIfConfigInvalid(publisherConfig);
-            return FromConfig(publisherConfig);
+            ThrowIfConfigInvalid(publisherOptions);
+            return FromConfig(publisherOptions);
         }
 
-        private void ThrowIfConfigInvalid<T>(RabbitMQConsumerConfig<T> config)
+        private void ThrowIfConfigInvalid<T>(RabbitMQConsumerOptions<T> options)
         {
-            ThrowIfInvalid(config);
-            ThrowIfInvalid(config.Queue);
+            ThrowIfInvalid(options);
+            ThrowIfInvalid(options.Queue);
         }
 
-        private void ThrowIfConfigInvalid<T>(RabbitMQPublisherConfig<T> config)
+        private void ThrowIfConfigInvalid<T>(RabbitMQPublisherOptions<T> options)
         {
-            ThrowIfInvalid(config);
-            ThrowIfInvalid(config.PublishingTarget);
+            ThrowIfInvalid(options);
+            ThrowIfInvalid(options.PublishingTarget);
         }
 
-        private void ThrowIfInvalid(RabbitMQConfig config)
+        private void ThrowIfInvalid(RabbitMQBaseOptions baseOptions)
         {
-            if (config == null)
-                throw new ArgumentNullException(nameof(config));
-            if (string.IsNullOrWhiteSpace(config.Host))
-                throw new ArgumentException(nameof(config.Host));
-            if (string.IsNullOrWhiteSpace(config.User))
-                throw new ArgumentException(nameof(config.User));
-            if (string.IsNullOrWhiteSpace(config.Password))
-                throw new ArgumentException(nameof(config.Password));
-            if (string.IsNullOrWhiteSpace(config.VirtualHost))
-                throw new ArgumentException(nameof(config.VirtualHost));
+            if (baseOptions == null)
+                throw new ArgumentNullException(nameof(baseOptions));
+            if (string.IsNullOrWhiteSpace(baseOptions.Host))
+                throw new ArgumentException(nameof(baseOptions.Host));
+            if (string.IsNullOrWhiteSpace(baseOptions.User))
+                throw new ArgumentException(nameof(baseOptions.User));
+            if (string.IsNullOrWhiteSpace(baseOptions.Password))
+                throw new ArgumentException(nameof(baseOptions.Password));
+            if (string.IsNullOrWhiteSpace(baseOptions.VirtualHost))
+                throw new ArgumentException(nameof(baseOptions.VirtualHost));
         }
 
-        private void ThrowIfInvalid(RabbitMQQueueConfig queueConfig)
+        private void ThrowIfInvalid(RabbitMQQueueOptions queueOptions)
         {
-            if (queueConfig == null)
-                throw new ArgumentException(nameof(queueConfig));
-            if (string.IsNullOrWhiteSpace(queueConfig.Name))
-                throw new ArgumentException(nameof(queueConfig.Name));
-            if (queueConfig.Bindings == null)
+            if (queueOptions == null)
+                throw new ArgumentException(nameof(queueOptions));
+            if (string.IsNullOrWhiteSpace(queueOptions.Name))
+                throw new ArgumentException(nameof(queueOptions.Name));
+            if (queueOptions.Bindings == null)
                 return;
-            if (!queueConfig.Bindings.Any())
+            if (!queueOptions.Bindings.Any())
                 return;
-            foreach (var binding in queueConfig.Bindings)
+            foreach (var binding in queueOptions.Bindings)
             {
                 if (string.IsNullOrWhiteSpace(binding.Exchange))
                     throw new ArgumentException(nameof(binding.Exchange));
@@ -70,26 +70,26 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
         }
 
-        private void ThrowIfInvalid(RabbitMQBindingConfig rabbitMqBindingConfig)
+        private void ThrowIfInvalid(RabbitMQBindingOptions rabbitMqBindingOptions)
         {
-            if (rabbitMqBindingConfig == null)
-                throw new ArgumentException(nameof(rabbitMqBindingConfig));
-            if (string.IsNullOrWhiteSpace(rabbitMqBindingConfig.Exchange))
-                throw new ArgumentException(nameof(rabbitMqBindingConfig.Exchange));
-            if (string.IsNullOrWhiteSpace(rabbitMqBindingConfig.RoutingKey))
-                throw new ArgumentException(nameof(rabbitMqBindingConfig.RoutingKey));
+            if (rabbitMqBindingOptions == null)
+                throw new ArgumentException(nameof(rabbitMqBindingOptions));
+            if (string.IsNullOrWhiteSpace(rabbitMqBindingOptions.Exchange))
+                throw new ArgumentException(nameof(rabbitMqBindingOptions.Exchange));
+            if (string.IsNullOrWhiteSpace(rabbitMqBindingOptions.RoutingKey))
+                throw new ArgumentException(nameof(rabbitMqBindingOptions.RoutingKey));
         }
 
-        private static IConnectionFactory FromConfig(RabbitMQConfig config)
+        private static IConnectionFactory FromConfig(RabbitMQBaseOptions baseOptions)
         {
             return new ConnectionFactory
             {
-                HostName = config.Host,
-                Port = config.Port,
-                VirtualHost = config.VirtualHost,
-                UserName = config.User,
-                Password = config.Password,
-                RequestedHeartbeat = config.RequestedHeartbeat
+                HostName = baseOptions.Host,
+                Port = baseOptions.Port,
+                VirtualHost = baseOptions.VirtualHost,
+                UserName = baseOptions.User,
+                Password = baseOptions.Password,
+                RequestedHeartbeat = baseOptions.RequestedHeartbeat
             };
         }
     }

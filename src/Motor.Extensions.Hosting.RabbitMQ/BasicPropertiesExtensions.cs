@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CloudNative.CloudEvents;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
@@ -13,10 +13,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public static readonly string CloudEventPrefix = "cloudEvents:";
 
         public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
-            RabbitMQPublisherConfig<T> config, ICloudEventFormatter cloudEventFormatter)
+            RabbitMQPublisherOptions<T> options, ICloudEventFormatter cloudEventFormatter)
         {
             var messagePriority = cloudEvent.Extension<RabbitMQPriorityExtension>()?.Priority ??
-                                  config.DefaultPriority;
+                                  options.DefaultPriority;
             if (messagePriority.HasValue)
                 self.Priority = messagePriority.Value;
             var dictionary = new Dictionary<string, object>();
@@ -27,8 +27,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     || string.Equals(attr.Key,
                         CloudEventAttributes.DataContentTypeAttributeName(cloudEvent.SpecVersion))
                     || string.Equals(attr.Key, RabbitMQPriorityExtension.PriorityAttributeName)
-                    || string.Equals(attr.Key, RabbitMQBindingConfigExtension.ExchangeAttributeName)
-                    || string.Equals(attr.Key, RabbitMQBindingConfigExtension.RoutingKeyAttributeName))
+                    || string.Equals(attr.Key, RabbitMQBindingExtension.ExchangeAttributeName)
+                    || string.Equals(attr.Key, RabbitMQBindingExtension.RoutingKeyAttributeName))
                     continue;
                 dictionary.Add($"{CloudEventPrefix}{attr.Key}",
                     cloudEventFormatter.EncodeAttribute(cloudEvent.SpecVersion, attr.Key, attr.Value,

@@ -1,6 +1,6 @@
 using System;
 using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerConfig<string>) null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerOptions<string>) null));
         }
 
         [Theory]
@@ -71,7 +71,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public void FromConsumerConfig_NoQueueConfig_Throws()
         {
             var factory = new RabbitMQConnectionFactory();
-            var cfg = new RabbitMQConsumerConfig<string>
+            var cfg = new RabbitMQConsumerOptions<string>
             {
                 Host = "host",
                 VirtualHost = "vHost",
@@ -146,7 +146,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherConfig<string>) null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherOptions<string>) null));
         }
 
         [Theory]
@@ -205,7 +205,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public void FromPublisherConfig_NullPublishingTarget_Throws()
         {
             var factory = new RabbitMQConnectionFactory();
-            var cfg = new RabbitMQPublisherConfig<string>
+            var cfg = new RabbitMQPublisherOptions<string>
             {
                 Host = "host",
                 User = "user",
@@ -262,22 +262,22 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             Assert.Equal(vHost, connectionFactory.VirtualHost);
         }
 
-        private RabbitMQConsumerConfig<string> GetConsumerConfig(string host, string user, string password,
+        private RabbitMQConsumerOptions<string> GetConsumerConfig(string host, string user, string password,
             string virtualHost,
             string name, string exchange, string routingKey)
         {
-            return new RabbitMQConsumerConfig<string>
+            return new RabbitMQConsumerOptions<string>
             {
                 Host = host,
                 VirtualHost = virtualHost,
                 User = user,
                 Password = password,
-                Queue = new RabbitMQQueueConfig
+                Queue = new RabbitMQQueueOptions
                 {
                     Name = name,
                     Bindings = new[]
                     {
-                        new RabbitMQBindingConfig
+                        new RabbitMQBindingOptions
                         {
                             Exchange = exchange,
                             RoutingKey = routingKey
@@ -287,16 +287,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             };
         }
 
-        private RabbitMQPublisherConfig<string> GetPublisherConfig(string host, string user, string password,
+        private RabbitMQPublisherOptions<string> GetPublisherConfig(string host, string user, string password,
             string virtualHost, string exchange, string routingKey)
         {
-            return new RabbitMQPublisherConfig<string>
+            return new RabbitMQPublisherOptions<string>
             {
                 Host = host,
                 Password = password,
                 User = user,
                 VirtualHost = virtualHost,
-                PublishingTarget = new RabbitMQBindingConfig
+                PublishingTarget = new RabbitMQBindingOptions
                 {
                     Exchange = exchange,
                     RoutingKey = routingKey

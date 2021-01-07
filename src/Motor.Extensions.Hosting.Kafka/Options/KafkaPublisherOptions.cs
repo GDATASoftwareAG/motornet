@@ -2,7 +2,7 @@ using Confluent.Kafka;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
-    public class KafkaPublisherConfig<T> : ProducerConfig
+    public class KafkaPublisherOptions<T> : ProducerConfig
     {
         public string? Topic { get; set; }
     }

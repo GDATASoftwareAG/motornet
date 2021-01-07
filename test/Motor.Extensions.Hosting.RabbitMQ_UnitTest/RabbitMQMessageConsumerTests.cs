@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
-using Motor.Extensions.Hosting.RabbitMQ.Config;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 using Xunit;
 
@@ -213,23 +213,23 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 Times.Exactly(1));
         }
 
-        private static IDictionary<string, object> GetExpectedArgumentsFromConfig(RabbitMQQueueConfig config)
+        private static IDictionary<string, object> GetExpectedArgumentsFromConfig(RabbitMQQueueOptions options)
         {
-            var expectedArguments = config.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            expectedArguments.Add("x-max-priority", config.MaxPriority);
-            expectedArguments.Add("x-max-length", config.MaxLength);
-            expectedArguments.Add("x-max-length-bytes", config.MaxLengthBytes);
-            expectedArguments.Add("x-message-ttl", config.MessageTtl);
+            var expectedArguments = options.Arguments.ToDictionary(t => t.Key, t => t.Value);
+            expectedArguments.Add("x-max-priority", options.MaxPriority);
+            expectedArguments.Add("x-max-length", options.MaxLength);
+            expectedArguments.Add("x-max-length-bytes", options.MaxLengthBytes);
+            expectedArguments.Add("x-message-ttl", options.MessageTtl);
             return expectedArguments;
         }
 
         private IMessageConsumer<string> GetRabbitMQMessageConsumer(
             IRabbitMQConnectionFactory rabbitMqConnectionFactory = null,
-            RabbitMQConsumerConfig<string> config = null, IHostApplicationLifetime applicationLifetime = null)
+            RabbitMQConsumerOptions<string> options = null, IHostApplicationLifetime applicationLifetime = null)
         {
             rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock().Object;
             applicationLifetime ??= FakeApplicationLifetime;
-            var optionsWrapper = new OptionsWrapper<RabbitMQConsumerConfig<string>>(config ?? GetConfig());
+            var optionsWrapper = new OptionsWrapper<RabbitMQConsumerOptions<string>>(options ?? GetConfig());
 
             return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
                 applicationLifetime, GetApplicationNameService(), new JsonEventFormatter());
@@ -250,16 +250,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             connectionFactoryMock ??= new Mock<IConnectionFactory>();
             connectionMock ??= new Mock<IConnection>();
             channelMock ??= new Mock<IModel>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerConfig<string>>()))
+            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<string>>()))
                 .Returns(connectionFactoryMock.Object);
             connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(connectionMock.Object);
             connectionMock.Setup(x => x.CreateModel()).Returns(channelMock.Object);
             return rabbitConnectionFactoryMock;
         }
 
-        private RabbitMQConsumerConfig<string> GetConfig()
+        private RabbitMQConsumerOptions<string> GetConfig()
         {
-            return new RabbitMQConsumerConfig<string>
+            return new RabbitMQConsumerOptions<string>
             {
                 Host = "someHost",
                 Port = 12345,
@@ -268,20 +268,20 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 VirtualHost = "vHost",
                 PrefetchCount = DefaultPrefetchCount,
                 RequestedHeartbeat = TimeSpan.FromSeconds(111),
-                Queue = new RabbitMQQueueConfig
+                Queue = new RabbitMQQueueOptions
                 {
                     Name = "qName",
                     Durable = true,
                     AutoDelete = false,
                     Bindings = new[]
                     {
-                        new RabbitMQBindingConfig
+                        new RabbitMQBindingOptions
                         {
                             Exchange = "someExchange",
                             RoutingKey = "routingKey",
                             Arguments = new Dictionary<string, object>()
                         },
-                        new RabbitMQBindingConfig
+                        new RabbitMQBindingOptions
                         {
                             Exchange = "someOtherExchange",
                             RoutingKey = "someOtherRoutingKey",
