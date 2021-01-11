@@ -97,8 +97,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 _logger = logger;
                 _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] {"someLabel"});
             }
-
-
+            
             public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
@@ -107,12 +106,6 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 var reversed = tmpChar.Reverse().ToArray();
                 _summary.WithLabels("collect_your_metrics").Observe(1.0);
                 return Task.FromResult(dataCloudEvent.CreateNew(new string(reversed)));
-            }
-
-            public Task<MotorCloudEvent<string>> ConvertMessageAsContainerAsync(MotorCloudEvent<string> dataCloudEvent,
-                CancellationToken token = default)
-            {
-                throw new NotImplementedException();
             }
         }
     }

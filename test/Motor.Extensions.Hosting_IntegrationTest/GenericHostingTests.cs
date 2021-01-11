@@ -42,7 +42,6 @@ namespace Motor.Extensions.Hosting_IntegrationTest
     {
         private readonly RabbitMQFixture _fixture;
         private readonly ITestOutputHelper _outputHelper;
-        private readonly Random _random = new Random();
 
         private readonly ActivityListener _listener;
 
@@ -54,7 +53,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 ShouldListenTo = source => source.Name == typeof(TracingDelegatingMessageHandler<>).FullName,
                 Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
                     ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = activity => { _outputHelper.WriteLine("test"); },
+                ActivityStarted = _ => { _outputHelper.WriteLine("test"); },
             };
             ActivitySource.AddActivityListener(_listener);
             _fixture = fixture;
@@ -178,7 +177,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
                 .ConfigureSerilog()
                 .ConfigurePrometheus()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddTransient(provider =>
                     {
