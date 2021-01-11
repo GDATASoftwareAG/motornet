@@ -43,7 +43,7 @@ namespace Motor.Extensions.TestUtilities
 
             public string GetFullName()
             {
-                throw new NotImplementedException();
+                return "test";
             }
 
             public Uri GetSource()

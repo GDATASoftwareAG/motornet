@@ -44,7 +44,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
                         builder
                             .AddAspNetCoreInstrumentation()
                             .AddSource(typeof(TracingDelegatingMessageHandler<>).FullName!)
-                            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationNameService.GetProduct(), serviceVersion: applicationNameService.GetVersion()))
+                            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationNameService.GetFullName(), serviceVersion: applicationNameService.GetVersion()))
                             .SetMotorSampler(openTelemetryOptions)
                             .AddExporter(logger, jaegerOptions.Value, applicationNameService, hostContext);
                     });
