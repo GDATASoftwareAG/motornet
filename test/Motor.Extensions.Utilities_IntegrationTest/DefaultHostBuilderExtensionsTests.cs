@@ -21,7 +21,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
             Environment.SetEnvironmentVariable("TestConfig", null);
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, _) =>
                 {
                     toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
                 })
@@ -42,9 +42,9 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
             Environment.SetEnvironmentVariable("TestConfig", null);
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, _) =>
                 {
-                    unchangedValue = hostContext.Configuration.GetSection("Tracing").GetValue<string>("AgentHost");
+                    unchangedValue = hostContext.Configuration.GetSection("JaegerExporter").GetValue<string>("AgentHost");
                 })
                 .Build();
 
@@ -64,7 +64,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
             Environment.SetEnvironmentVariable("TestConfig", expectedValue);
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, _) =>
                 {
                     toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
                 })
@@ -85,9 +85,9 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", env);
             Environment.SetEnvironmentVariable("TestConfig", null);
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, _) =>
                 {
-                    unchangedValue = hostContext.Configuration.GetSection("Tracing").GetValue<string>("AgentHost");
+                    unchangedValue = hostContext.Configuration.GetSection("JaegerExporter").GetValue<string>("AgentHost");
                 })
                 .Build();
 
@@ -107,7 +107,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", env);
             Environment.SetEnvironmentVariable("TestConfig", expectedValue);
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, _) =>
                 {
                     toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
                 })

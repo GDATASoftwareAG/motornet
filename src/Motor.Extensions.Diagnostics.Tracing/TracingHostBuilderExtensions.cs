@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Net;
@@ -8,7 +9,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Utilities.Abstractions;
+using OpenTelemetry;
 using OpenTelemetry.Exporter.Jaeger;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace Motor.Extensions.Diagnostics.Tracing
@@ -17,8 +20,8 @@ namespace Motor.Extensions.Diagnostics.Tracing
     {
         public static readonly string JaegerExporter = "JaegerExporter";
         public static readonly string OpenTelemetry = "OpenTelemetry";
-        public static readonly string AttributeMotorProduct = "motor.product";
-        public static readonly string AttributeMotorEnvironment = "motor.environment";
+        public static readonly string AttributeMotorNetEnvironment = "motor.net.environment";
+        public static readonly string AttributeMotorNetLibraryVersion = "motor.net.libversion";
 
         public static IMotorHostBuilder ConfigureJaegerTracing(this IMotorHostBuilder hostBuilder)
         {
@@ -41,6 +44,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
                         builder
                             .AddAspNetCoreInstrumentation()
                             .AddSource(typeof(TracingDelegatingMessageHandler<>).FullName!)
+                            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationNameService.GetProduct(), serviceVersion: applicationNameService.GetVersion()))
                             .SetMotorSampler(openTelemetryOptions)
                             .AddExporter(logger, jaegerOptions.Value, applicationNameService, hostContext);
                     });
@@ -68,9 +72,9 @@ namespace Motor.Extensions.Diagnostics.Tracing
                 Dns.GetHostEntry(options.AgentHost);
                 builder.AddJaegerExporter(internalOptions =>
                 {
-                    var dictionary = options.ProcessTags.ToDictionary(pair => pair.Key, pair => pair.Value);
-                    dictionary.Add(AttributeMotorProduct, applicationNameService.GetProduct());
-                    dictionary.Add(AttributeMotorEnvironment, hostContext.HostingEnvironment.EnvironmentName.ToLower());
+                    var dictionary = options.ProcessTags?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new Dictionary<string, object>();
+                    dictionary.Add(AttributeMotorNetEnvironment, hostContext.HostingEnvironment.EnvironmentName.ToLower());
+                    dictionary.Add(AttributeMotorNetLibraryVersion, applicationNameService.GetLibVersion());
                     internalOptions.ProcessTags = dictionary.ToList();
                     internalOptions.AgentHost = options.AgentHost;
                     internalOptions.AgentPort = options.AgentPort;
