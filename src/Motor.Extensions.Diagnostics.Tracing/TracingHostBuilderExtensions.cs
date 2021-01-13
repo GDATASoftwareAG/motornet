@@ -43,7 +43,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
 
                         builder
                             .AddAspNetCoreInstrumentation()
-                            .AddSource(typeof(TracingDelegatingMessageHandler<>).FullName!)
+                            .AddSource(openTelemetryOptions.Sources.ToArray())
                             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationNameService.GetFullName(), serviceVersion: applicationNameService.GetVersion()))
                             .SetMotorSampler(openTelemetryOptions)
                             .AddExporter(logger, jaegerOptions.Value, applicationNameService, hostContext);
