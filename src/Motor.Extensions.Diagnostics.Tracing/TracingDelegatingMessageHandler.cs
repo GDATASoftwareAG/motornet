@@ -14,8 +14,8 @@ namespace Motor.Extensions.Diagnostics.Tracing
     {
         private readonly ILogger<TracingDelegatingMessageHandler<TInput>> _logger;
 
-        private static readonly ActivitySource _activitySource =
-            new(typeof(TracingDelegatingMessageHandler<>).FullName!);
+        private static readonly ActivitySource ActivitySource =
+            new(OpenTelemetryOptions.DefaultActivitySourceName);
 
         public TracingDelegatingMessageHandler(ILogger<TracingDelegatingMessageHandler<TInput>> logger)
         {
@@ -33,7 +33,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
             {
                 parentContext = extension.GetActivityContext();
             }
-            using var activity = _activitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
+            using var activity = ActivitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
             if (activity == null) return await base.HandleMessageAsync(dataCloudEvent, token);
 
             using (activity.Start())

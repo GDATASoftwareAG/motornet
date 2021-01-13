@@ -50,7 +50,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             _outputHelper = outputHelper;
             _listener = new ActivityListener
             {
-                ShouldListenTo = source => source.Name == typeof(TracingDelegatingMessageHandler<>).FullName,
+                ShouldListenTo = source => source.Name == OpenTelemetryOptions.DefaultActivitySourceName,
                 Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
                     ActivitySamplingResult.AllDataAndRecorded,
                 ActivityStarted = _ => { _outputHelper.WriteLine("test"); },
@@ -301,6 +301,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             private readonly ILogger<ReverseStringConverter> _logger;
             private readonly IMetricFamily<ISummary> _summary;
+            private static ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName); 
 
             public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
                 IMetricsFactory<ReverseStringConverter> metricsFactory)
@@ -314,6 +315,10 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             {
                 _logger.LogInformation("log your request");
                 var tmpChar = dataCloudEvent.TypedData.ToCharArray();
+                if (!ActivitySource.HasListeners())
+                {
+                    throw new ArgumentException();
+                }
                 var reversed = tmpChar.Reverse().ToArray();
                 _summary.WithLabels("collect_your_metrics").Observe(1.0);
                 return Task.FromResult(dataCloudEvent.CreateNew(new string(reversed)));
