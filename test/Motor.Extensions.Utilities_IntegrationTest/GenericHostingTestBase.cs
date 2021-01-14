@@ -52,7 +52,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         {
             var basicProperties = channel.CreateBasicProperties();
 
-            if (rabbitMqHeaders != null) basicProperties.Headers = rabbitMqHeaders;
+            if (rabbitMqHeaders is not null) basicProperties.Headers = rabbitMqHeaders;
 
             channel.BasicPublish("amq.topic", "serviceQueue", true, basicProperties,
                 Encoding.UTF8.GetBytes(messageToPublish));

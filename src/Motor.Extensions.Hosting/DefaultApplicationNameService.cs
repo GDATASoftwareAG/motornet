@@ -42,7 +42,7 @@ namespace Motor.Extensions.Hosting
 
         public string GetLibVersion()
         {
-            return Assembly.GetAssembly(typeof(DefaultApplicationNameService))?.GetName()?.Version?.ToString() ?? "debug";
+            return Assembly.GetAssembly(typeof(DefaultApplicationNameService))?.GetName().Version?.ToString() ?? "debug";
         }
 
         public string GetFullName()
@@ -52,10 +52,10 @@ namespace Motor.Extensions.Hosting
 
         public Uri GetSource()
         {
-            return new Uri($"motor://{GetFullName()}");
+            return new($"motor://{GetFullName()}");
         }
 
-        public string GetAssemblyName()
+        private string GetAssemblyName()
         {
             return _assembly.GetName().Name!;
         }

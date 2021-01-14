@@ -21,7 +21,7 @@ namespace Motor.Extensions.Diagnostics.Logging
                         .WriteTo.Console(new JsonFormatter(renderMessage: true));
                     configuration?.Invoke(hostingContext, loggerConfiguration);
                 })
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
                 });

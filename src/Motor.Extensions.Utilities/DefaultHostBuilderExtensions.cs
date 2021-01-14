@@ -16,7 +16,7 @@ namespace Motor.Extensions.Utilities
         public static IMotorHostBuilder ConfigureServices(this IMotorHostBuilder hostBuilder,
             Action<IServiceCollection> configureDelegate)
         {
-            hostBuilder.ConfigureServices((context, collection) => configureDelegate(collection));
+            hostBuilder.ConfigureServices((_, collection) => configureDelegate(collection));
             return hostBuilder;
         }
 
@@ -34,7 +34,7 @@ namespace Motor.Extensions.Utilities
         {
             return hostBuilder
                 .ConfigureNoOutputService<TInput>()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<INoOutputService<TInput>, SingleOutputServiceAdapter<TInput, TOutput>>();
                 });
@@ -47,7 +47,7 @@ namespace Motor.Extensions.Utilities
         {
             return hostBuilder
                 .ConfigureNoOutputService<TInput>()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<INoOutputService<TInput>, MultiOutputServiceAdapter<TInput, TOutput>>();
                 });

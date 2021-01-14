@@ -16,7 +16,7 @@ namespace Motor.Extensions.Hosting.Publisher
             {
                 var consumerBuilder = new PublisherBuilder<TOutput>(collection, context);
                 action.Invoke(context, consumerBuilder);
-                if (consumerBuilder.PublisherImplType == null)
+                if (consumerBuilder.PublisherImplType is null)
                 {
                     throw new ArgumentNullException(nameof(consumerBuilder.PublisherImplType));
                 }

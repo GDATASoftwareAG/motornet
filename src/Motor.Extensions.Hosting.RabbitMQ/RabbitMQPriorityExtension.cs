@@ -20,7 +20,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             get => (byte?)attributes[PriorityAttributeName];
             set
             {
-                if (value != null) attributes[PriorityAttributeName] = value;
+                if (value is not null) attributes[PriorityAttributeName] = value;
             }
         }
 

@@ -72,7 +72,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void ThrowIfNoCallbackConfigured()
         {
-            if (ConsumeCallbackAsync == null)
+            if (ConsumeCallbackAsync is null)
                 throw new InvalidOperationException(
                     $"Cannot start consuming as no {nameof(ConsumeCallbackAsync)} was configured!");
         }
@@ -96,13 +96,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private void DeclareQueue()
         {
             var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            if (_options.Queue.MaxPriority != null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
+            if (_options.Queue.MaxPriority is not null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
 
-            if (_options.Queue.MaxLength != null) arguments.Add("x-max-length", _options.Queue.MaxLength);
+            if (_options.Queue.MaxLength is not null) arguments.Add("x-max-length", _options.Queue.MaxLength);
 
-            if (_options.Queue.MaxLengthBytes != null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
+            if (_options.Queue.MaxLengthBytes is not null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
 
-            if (_options.Queue.MessageTtl != null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
+            if (_options.Queue.MessageTtl is not null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
 
             switch (_options.Queue.Mode)
             {

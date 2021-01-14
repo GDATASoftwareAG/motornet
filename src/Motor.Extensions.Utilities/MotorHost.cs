@@ -30,7 +30,7 @@ namespace Motor.Extensions.Utilities
             return (IMotorHostBuilder)hostBuilder
                 .ConfigureServices(collection =>
                 {
-                    collection.AddTransient<IApplicationNameService>(provider =>
+                    collection.AddTransient<IApplicationNameService>(_ =>
                         new DefaultApplicationNameService(assembly));
                 })
                 .ConfigureSerilog()

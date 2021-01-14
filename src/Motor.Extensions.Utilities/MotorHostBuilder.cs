@@ -127,7 +127,7 @@ namespace Motor.Extensions.Utilities
             return this;
         }
 
-        private struct HealthCheckData
+        private record HealthCheckData
         {
             public readonly Type Type;
             public readonly string Name;

@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         public virtual Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {
-            if (InnerService == null)
+            if (InnerService is null)
             {
                 throw new IndexOutOfRangeException("No message handler was set.");
             }

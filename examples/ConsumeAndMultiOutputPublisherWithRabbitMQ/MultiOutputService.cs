@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ConsumeAndMultiOutputPublisherWithRabbitMQ.Model;
@@ -11,22 +12,23 @@ namespace ConsumeAndMultiOutputPublisherWithRabbitMQ
     public class MultiOutputService : IMultiOutputService<InputMessage, OutputMessage>
     {
         // Handle incoming messages
-        public Task<IEnumerable<MotorCloudEvent<OutputMessage>>> ConvertMessageAsync(
-            MotorCloudEvent<InputMessage> inputEvent,
-            CancellationToken token = default)
+        public async IAsyncEnumerable<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
+            MotorCloudEvent<InputMessage> inputEvent, [EnumeratorCancellation] CancellationToken token = default)
         {
             // Get the input message from the cloud event
             var input = inputEvent.TypedData;
 
             // Do your magic here .....
-            var output = MagicFunc(input);
+            var output = MagicFuncAsync(input);
 
             // Create a new cloud event from your output message which is automatically published and return a new task.
-            var outputEvent = output.Select(singleEvent => inputEvent.CreateNew(singleEvent));
-            return Task.FromResult(outputEvent);
+            await foreach (var outputMessage in output.WithCancellation(token))
+            {
+                yield return inputEvent.CreateNew(outputMessage);
+            }
         }
 
-        private static IEnumerable<OutputMessage> MagicFunc(InputMessage input)
+        private static async IAsyncEnumerable<OutputMessage> MagicFuncAsync(InputMessage input)
         {
             if (string.IsNullOrEmpty(input.FancyText))
             {
@@ -34,18 +36,18 @@ namespace ConsumeAndMultiOutputPublisherWithRabbitMQ
                 throw new ArgumentNullException("FancyText is empty");
             }
 
-            return new List<OutputMessage>
+            // Magic async function.
+            await Task.Delay(10).ConfigureAwait(false);
+
+            yield return new()
             {
-                new()
-                {
-                    NotSoFancyText = input.FancyText.Reverse().ToString(),
-                    NotSoFancyNumber = input.FancyNumber * -1,
-                },
-                new()
-                {
-                    NotSoFancyText = input.FancyText,
-                    NotSoFancyNumber = input.FancyNumber * -2,
-                },
+                NotSoFancyText = input.FancyText.Reverse().ToString(),
+                NotSoFancyNumber = input.FancyNumber * -1,
+            };
+            yield return new()
+            {
+                NotSoFancyText = input.FancyText,
+                NotSoFancyNumber = input.FancyNumber * -2,
             };
         }
     }

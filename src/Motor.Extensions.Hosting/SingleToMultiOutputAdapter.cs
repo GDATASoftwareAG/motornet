@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting
@@ -17,12 +17,15 @@ namespace Motor.Extensions.Hosting
             _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
-        public async Task<IEnumerable<MotorCloudEvent<TOutput>>> ConvertMessageAsync(
-            MotorCloudEvent<TInput> dataCloudEvent, CancellationToken token)
+        public async IAsyncEnumerable<MotorCloudEvent<TOutput>> ConvertMessageAsync(
+            MotorCloudEvent<TInput> dataCloudEvent, [EnumeratorCancellation] CancellationToken token)
         {
             var convertMessage = await _service.ConvertMessageAsync(dataCloudEvent, token)
                 .ConfigureAwait(false);
-            return convertMessage == null ? new MotorCloudEvent<TOutput>[0] : new[] { convertMessage };
+            if (convertMessage != null)
+            {
+                yield return convertMessage;
+            }
         }
     }
 }

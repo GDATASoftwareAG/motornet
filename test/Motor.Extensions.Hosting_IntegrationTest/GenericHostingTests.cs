@@ -121,7 +121,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await PublishMessageIntoQueueOfService(channel, "12345");
 
             await GetMessageFromDestinationQueue(channel);
-            //Assert.Contains(tracer.FinishedSpans(), t => t.ParentId == null);
+            //Assert.Contains(tracer.FinishedSpans(), t => t.ParentId is null);
             await host.StopAsync();
         }
 
@@ -245,7 +245,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             MotorCloudEvent<byte[]> cloudEvent = null)
         {
             var basicProperties = channel.CreateBasicProperties();
-            if (cloudEvent != null)
+            if (cloudEvent is not null)
             {
                 basicProperties.Update(cloudEvent, new RabbitMQPublisherOptions<string>(), new JsonEventFormatter());
             }
@@ -282,7 +282,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 headerFromMessageInDestinationQueue = args.BasicProperties.Headers;
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (headerFromMessageInDestinationQueue == null) await Task.Delay(TimeSpan.FromMilliseconds(50));
+            while (headerFromMessageInDestinationQueue is null) await Task.Delay(TimeSpan.FromMilliseconds(50));
 
             return headerFromMessageInDestinationQueue;
         }

@@ -147,7 +147,7 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         public void MergeFrom(OutputMessage other)
         {
-            if (other == null)
+            if (other is null)
             {
                 return;
             }
