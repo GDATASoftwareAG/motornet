@@ -43,6 +43,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
 
                         builder
                             .AddAspNetCoreInstrumentation()
+                            .AddHttpClientInstrumentation()
                             .AddSource(openTelemetryOptions.Sources.ToArray())
                             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationNameService.GetFullName(), serviceVersion: applicationNameService.GetVersion()))
                             .SetMotorSampler(openTelemetryOptions)
