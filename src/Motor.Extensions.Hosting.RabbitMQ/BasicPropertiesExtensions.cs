@@ -46,7 +46,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var specVersion = CloudEventsSpecVersion.V1_0;
             var attributes = new Dictionary<string, object>();
             IDictionary<string, object> headers = new Dictionary<string, object>();
-            if (self.IsHeadersPresent() && self.Headers != null)
+            if (self.IsHeadersPresent() && self.Headers is not null)
             {
                 headers = self.Headers;
             }

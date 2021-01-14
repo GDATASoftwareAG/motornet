@@ -7,7 +7,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         where TInput : class
         where TOutput : class
     {
-        Task<MotorCloudEvent<TOutput>> ConvertMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
+        Task<MotorCloudEvent<TOutput>?> ConvertMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default);
     }
 }

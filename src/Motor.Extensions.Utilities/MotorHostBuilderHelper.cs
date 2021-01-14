@@ -11,7 +11,7 @@ namespace Motor.Extensions.Utilities
         public static void ConfigureWebHost(IWebHostBuilder builder, Func<string, string?> getSetting, Type? motorStartup)
         {
             IMotorStartup? startup = null;
-            if (motorStartup != null) startup = Activator.CreateInstance(motorStartup) as IMotorStartup;
+            if (motorStartup is not null) startup = Activator.CreateInstance(motorStartup) as IMotorStartup;
 
             var urls = builder.GetSetting(WebHostDefaults.ServerUrlsKey);
             const string defaultUrl = "http://0.0.0.0:9110";
@@ -28,7 +28,7 @@ namespace Motor.Extensions.Utilities
                 startup?.Configure(context, applicationBuilder);
                 applicationBuilder.UseEndpoints(endpoints => { endpoints.MapHealthChecks("/health"); });
             });
-            if (motorStartup != null)
+            if (motorStartup is not null)
                 builder.UseSetting(WebHostDefaults.ApplicationKey, motorStartup.Assembly.GetName().Name);
 
             builder.ConfigureServices((context, collection) =>

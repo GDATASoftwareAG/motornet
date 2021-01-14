@@ -24,7 +24,7 @@ namespace Motor.Extensions.Hosting.Internal
 
         public Task<ProcessedMessageStatus> QueueBackgroundWorkItem(T item)
         {
-            if (item == null) throw new ArgumentNullException(nameof(item));
+            if (item is null) throw new ArgumentNullException(nameof(item));
 
             var taskCompletionStatus = new TaskCompletionSource<ProcessedMessageStatus>();
 

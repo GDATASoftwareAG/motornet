@@ -29,12 +29,12 @@ namespace Motor.Extensions.Diagnostics.Tracing
         {
             ActivityContext parentContext = default;
             var extension = dataCloudEvent.GetExtensionOrCreate(() => new DistributedTracingExtension());
-            if (extension.TraceParent != null)
+            if (extension.TraceParent is not null)
             {
                 parentContext = extension.GetActivityContext();
             }
             using var activity = ActivitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
-            if (activity == null) return await base.HandleMessageAsync(dataCloudEvent, token);
+            if (activity is null) return await base.HandleMessageAsync(dataCloudEvent, token);
 
             using (activity.Start())
             using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",

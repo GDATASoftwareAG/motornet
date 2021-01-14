@@ -19,7 +19,7 @@ namespace Motor.Extensions.Hosting.Kafka
             get => (string?)_attributes[TopicAttributeName];
             set
             {
-                if (value != null) _attributes[TopicAttributeName] = value;
+                if (value is not null) _attributes[TopicAttributeName] = value;
             }
         }
 

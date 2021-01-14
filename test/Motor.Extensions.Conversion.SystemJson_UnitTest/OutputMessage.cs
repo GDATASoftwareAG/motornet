@@ -1,6 +1,6 @@
 namespace Motor.Extensions.Conversion.SystemJson_UnitTest
 {
-    public class OutputMessage
+    public record OutputMessage
     {
         public string Firstname { get; set; }
         public string Lastname { get; set; }

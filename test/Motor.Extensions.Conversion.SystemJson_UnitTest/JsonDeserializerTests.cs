@@ -9,7 +9,7 @@ namespace Motor.Extensions.Conversion.SystemJson_UnitTest
 {
     public class JsonDeserializerTests
     {
-        private InputMessage ValidMessage => new InputMessage { Firstname = "Foo", Lastname = "Bar", Age = 42 };
+        private InputMessage ValidMessage => new() { Firstname = "Foo", Lastname = "Bar", Age = 42 };
 
         [Fact]
         public void Deserialize_ValidMessage_DeserializedMessage()
@@ -57,7 +57,7 @@ namespace Motor.Extensions.Conversion.SystemJson_UnitTest
 
         private SystemJsonDeserializer<InputMessage> CreateDeserializer()
         {
-            return new SystemJsonDeserializer<InputMessage>();
+            return new();
         }
     }
 }

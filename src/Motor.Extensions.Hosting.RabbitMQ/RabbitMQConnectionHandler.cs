@@ -19,13 +19,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         protected void EstablishConnection()
         {
-            if (ConnectionFactory == null) throw new InvalidOperationException("ConnectionFactory is not set.");
+            if (ConnectionFactory is null) throw new InvalidOperationException("ConnectionFactory is not set.");
             Connection = ConnectionFactory.CreateConnection();
         }
 
         protected void EstablishChannel()
         {
-            if (Connection == null) throw new InvalidOperationException("Connection is not established.");
+            if (Connection is null) throw new InvalidOperationException("Connection is not established.");
             Channel = Connection.CreateModel();
         }
 

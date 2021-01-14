@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.Kafka.Options;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Kafka
@@ -48,7 +49,7 @@ namespace Motor.Extensions.Hosting.Kafka
 
         public Task StartAsync(CancellationToken token = default)
         {
-            if (ConsumeCallbackAsync == null) throw new InvalidOperationException("ConsumeCallback is null");
+            if (ConsumeCallbackAsync is null) throw new InvalidOperationException("ConsumeCallback is null");
 
             var consumerBuilder = new ConsumerBuilder<string, byte[]>(_options)
                 .SetLogHandler((_, logMessage) => WriteLog(logMessage))
@@ -130,7 +131,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 .Select(t => t.Value)
                 .SelectMany(t => t.Partitions ?? new Dictionary<string, KafkaStatisticsPartition>())
                 .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
-            if (partitionConsumerLags == null) return;
+            if (partitionConsumerLags is null) return;
             foreach (var (partition, consumerLag) in partitionConsumerLags)
             {
                 var lag = consumerLag;

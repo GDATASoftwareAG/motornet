@@ -1,6 +1,6 @@
 using Confluent.Kafka;
 
-namespace Motor.Extensions.Hosting.Kafka
+namespace Motor.Extensions.Hosting.Kafka.Options
 {
     public class KafkaConsumerOptions<T> : ConsumerConfig
     {

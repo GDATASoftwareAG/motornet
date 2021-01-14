@@ -39,7 +39,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void ThrowIfInvalid(RabbitMQBaseOptions baseOptions)
         {
-            if (baseOptions == null)
+            if (baseOptions is null)
                 throw new ArgumentNullException(nameof(baseOptions));
             if (string.IsNullOrWhiteSpace(baseOptions.Host))
                 throw new ArgumentException(nameof(baseOptions.Host));
@@ -53,11 +53,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void ThrowIfInvalid(RabbitMQQueueOptions queueOptions)
         {
-            if (queueOptions == null)
+            if (queueOptions is null)
                 throw new ArgumentException(nameof(queueOptions));
             if (string.IsNullOrWhiteSpace(queueOptions.Name))
                 throw new ArgumentException(nameof(queueOptions.Name));
-            if (queueOptions.Bindings == null)
+            if (queueOptions.Bindings is null)
                 return;
             if (!queueOptions.Bindings.Any())
                 return;
@@ -72,7 +72,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void ThrowIfInvalid(RabbitMQBindingOptions rabbitMqBindingOptions)
         {
-            if (rabbitMqBindingOptions == null)
+            if (rabbitMqBindingOptions is null)
                 throw new ArgumentException(nameof(rabbitMqBindingOptions));
             if (string.IsNullOrWhiteSpace(rabbitMqBindingOptions.Exchange))
                 throw new ArgumentException(nameof(rabbitMqBindingOptions.Exchange));

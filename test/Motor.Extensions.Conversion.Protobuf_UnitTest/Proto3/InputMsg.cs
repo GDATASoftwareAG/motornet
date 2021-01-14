@@ -196,7 +196,7 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         public void MergeFrom(InputMsg other)
         {
-            if (other == null)
+            if (other is null)
             {
                 return;
             }

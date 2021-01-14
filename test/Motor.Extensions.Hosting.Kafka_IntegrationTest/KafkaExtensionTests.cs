@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Kafka;
+using Motor.Extensions.Hosting.Kafka.Options;
 using Motor.Extensions.TestUtilities;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;

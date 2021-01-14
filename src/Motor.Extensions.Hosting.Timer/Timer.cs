@@ -35,7 +35,7 @@ namespace Motor.Extensions.Hosting.Timer
             // make function async
             await Task.Delay(1, token).ConfigureAwait(false);
             await Task.FromCanceled(token).ConfigureAwait(false);
-            if (_scheduler != null) await _scheduler.Shutdown(token);
+            if (_scheduler is not null) await _scheduler.Shutdown(token);
         }
 
         private void StartTimer(CancellationToken token)

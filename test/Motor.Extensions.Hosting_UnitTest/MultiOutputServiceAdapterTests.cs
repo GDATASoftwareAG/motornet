@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -162,9 +161,12 @@ namespace Motor.Extensions.Hosting_UnitTest
             ;
         }
 
-        private Task<IEnumerable<MotorCloudEvent<string>>> CreateReturnValues(params string[] data)
+        private async IAsyncEnumerable<MotorCloudEvent<string>> CreateReturnValues(params string[] data)
         {
-            return Task.FromResult(data.Select(t => MotorCloudEvent.CreateTestCloudEvent(t, new Uri("test://non"))));
+            foreach (var t in data)
+            {
+                yield return await Task.FromResult(MotorCloudEvent.CreateTestCloudEvent(t, new Uri("test://non")));
+            }
         }
 
         private MultiOutputServiceAdapter<string, string> GetMessageHandler(

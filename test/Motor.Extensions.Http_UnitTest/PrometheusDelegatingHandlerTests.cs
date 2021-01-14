@@ -19,9 +19,9 @@ namespace Motor.Extensions.Http_UnitTest
             var hostBuilder = new MotorHostBuilder(new HostBuilder())
                 .ConfigurePrometheus()
                 .ConfigureDefaultHttpClient()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
-                    services.AddTransient(provider =>
+                    services.AddTransient(_ =>
                     {
                         var mock = new Mock<IApplicationNameService>();
                         mock.Setup(t => t.GetVersion()).Returns("test");

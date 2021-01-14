@@ -21,7 +21,7 @@ namespace Motor.Extensions.Hosting
         private readonly ITypedMessagePublisher<TOutput> _publisher;
 
         public MultiOutputServiceAdapter(ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
-            IMetricsFactory<SingleOutputServiceAdapter<TInput, TOutput>> metrics,
+            IMetricsFactory<SingleOutputServiceAdapter<TInput, TOutput>>? metrics,
             IMultiOutputService<TInput, TOutput> converter,
             ITypedMessagePublisher<TOutput> publisher)
         {
@@ -36,23 +36,24 @@ namespace Motor.Extensions.Hosting
         {
             try
             {
-                var watch = new Stopwatch();
-                watch.Start();
-                IEnumerable<MotorCloudEvent<TOutput>> convertedMessages;
+                var watch = Stopwatch.StartNew();
                 try
                 {
-                    convertedMessages = await _converter.ConvertMessageAsync(dataCloudEvent, token)
-                        .ConfigureAwait(false);
+                    await foreach (var message in _converter.ConvertMessageAsync(dataCloudEvent, token)
+                        .ConfigureAwait(false).WithCancellation(token))
+                    {
+                        if (message?.Data is not null)
+                        {
+                            await _publisher.PublishMessageAsync(message, token)
+                                .ConfigureAwait(false);
+                        }
+                    }
                 }
                 finally
                 {
                     watch.Stop();
                     _messageProcessing?.Observe(watch.ElapsedMilliseconds);
                 }
-
-                foreach (var publishEvent in convertedMessages.Where(t => t.Data != null))
-                    await _publisher.PublishMessageAsync(publishEvent, token)
-                        .ConfigureAwait(false);
 
                 return ProcessedMessageStatus.Success;
             }

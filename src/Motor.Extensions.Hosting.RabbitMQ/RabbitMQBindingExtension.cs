@@ -24,7 +24,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             get => (string?)_attributes[ExchangeAttributeName];
             set
             {
-                if (value != null) _attributes[ExchangeAttributeName] = value;
+                if (value is not null) _attributes[ExchangeAttributeName] = value;
             }
         }
 
@@ -33,7 +33,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             get => (string?)_attributes[RoutingKeyAttributeName];
             set
             {
-                if (value != null) _attributes[RoutingKeyAttributeName] = value;
+                if (value is not null) _attributes[RoutingKeyAttributeName] = value;
             }
         }
 

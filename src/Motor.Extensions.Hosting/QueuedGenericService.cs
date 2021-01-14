@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,7 +49,7 @@ namespace Motor.Extensions.Hosting
                 {
                     var queueItem = await _queue.DequeueAsync(token)
                         .ConfigureAwait(false);
-                    if (queueItem == null)
+                    if (queueItem is null)
                     {
                         continue;
                     }

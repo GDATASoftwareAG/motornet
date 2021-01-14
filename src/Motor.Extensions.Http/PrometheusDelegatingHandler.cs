@@ -27,7 +27,7 @@ namespace Motor.Extensions.Http
             stopwatch.Start();
             var response = await base.SendAsync(request, token);
             var uri = request.RequestUri;
-            if (uri == null) return response;
+            if (uri is null) return response;
             _requestTotal.WithLabels(uri.Host, response.StatusCode.ToString()).Inc();
             _requestLatency.WithLabels(uri.Host).Observe(stopwatch.ElapsedMilliseconds);
             return response;
