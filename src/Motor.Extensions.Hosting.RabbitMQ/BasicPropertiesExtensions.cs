@@ -75,7 +75,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
             foreach (var attribute in attributes)
                 cloudEvent.GetAttributes().Add(attribute.Key, cloudEventFormatter.DecodeAttribute(
-                    cloudEvent.SpecVersion, attribute.Key, (byte[]) attribute.Value, extensions));
+                    cloudEvent.SpecVersion, attribute.Key, (byte[])attribute.Value, extensions));
 
             return cloudEvent;
         }

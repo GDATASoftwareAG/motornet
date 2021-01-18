@@ -170,10 +170,10 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
                         input.SkipLastField();
                         break;
                     case 10:
-                    {
-                        Greeting = input.ReadString();
-                        break;
-                    }
+                        {
+                            Greeting = input.ReadString();
+                            break;
+                        }
                 }
             }
         }

@@ -27,7 +27,7 @@ namespace Motor.Extensions.Utilities
             var hostBuilder = Host.CreateDefaultBuilder()
                 .ToMotorHostBuilder(enableConfigureWebDefaults);
 
-            return (IMotorHostBuilder) hostBuilder
+            return (IMotorHostBuilder)hostBuilder
                 .ConfigureServices(collection =>
                 {
                     collection.AddTransient<IApplicationNameService>(provider =>

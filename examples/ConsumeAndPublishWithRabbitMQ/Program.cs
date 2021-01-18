@@ -1,4 +1,4 @@
-﻿using ConsumeAndPublishWithRabbitMQ;
+using ConsumeAndPublishWithRabbitMQ;
 using ConsumeAndPublishWithRabbitMQ.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

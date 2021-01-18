@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerOptions<string>) null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerOptions<string>)null));
         }
 
         [Theory]
@@ -146,7 +146,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         {
             var factory = new RabbitMQConnectionFactory();
 
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherOptions<string>) null));
+            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherOptions<string>)null));
         }
 
         [Theory]

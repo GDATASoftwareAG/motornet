@@ -49,7 +49,7 @@ namespace Motor.Extensions.Hosting.Abstractions
 
         public TData TypedData
         {
-            get => (TData) Data;
+            get => (TData)Data;
             set => Data = value;
         }
 
@@ -61,7 +61,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         public T GetExtensionOrCreate<T>(Func<T> createNewExtension)
             where T : ICloudEventExtension
         {
-            if (Extensions.TryGetValue(typeof(T), out var cloudEventExtension)) return (T) cloudEventExtension;
+            if (Extensions.TryGetValue(typeof(T), out var cloudEventExtension)) return (T)cloudEventExtension;
 
             var invoke = createNewExtension.Invoke();
             Extensions.Add(invoke.GetType(), invoke);

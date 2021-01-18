@@ -7,7 +7,7 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Consumer
 {
-    public class ConsumerBuilder<T> : IConsumerBuilder<T> where T: notnull
+    public class ConsumerBuilder<T> : IConsumerBuilder<T> where T : notnull
     {
         private readonly IServiceCollection _serviceCollection;
 

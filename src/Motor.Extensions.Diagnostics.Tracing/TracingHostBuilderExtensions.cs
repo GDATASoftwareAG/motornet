@@ -34,9 +34,9 @@ namespace Motor.Extensions.Diagnostics.Tracing
                     {
                         var jaegerOptions = provider.GetService<IOptions<JaegerExporterOptions>>()
                                             ?? throw new InvalidConstraintException($"{nameof(JaegerExporterOptions)} is not configured.");
-                        var openTelemetryOptions = provider.GetService<IOptions<OpenTelemetryOptions>>()?.Value 
+                        var openTelemetryOptions = provider.GetService<IOptions<OpenTelemetryOptions>>()?.Value
                                                    ?? new OpenTelemetryOptions();
-                        var applicationNameService = provider.GetService<IApplicationNameService>() 
+                        var applicationNameService = provider.GetService<IApplicationNameService>()
                                                      ?? throw new InvalidConstraintException($"{nameof(IApplicationNameService)} is not configured.");
                         var logger = provider.GetService<ILogger<OpenTelemetryOptions>>()
                                      ?? throw new InvalidConstraintException($"{nameof(ILogger<OpenTelemetryOptions>)} is not configured.");
@@ -57,7 +57,7 @@ namespace Motor.Extensions.Diagnostics.Tracing
             OpenTelemetryOptions options)
         {
             Sampler sampler = (Math.Abs(options.SamplingProbability - 1.0) < 0.0001)
-                ? (Sampler) new AlwaysOnSampler()
+                ? (Sampler)new AlwaysOnSampler()
                 : new TraceIdRatioBasedSampler(options.SamplingProbability);
 
             builder.SetSampler(new ParentBasedSampler(sampler));

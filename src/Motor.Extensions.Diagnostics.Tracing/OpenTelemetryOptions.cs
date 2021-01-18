@@ -6,6 +6,6 @@ namespace Motor.Extensions.Diagnostics.Tracing
     {
         public static readonly string DefaultActivitySourceName = "MotorNet.OpenTelemetry";
         public double SamplingProbability { get; set; } = 0.0001;
-        public List<string> Sources { get; set; } = new() {DefaultActivitySourceName};
+        public List<string> Sources { get; set; } = new() { DefaultActivitySourceName };
     }
 }

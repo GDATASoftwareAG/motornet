@@ -209,7 +209,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             channelMock.Verify(
                 x => x.QueueDeclare(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(),
-                    It.Is<IDictionary<string, object>>(dict => (long) dict["x-max-length-bytes"] == maxLengthBytes)),
+                    It.Is<IDictionary<string, object>>(dict => (long)dict["x-max-length-bytes"] == maxLengthBytes)),
                 Times.Exactly(1));
         }
 

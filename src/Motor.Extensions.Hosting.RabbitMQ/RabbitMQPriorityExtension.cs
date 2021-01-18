@@ -17,7 +17,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public byte? Priority
         {
-            get => (byte?) attributes[PriorityAttributeName];
+            get => (byte?)attributes[PriorityAttributeName];
             set
             {
                 if (value != null) attributes[PriorityAttributeName] = value;
@@ -46,12 +46,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                         case null:
                             return true;
                         case string s:
-                        {
-                            if (!byte.TryParse(s, out var i))
-                                throw new InvalidOperationException("ErrorPriorityValueIsaNotAnInteger");
-                            value = (byte?) i;
-                            return true;
-                        }
+                            {
+                                if (!byte.TryParse(s, out var i))
+                                    throw new InvalidOperationException("ErrorPriorityValueIsaNotAnInteger");
+                                value = (byte?)i;
+                                return true;
+                            }
                         case byte b:
                             value = b;
                             return true;
@@ -62,10 +62,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
             return false;
         }
-        
+
         // Disabled null check because CloudEvent SDK doesn't 
         // implement null-checks
-        #pragma warning disable CS8603
+#pragma warning disable CS8603
         public Type GetAttributeType(string name)
         {
             return name switch

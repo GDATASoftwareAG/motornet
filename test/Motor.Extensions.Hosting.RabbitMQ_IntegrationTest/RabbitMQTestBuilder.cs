@@ -32,7 +32,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         public byte[] Body { get; }
         public byte Priority { get; }
     }
-    
+
     public class RabbitMQTestBuilder
     {
         public const ushort PrefetchCount = 100;
@@ -48,7 +48,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
         {
-            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
 
             return new RabbitMQTestBuilder
             {
@@ -112,7 +112,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                     .Execute(() =>
                     {
                         var messageInConsumerQueue = MessageInConsumerQueue();
-                        Assert.Equal((uint) messages.Count, messageInConsumerQueue);
+                        Assert.Equal((uint)messages.Count, messageInConsumerQueue);
                     });
             }
 
@@ -249,8 +249,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue()
         {
-            var message = (byte[]) null;
-            var priority = (byte) 0;
+            var message = (byte[])null;
+            var priority = (byte)0;
             using (var channel = Fixture.Connection.CreateModel())
             {
                 var consumer = new EventingBasicConsumer(channel);

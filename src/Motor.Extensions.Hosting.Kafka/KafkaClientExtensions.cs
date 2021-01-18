@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 return new MotorCloudEvent<byte[]>(applicationNameService, message.Message.Value, typeof(T).Name,
                     new Uri("kafka://notset"));
             var cloudEvent = message.Message.ToCloudEvent(cloudEventFormatter);
-            var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[]) cloudEvent.Data,
+            var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
                 cloudEvent.Type, cloudEvent.Source, cloudEvent.Id, cloudEvent.Time);
             var newAttributes = motorCloudEvent.GetAttributes();
             foreach (var (key, value) in cloudEvent.GetAttributes())

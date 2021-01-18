@@ -21,7 +21,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public string? Exchange
         {
-            get => (string?) _attributes[ExchangeAttributeName];
+            get => (string?)_attributes[ExchangeAttributeName];
             set
             {
                 if (value != null) _attributes[ExchangeAttributeName] = value;
@@ -30,7 +30,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public string? RoutingKey
         {
-            get => (string?) _attributes[RoutingKeyAttributeName];
+            get => (string?)_attributes[RoutingKeyAttributeName];
             set
             {
                 if (value != null) _attributes[RoutingKeyAttributeName] = value;
@@ -90,7 +90,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         // Disabled null check because CloudEvent SDK doesn't 
         // implement null-checks
-        #pragma warning disable CS8603
+#pragma warning disable CS8603
         public Type GetAttributeType(string name)
         {
             return name switch

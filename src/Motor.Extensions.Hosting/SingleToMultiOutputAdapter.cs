@@ -22,7 +22,7 @@ namespace Motor.Extensions.Hosting
         {
             var convertMessage = await _service.ConvertMessageAsync(dataCloudEvent, token)
                 .ConfigureAwait(false);
-            return convertMessage == null ? new MotorCloudEvent<TOutput>[0] : new[] {convertMessage};
+            return convertMessage == null ? new MotorCloudEvent<TOutput>[0] : new[] { convertMessage };
         }
     }
 }

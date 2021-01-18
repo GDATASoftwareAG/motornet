@@ -42,7 +42,7 @@ namespace Motor.Extensions.Http
             return clientBuilder
                 .AddPolicyHandler((provider, _) =>
                 {
-                    var config = (IOptions<HttpOptions>?) provider.GetService(typeof(IOptions<HttpOptions>));
+                    var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
                     return HttpPolicyExtensions
                         .HandleTransientHttpError()
                         .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
@@ -52,7 +52,7 @@ namespace Motor.Extensions.Http
                 })
                 .AddPolicyHandler((provider, _) =>
                 {
-                    var config = (IOptions<HttpOptions>?) provider.GetService(typeof(IOptions<HttpOptions>));
+                    var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
                     return Policy.TimeoutAsync<HttpResponseMessage>(config?.Value.TimeoutInSeconds ??
                                                                     HttpOptions.DefaultTimeoutInSeconds);
                 })

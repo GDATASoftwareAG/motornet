@@ -103,7 +103,7 @@ namespace Motor.Extensions.Utilities
                         foreach (var healthCheck in _healthChecks)
                             builder.Add(new HealthCheckRegistration(
                                 healthCheck.Name,
-                                s => (IHealthCheck) ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
+                                s => (IHealthCheck)ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
                                 healthCheck.FailureStatus,
                                 healthCheck.Tags,
                                 healthCheck.Timeout)

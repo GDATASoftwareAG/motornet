@@ -8,7 +8,7 @@ using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Hosting.Internal
 {
-    public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where T: notnull
+    public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where T : notnull
     {
         private readonly IGauge? _elementsInQueue;
         private readonly SemaphoreSlim _signal = new(0);

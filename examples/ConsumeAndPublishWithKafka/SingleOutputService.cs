@@ -11,7 +11,7 @@ namespace ConsumeAndPublishWithKafka
     {
         // Handle incoming messages
         public Task<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
-            MotorCloudEvent<InputMessage> inputEvent, 
+            MotorCloudEvent<InputMessage> inputEvent,
             CancellationToken token = default)
         {
             // Get the input message from the cloud event

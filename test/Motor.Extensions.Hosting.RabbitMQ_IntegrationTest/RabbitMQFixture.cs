@@ -48,7 +48,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         private IConnection CreateConnection()
         {
             var connectionString = $"amqp://guest:guest@{this.Hostname}:{this.Port}";
-            var connectionFactory2 = new ConnectionFactory {Uri = new Uri(connectionString)};
+            var connectionFactory2 = new ConnectionFactory { Uri = new Uri(connectionString) };
             return connectionFactory2.CreateConnection();
         }
     }

@@ -35,7 +35,7 @@ namespace Motor.Extensions.Hosting.Kafka
             _cloudEventFormatter = cloudEventFormatter;
             _options = config.Value ?? throw new ArgumentNullException(nameof(config));
             _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
-                "Contains a summary of current consumer lag of each partition", new [] {"topic", "partition"});
+                "Contains a summary of current consumer lag of each partition", new[] { "topic", "partition" });
             _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
                 "Contains current number consumer lag of each partition", false, "topic", "partition");
         }

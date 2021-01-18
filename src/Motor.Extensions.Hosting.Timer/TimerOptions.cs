@@ -1,4 +1,4 @@
-﻿namespace Motor.Extensions.Hosting.Timer
+namespace Motor.Extensions.Hosting.Timer
 {
     public record TimerOptions
     {

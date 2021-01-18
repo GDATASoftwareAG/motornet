@@ -11,7 +11,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 
         public KafkaFixture()
         {
-            _kafka =  new ContainerBuilder<KafkaContainer>()
+            _kafka = new ContainerBuilder<KafkaContainer>()
                 .Build();
         }
 

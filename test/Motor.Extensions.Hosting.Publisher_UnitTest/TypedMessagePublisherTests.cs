@@ -31,7 +31,7 @@ namespace Motor.Extensions.Hosting.Publisher_UnitTest
         {
             var publisher = new Mock<ITypedMessagePublisher<byte[]>>();
             var serializer = new Mock<IMessageSerializer<string>>();
-            var bytes = new byte[] {1, 2, 3, 4};
+            var bytes = new byte[] { 1, 2, 3, 4 };
             serializer.Setup(t => t.Serialize(It.IsAny<string>())).Returns(bytes);
             var typedMessagePublisher =
                 new TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>>(null, publisher.Object,

@@ -229,20 +229,20 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
                         input.SkipLastField();
                         break;
                     case 10:
-                    {
-                        Forename = input.ReadString();
-                        break;
-                    }
+                        {
+                            Forename = input.ReadString();
+                            break;
+                        }
                     case 18:
-                    {
-                        Surename = input.ReadString();
-                        break;
-                    }
+                        {
+                            Surename = input.ReadString();
+                            break;
+                        }
                     case 24:
-                    {
-                        Age = input.ReadInt32();
-                        break;
-                    }
+                        {
+                            Age = input.ReadInt32();
+                            break;
+                        }
                 }
             }
         }

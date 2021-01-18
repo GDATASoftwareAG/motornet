@@ -218,7 +218,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
 
         private void PrepareQueues()
         {
-            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Port", _fixture.Port.ToString());
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Host", _fixture.Hostname);
             Environment.SetEnvironmentVariable("RabbitMQPublisher__Port", _fixture.Port.ToString());
@@ -291,7 +291,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             var headers = await GetHeadersFromDestinationQueue(channel);
             var traceparent = Encoding.UTF8
-                .GetString((byte[]) headers[
+                .GetString((byte[])headers[
                     $"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"])
                 .Trim('"');
             return ActivityContext.Parse(traceparent, null);
@@ -301,13 +301,13 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             private readonly ILogger<ReverseStringConverter> _logger;
             private readonly IMetricFamily<ISummary> _summary;
-            private static ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName); 
+            private static ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName);
 
             public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
                 IMetricsFactory<ReverseStringConverter> metricsFactory)
             {
                 _logger = logger;
-                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] {"someLabel"});
+                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
             }
 
             public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,

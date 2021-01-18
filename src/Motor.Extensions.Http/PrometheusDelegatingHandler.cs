@@ -16,7 +16,7 @@ namespace Motor.Extensions.Http
         {
             _requestTotal =
                 metricsFactory.CreateCounter("request_total", "number of external request", false, "host", "status");
-            _requestLatency = metricsFactory.CreateSummary("request_latency", "request duration in ms", new[] {"host"});
+            _requestLatency = metricsFactory.CreateSummary("request_latency", "request duration in ms", new[] { "host" });
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(
