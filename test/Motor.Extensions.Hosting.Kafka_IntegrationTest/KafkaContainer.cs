@@ -25,7 +25,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 
         private static IImage CreateDefaultImage(IDockerClient dockerClient, ILoggerFactory loggerFactory)
         {
-            return new GenericImage(dockerClient, loggerFactory) {ImageName = $"{KafkaDefaultImage}:{KafkaDefaultTag}"};
+            return new GenericImage(dockerClient, loggerFactory) { ImageName = $"{KafkaDefaultImage}:{KafkaDefaultTag}" };
         }
 
         public const int KAFKA_PORT = 9093;

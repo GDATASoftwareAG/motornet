@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Utilities;
 using Motor.Extensions.Utilities.Abstractions;
 using Quartz;

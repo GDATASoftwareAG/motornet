@@ -1,4 +1,4 @@
-﻿namespace Motor.Extensions.Hosting.Abstractions
+namespace Motor.Extensions.Hosting.Abstractions
 {
     public enum ProcessedMessageStatus
     {

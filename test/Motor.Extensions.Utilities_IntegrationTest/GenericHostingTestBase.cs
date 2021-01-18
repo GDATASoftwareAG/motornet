@@ -23,7 +23,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
         protected void PrepareQueues(int prefetchCount = 1)
         {
-            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Port", Fixture.Port.ToString());
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Host", Fixture.Hostname);
             Environment.SetEnvironmentVariable("RabbitMQConsumer__Queue__Name", randomizerString.Generate());

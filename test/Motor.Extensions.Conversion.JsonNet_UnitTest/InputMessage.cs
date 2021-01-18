@@ -17,7 +17,7 @@ namespace Motor.Extensions.Conversion.JsonNet_UnitTest
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
-            return Equals((InputMessage) obj);
+            return Equals((InputMessage)obj);
         }
 
         public override int GetHashCode()

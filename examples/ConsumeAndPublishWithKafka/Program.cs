@@ -1,4 +1,4 @@
-﻿using ConsumeAndPublishWithKafka;
+using ConsumeAndPublishWithKafka;
 using ConsumeAndPublishWithKafka.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

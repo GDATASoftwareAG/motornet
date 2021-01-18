@@ -1,4 +1,4 @@
-﻿using Metrics;
+using Metrics;
 using Metrics.DifferentNamespace;
 using Metrics.Model;
 using Microsoft.Extensions.DependencyInjection;

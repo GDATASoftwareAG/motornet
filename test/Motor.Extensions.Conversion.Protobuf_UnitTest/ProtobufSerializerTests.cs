@@ -6,7 +6,7 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
 {
     public class ProtobufSerializerTests
     {
-        private InputMsg ValidMessage => new InputMsg {Forename = "Foo", Surename = "Bar", Age = 42};
+        private InputMsg ValidMessage => new InputMsg { Forename = "Foo", Surename = "Bar", Age = 42 };
 
         private byte[] ValidSerializedMessage => new byte[]
         {

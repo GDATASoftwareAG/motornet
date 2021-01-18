@@ -16,7 +16,7 @@ namespace Motor.Extensions.Hosting.Kafka
 
         public string? Topic
         {
-            get => (string?) _attributes[TopicAttributeName];
+            get => (string?)_attributes[TopicAttributeName];
             set
             {
                 if (value != null) _attributes[TopicAttributeName] = value;
@@ -53,10 +53,10 @@ namespace Motor.Extensions.Hosting.Kafka
 
             return false;
         }
-        
+
         // Disabled null check because CloudEvent SDK doesn't 
         // implement null-checks
-        #pragma warning disable CS8603
+#pragma warning disable CS8603
         public Type GetAttributeType(string name)
         {
             return name switch

@@ -25,7 +25,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
         public KafkaMessageConsumerTests(KafkaFixture fixture)
         {
             _fixture = fixture;
-            randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+            randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
         }
 
         [Fact(Timeout = 50000)]
@@ -35,7 +35,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             const string message = "testMessage";
             await PublishMessage(topic, "someKey", message);
             var consumer = GetConsumer<string>(topic);
-            var rawConsumedKafkaMessage = (byte[]) null;
+            var rawConsumedKafkaMessage = (byte[])null;
             var taskCompletionSource = new TaskCompletionSource();
             consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
             {
@@ -108,7 +108,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
         {
             using var producer = new ProducerBuilder<string, byte[]>(GetPublisherConfig<string>(topic)).Build();
             await producer.ProduceAsync(topic,
-                new Message<string, byte[]> {Key = key, Value = Encoding.UTF8.GetBytes(value)});
+                new Message<string, byte[]> { Key = key, Value = Encoding.UTF8.GetBytes(value) });
             producer.Flush();
         }
 

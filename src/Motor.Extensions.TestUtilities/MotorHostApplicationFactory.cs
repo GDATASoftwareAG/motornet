@@ -27,7 +27,7 @@ namespace Motor.Extensions.TestUtilities
             {
                 collection.AddHealthChecks();
             });
-            
+
             server = new TestServer(webHostBuilder);
             return Task.CompletedTask;
         }

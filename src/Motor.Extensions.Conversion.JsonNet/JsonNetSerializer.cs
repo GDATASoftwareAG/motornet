@@ -9,7 +9,7 @@ namespace Motor.Extensions.Conversion.JsonNet
     {
         public byte[] Serialize(T message)
         {
-            if(Equals(message, default(T)))
+            if (Equals(message, default(T)))
                 throw new ArgumentNullException(nameof(message));
 
             return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));

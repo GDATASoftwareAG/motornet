@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting
             _assembly = assembly;
         }
 
-        public IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> {"Service", "Console"};
+        public IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> { "Service", "Console" };
 
         public IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
         {
@@ -26,7 +26,7 @@ namespace Motor.Extensions.Hosting
         public string GetProduct()
         {
             var assemblyProductAttribute =
-                (AssemblyProductAttribute?) Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
+                (AssemblyProductAttribute?)Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
             if (assemblyProductAttribute?.Product == GetAssemblyName())
             {
                 throw new InvalidProgramException("Product is not set.");

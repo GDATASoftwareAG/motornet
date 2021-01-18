@@ -40,9 +40,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         public async Task ConsumerStartAsync_ConsumeMessage_ConsumedEqualsPublished()
         {
             const byte priority = 111;
-            var message = new byte[] {1, 2, 3};
+            var message = new byte[] { 1, 2, 3 };
             byte? consumedPriority = null;
-            var consumedMessage = (byte[]) null;
+            var consumedMessage = (byte[])null;
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSinglePublishedMessage(priority, message)
@@ -73,7 +73,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var publisher = builder.GetPublisher<byte[]>();
 
             const byte priority = 222;
-            var message = new byte[] {3, 2, 1};
+            var message = new byte[] { 3, 2, 1 };
             var extensions = new List<ICloudEventExtension>
             {
                 new RabbitMQPriorityExtension(priority)
@@ -100,7 +100,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             await consumer.StartAsync();
 
             await Task.Delay(TimeSpan.FromSeconds(2));
-            Assert.Equal((uint) 0, builder.MessageInConsumerQueue());
+            Assert.Equal((uint)0, builder.MessageInConsumerQueue());
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             await consumer.StartAsync();
 
             await Task.Delay(TimeSpan.FromSeconds(messageProcessingTimeSeconds + raceConditionTimeout));
-            Assert.Equal((uint) 0, builder.MessageInConsumerQueue());
+            Assert.Equal((uint)0, builder.MessageInConsumerQueue());
         }
 
         [Fact]
@@ -164,7 +164,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             await consumer.StartAsync();
 
             await Task.Delay(TimeSpan.FromSeconds(2));
-            Assert.Equal((uint) 0, builder.MessageInConsumerQueue());
+            Assert.Equal((uint)0, builder.MessageInConsumerQueue());
         }
 
 

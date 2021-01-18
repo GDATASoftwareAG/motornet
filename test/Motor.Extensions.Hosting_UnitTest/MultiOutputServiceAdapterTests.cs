@@ -35,7 +35,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             GetMessageHandler(metrics: metricsFactoryMock.Object);
 
             metricsFactoryMock.Verify(x =>
-                x.CreateSummary("message_processing", "Message processing duration in ms", 
+                x.CreateSummary("message_processing", "Message processing duration in ms",
                     false, null,
                     null, null, null));
         }
@@ -85,7 +85,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var converterMock = FakeService;
             converterMock.Setup(x =>
                     x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(CreateReturnValues((string) null));
+                .Returns(CreateReturnValues((string)null));
             var publisherMock = FakePublisher;
             var messageHandler = GetMessageHandler(service: converterMock.Object,
                 publisher: publisherMock.Object);

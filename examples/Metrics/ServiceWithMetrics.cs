@@ -18,13 +18,13 @@ namespace Metrics
             IServiceInDifferentNamespace serviceInDifferentNamespace)
         {
             _serviceInDifferentNamespace = serviceInDifferentNamespace;
-            
+
             // Resulting label in Prometheus: metrics_emtpy_string_total
             _counter = metricFactory?.CreateCounter("empty_string_total",
                 "Counts the total number of recieved empty strings.");
-            
+
             // Resulting label in Prometheus: metrics_fancy_number
-            _summary = metricFactory?.CreateSummary("fancy_number", 
+            _summary = metricFactory?.CreateSummary("fancy_number",
                 "Shows the distribution of fancy numbers.");
         }
 
@@ -48,9 +48,9 @@ namespace Metrics
             {
                 _counter?.Inc();
             }
-            
+
             _summary?.Observe(input.FancyNumber);
-            
+
             _serviceInDifferentNamespace.CountInDifferentNamespace();
         }
     }

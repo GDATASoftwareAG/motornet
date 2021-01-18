@@ -95,9 +95,9 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 IMetricsFactory<ReverseStringConverter> metricsFactory)
             {
                 _logger = logger;
-                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] {"someLabel"});
+                _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
             }
-            
+
             public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {

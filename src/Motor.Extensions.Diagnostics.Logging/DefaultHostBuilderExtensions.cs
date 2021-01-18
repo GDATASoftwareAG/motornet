@@ -12,7 +12,7 @@ namespace Motor.Extensions.Diagnostics.Logging
         public static IMotorHostBuilder ConfigureSerilog(this IMotorHostBuilder hostBuilder,
             Action<HostBuilderContext, LoggerConfiguration>? configuration = null)
         {
-            return (IMotorHostBuilder) hostBuilder
+            return (IMotorHostBuilder)hostBuilder
                 .UseSerilog((hostingContext, loggerConfiguration) =>
                 {
                     loggerConfiguration

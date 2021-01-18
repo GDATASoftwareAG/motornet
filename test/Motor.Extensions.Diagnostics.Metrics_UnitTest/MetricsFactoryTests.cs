@@ -20,7 +20,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateCounter1_WithNameSpace_EnsureNameAsExpected()
         {
@@ -31,7 +31,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateCounter2_WithNameSpace_EnsureNameAsExpected()
         {
@@ -42,7 +42,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateCounter3_WithNameSpace_EnsureNameAsExpected()
         {
@@ -63,7 +63,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
 
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_gauge_name", factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateGauge1_WithNameSpace_EnsureNameAsExpected()
         {
@@ -74,7 +74,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateGauge2_WithNameSpace_EnsureNameAsExpected()
         {
@@ -85,7 +85,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateGauge3_WithNameSpace_EnsureNameAsExpected()
         {
@@ -106,7 +106,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
 
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_histo_name", factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateHistogram1_WithNameSpace_EnsureNameAsExpected()
         {
@@ -117,7 +117,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateHistogram2_WithNameSpace_EnsureNameAsExpected()
         {
@@ -128,7 +128,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateHistogram3_WithNameSpace_EnsureNameAsExpected()
         {
@@ -149,7 +149,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
 
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_name", factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateSummary1_WithNameSpace_EnsureNameAsExpected()
         {
@@ -160,7 +160,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateSummary2_WithNameSpace_EnsureNameAsExpected()
         {
@@ -171,7 +171,7 @@ namespace Motor.Extensions.Diagnostics.Metrics_UnitTest
             Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
                 factory.Names.FirstOrDefault());
         }
-        
+
         [Fact]
         public void CreateSummary3_WithNameSpace_EnsureNameAsExpected()
         {

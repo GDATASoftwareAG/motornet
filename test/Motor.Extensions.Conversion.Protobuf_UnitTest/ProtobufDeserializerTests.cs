@@ -41,7 +41,7 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest
 
             var message = serializer.Deserialize(ValidMessage);
 
-            var expectedMessage = new InputMsg {Forename = "Foo", Surename = "Bar", Age = 42};
+            var expectedMessage = new InputMsg { Forename = "Foo", Surename = "Bar", Age = 42 };
             Assert.Equal(expectedMessage, message);
         }
 

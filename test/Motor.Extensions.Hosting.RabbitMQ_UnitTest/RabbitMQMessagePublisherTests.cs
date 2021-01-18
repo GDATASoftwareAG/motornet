@@ -26,7 +26,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var config = GetConfig();
             var publisher = GetPublisher(mock.Object, config);
 
-            await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte [0]));
+            await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
             mock.Verify(x => x.From(config), Times.Exactly(1));
         }
@@ -75,7 +75,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
                 GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
-            
+
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
             const byte priority = 1;
 
@@ -85,7 +85,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             activity.SetIdFormat(ActivityIdFormat.W3C);
             activity.Start();
             openTelemetryExtension.SetActivity(activity);
-            
+
             var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(new byte[0],
                 extensions: new List<ICloudEventExtension>
                 {
@@ -96,7 +96,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Equal(2, basicProperties.DeliveryMode);
             Assert.Equal(priority, basicProperties.Priority);
-            var traceparent = Encoding.UTF8.GetString((byte[]) basicProperties.Headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var traceparent = Encoding.UTF8.GetString((byte[])basicProperties.Headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
             var activityContext = ActivityContext.Parse(traceparent, null);
             Assert.Equal(activity.Context.TraceId, activityContext.TraceId);
             Assert.Equal(activity.Context.SpanId, activityContext.SpanId);
