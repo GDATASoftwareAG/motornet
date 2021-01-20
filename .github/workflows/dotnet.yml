@@ -23,7 +23,7 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: restore format
-      run: dotnet tool install dotnet-format --version 5.0.142902+8012f4ede1bb9a4e90ac01efd204b0f1ee428f10 --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json
+      run: dotnet tool restore --configfile NuGet.config
     - name: check format
       run: dotnet format --check ./Motor.NET.sln
 

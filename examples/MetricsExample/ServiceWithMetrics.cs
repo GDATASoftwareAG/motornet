@@ -1,12 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Metrics.DifferentNamespace;
-using Metrics.Model;
+using MetricsExample.DifferentNamespace;
+using MetricsExample.Model;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client.Abstractions;
 
-namespace Metrics
+namespace MetricsExample
 {
     public class ServiceWithMetrics : INoOutputService<InputMessage>
     {
@@ -19,11 +19,11 @@ namespace Metrics
         {
             _serviceInDifferentNamespace = serviceInDifferentNamespace;
 
-            // Resulting label in Prometheus: metrics_emtpy_string_total
+            // Resulting label in Prometheus: metricsexample_emtpy_string_total
             _counter = metricFactory?.CreateCounter("empty_string_total",
                 "Counts the total number of recieved empty strings.");
 
-            // Resulting label in Prometheus: metrics_fancy_number
+            // Resulting label in Prometheus: metricsexample_fancy_number
             _summary = metricFactory?.CreateSummary("fancy_number",
                 "Shows the distribution of fancy numbers.");
         }
