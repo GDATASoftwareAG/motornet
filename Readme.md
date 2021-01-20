@@ -16,7 +16,9 @@ You find working examples for different use-cases under the [examples](./example
 
 - [Consume and publish to RabbitMQ](./examples/ConsumeAndPublishWithRabbitMQ)
 - [Consume and publish to Kafka](./examples/ConsumeAndPublishWithKafka)
-- [Create a service with metrics](./examples/Metrics)
+- [Consume and publish multiple messages at once to RabbitMQ](./examples/ConsumeAndMultiOutputPublishWithRabbitMQ)
+- [Create a service with metrics](./examples/MetricsExample)
+- [Create a service with custom traces](./examples/OpenTelemetryExample)
 
 ## Support Matrix
 

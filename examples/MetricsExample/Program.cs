@@ -1,6 +1,6 @@
-using Metrics;
-using Metrics.DifferentNamespace;
-using Metrics.Model;
+using MetricsExample;
+using MetricsExample.DifferentNamespace;
+using MetricsExample.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Conversion.SystemJson;

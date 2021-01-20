@@ -1,4 +1,4 @@
-namespace Metrics.Model
+namespace MetricsExample.Model
 {
     public record InputMessage
     {

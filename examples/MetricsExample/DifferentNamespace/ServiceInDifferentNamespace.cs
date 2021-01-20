@@ -1,7 +1,7 @@
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Prometheus.Client.Abstractions;
 
-namespace Metrics.DifferentNamespace
+namespace MetricsExample.DifferentNamespace
 {
     public interface IServiceInDifferentNamespace
     {
@@ -14,7 +14,7 @@ namespace Metrics.DifferentNamespace
 
         public ServiceInDifferentNamespace(IMetricsFactory<ServiceInDifferentNamespace>? metricsFactory)
         {
-            // Resulting label in Prometheus: metrics_differentnamespace_counter_in_different_namespace
+            // Resulting label in Prometheus: metricsexample_differentnamespace_counter_in_different_namespace
             _counter = metricsFactory?.CreateCounter("counter_in_different_namespace", "This counts something else.");
         }
 
