@@ -1,8 +1,4 @@
 namespace ConsumeAndPublishWithRabbitMQ.Model
 {
-    public record OutputMessage
-    {
-        public string NotSoFancyText { get; set; }
-        public int NotSoFancyNumber { get; set; }
-    }
+    public record OutputMessage(string NotSoFancyText, int NotSoFancyNumber);
 }

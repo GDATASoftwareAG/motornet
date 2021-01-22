@@ -34,7 +34,7 @@ namespace Motor.Extensions.Utilities
         {
             return hostBuilder
                 .ConfigureNoOutputService<TInput>()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<INoOutputService<TInput>, SingleOutputServiceAdapter<TInput, TOutput>>();
                 });
@@ -62,10 +62,8 @@ namespace Motor.Extensions.Utilities
                 {
                     services.AddQueuedGenericService<TInput>();
                     services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
-                    services.Configure<MessageProcessingHealthCheckOptions>(
-                        hostContext.Configuration.GetSection(healthCheckConfigSection));
-                    services
-                        .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
+                    services.Configure<MessageProcessingHealthCheckOptions>(hostContext.Configuration.GetSection(healthCheckConfigSection));
+                    services.AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
                 });
         }
     }

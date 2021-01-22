@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Motor.Extensions.Conversion.SystemJson\Motor.Extensions.Conversion.SystemJson.csproj" />
+        <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.Nano\Motor.Extensions.Hosting.Nano.csproj" />
+        <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
+        <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
+    </ItemGroup>
+
+</Project>
