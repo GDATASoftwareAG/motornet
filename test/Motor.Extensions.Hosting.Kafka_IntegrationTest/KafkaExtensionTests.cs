@@ -17,19 +17,19 @@ using Xunit;
 namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
 {
     [Collection("KafkaMessage")]
-    public class KafkaMessageConsumerTests : IClassFixture<KafkaFixture>
+    public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     {
         private readonly KafkaFixture _fixture;
         private readonly IRandomizerString randomizerString;
 
-        public KafkaMessageConsumerTests(KafkaFixture fixture)
+        public KafkaExtensionTests(KafkaFixture fixture)
         {
             _fixture = fixture;
             randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
         }
 
         [Fact(Timeout = 50000)]
-        public async Task Consume_PublishIntoKafkaAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+        public async Task Consume_RawPublishIntoKafkaAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
         {
             var topic = randomizerString.Generate();
             const string message = "testMessage";
