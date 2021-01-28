@@ -54,10 +54,11 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder ConfigureNoOutputService<TInput>(this IMotorHostBuilder hostBuilder,
+            string healthCheckName = nameof(MessageProcessingHealthCheck<TInput>),
             string healthCheckConfigSection = "HealthCheck") where TInput : class
         {
             return hostBuilder
-                .AddHealthCheck<MessageProcessingHealthCheck<TInput>>(nameof(MessageProcessingHealthCheck<TInput>))
+                .AddHealthCheck<MessageProcessingHealthCheck<TInput>>(healthCheckName)
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddQueuedGenericService<TInput>();
