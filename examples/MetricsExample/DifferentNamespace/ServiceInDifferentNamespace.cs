@@ -1,5 +1,5 @@
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 
 namespace MetricsExample.DifferentNamespace
 {

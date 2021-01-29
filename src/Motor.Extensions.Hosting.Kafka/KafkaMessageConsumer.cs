@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
