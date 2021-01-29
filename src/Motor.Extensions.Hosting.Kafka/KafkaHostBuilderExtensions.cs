@@ -19,7 +19,7 @@ namespace Motor.Extensions.Hosting.Kafka
             builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
         }
 
-        public static void AddRabbitMQWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config) where T : notnull
+        public static void AddKafkaWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config) where T : notnull
         {
             builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
             builder.AddPublisher<KafkaMessagePublisher<T>>();
@@ -28,7 +28,7 @@ namespace Motor.Extensions.Hosting.Kafka
 
         public static void AddKafka<T>(this IPublisherBuilder<T> builder, string configSection = "KafkaPublisher") where T : notnull
         {
-            builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
+            builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
         }
     }
 }
