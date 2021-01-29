@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Prometheus.Client;
-using Prometheus.Client.Abstractions;
 
 namespace Motor.Extensions.Diagnostics.Metrics
 {

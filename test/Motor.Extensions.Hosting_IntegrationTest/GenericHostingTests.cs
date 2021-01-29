@@ -26,7 +26,7 @@ using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using Motor.Extensions.Utilities;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RandomDataGenerator.FieldOptions;

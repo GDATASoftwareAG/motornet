@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 
 namespace Motor.Extensions.Http
 {

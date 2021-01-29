@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 
 namespace Motor.Extensions.Diagnostics.Metrics.Abstractions
 {

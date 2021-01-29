@@ -13,7 +13,7 @@ using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Utilities;
-using Prometheus.Client.Abstractions;
+using Prometheus.Client;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Xunit;
