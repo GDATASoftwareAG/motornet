@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Utilities.Abstractions;
-using OpenTelemetry;
 using OpenTelemetry.Exporter.Jaeger;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
