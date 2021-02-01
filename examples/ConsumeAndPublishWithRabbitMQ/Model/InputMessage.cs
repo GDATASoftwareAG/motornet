@@ -1,8 +1,4 @@
 namespace ConsumeAndPublishWithRabbitMQ.Model
 {
-    public record InputMessage
-    {
-        public string FancyText { get; set; } = "FooBar";
-        public int FancyNumber { get; set; } = 42;
-    }
+    public record InputMessage(string FancyText = "FooBar", int FancyNumber = 42);
 }

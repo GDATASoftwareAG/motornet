@@ -33,11 +33,7 @@ namespace ConsumeAndPublishWithRabbitMQ
                 throw new ArgumentNullException("FancyText is empty");
             }
 
-            var output = new OutputMessage
-            {
-                NotSoFancyText = input.FancyText.Reverse().ToString(),
-                NotSoFancyNumber = input.FancyNumber * -1,
-            };
+            var output = new OutputMessage(input.FancyText.Reverse().ToString(), input.FancyNumber * -1);
             return output;
         }
     }
