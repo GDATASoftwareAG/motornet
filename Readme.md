@@ -28,6 +28,7 @@ You find working examples for different use-cases under the [examples](./example
 | Kafka | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
 | Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark:| |
 | Timer | (:heavy_check_mark:) | - | :x: | :x:| |
+| SQS | (:heavy_check_mark:) | - | :x: | :x:| |
 
 ## License
 

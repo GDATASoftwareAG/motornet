@@ -8,17 +8,19 @@ namespace Motor.Extensions.Hosting.SQS
 {
     public static class SQSHostBuilderExtensions
     {
-        public static void AddSQSWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+        public static void AddSQSWithConfig<T>(this IConsumerBuilder<T> builder,
+            IConfiguration clientConfiguration)
             where T : notnull
         {
-            builder.Configure<SQSConsumerOptions<T>>(config);
+            builder.Configure<SQSClientOptions>(clientConfiguration);
             builder.AddConsumer<SQSConsumer<T>>();
+            builder.AddTransient<ISQSClientFactory, SQSClientFactory>();
         }
 
-        public static void AddSQS<T>(this IConsumerBuilder<T> builder, string configSection = "SQSConsumer")
+        public static void AddSQS<T>(this IConsumerBuilder<T> builder, string clientConfigSection = "SQSConsumer")
             where T : notnull
         {
-            builder.AddSQSWithConfig(builder.Context.Configuration.GetSection(configSection));
+            builder.AddSQSWithConfig(builder.Context.Configuration.GetSection(clientConfigSection));
         }
     }
 }

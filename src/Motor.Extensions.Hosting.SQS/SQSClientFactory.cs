@@ -1,19 +1,24 @@
+using Amazon;
 using Amazon.SQS;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.SQS.Options;
 
 namespace Motor.Extensions.Hosting.SQS
 {
     public interface ISQSClientFactory
     {
-        IAmazonSQS From<T>(SQSConsumerOptions<T> options);
+        IAmazonSQS From(SQSClientOptions clientOptions);
     }
 
     public class SQSClientFactory : ISQSClientFactory
     {
-        public IAmazonSQS From<T>(SQSConsumerOptions<T> options)
+        public IAmazonSQS From(SQSClientOptions clientOptions)
         {
-            return new AmazonSQSClient(options.AwsAccessKeyId, options.AwsSecretAccessKey,
-                options.Region);
+            var amazonSqsConfig = new AmazonSQSConfig();
+            if (!string.IsNullOrWhiteSpace(clientOptions.ServiceUrl)) amazonSqsConfig.ServiceURL = clientOptions.ServiceUrl;
+            if (!string.IsNullOrWhiteSpace(clientOptions.Region)) amazonSqsConfig.RegionEndpoint = RegionEndpoint.GetBySystemName(clientOptions.Region);
+
+            return new AmazonSQSClient(clientOptions.AwsAccessKeyId, clientOptions.AwsSecretAccessKey, amazonSqsConfig);
         }
     }
 }
