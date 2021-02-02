@@ -1,4 +1,3 @@
-using Amazon.SQS;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Hosting.Abstractions;

@@ -1,4 +1,4 @@
-﻿using ConsumeSQS;
+using ConsumeSQS;
 using ConsumeSQS.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

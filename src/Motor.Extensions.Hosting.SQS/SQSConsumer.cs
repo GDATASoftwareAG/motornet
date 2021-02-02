@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -79,7 +79,7 @@ namespace Motor.Extensions.Hosting.SQS
                     case ProcessedMessageStatus.TemporaryFailure:
                         break;
                     case ProcessedMessageStatus.InvalidInput:
-                        await DeleteMessageAsync(message, token);                        
+                        await DeleteMessageAsync(message, token);
                         break;
                     case ProcessedMessageStatus.CriticalFailure:
                         break;

@@ -23,7 +23,7 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest
 
         public SQSMessageConsumerTests(SQSFixture fixture)
         {
-            _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex {Pattern = @"^[A-Z]{10}"});
+            _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
             _baseSQSUrl = $"http://{fixture.Hostname}:{fixture.Port}";
         }
 
@@ -33,9 +33,9 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest
             const string expectedMessage = "testMessage";
             var queueName = _randomizerString.Generate();
             var clientOptions = GetSqsClientOptions(queueName);
-            
+
             var sqs = new SQSClientFactory().From(clientOptions);
-            
+
             await sqs.CreateQueueAsync(queueName);
             await PublishMessage(sqs, queueName, expectedMessage);
 
@@ -43,10 +43,10 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest
             var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
             Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
         }
-        
+
         private static async Task<byte[]> RawConsumedSqsMessage(SQSConsumer<string> consumer)
         {
-            var rawConsumedSQSMessage = (byte[]) null;
+            var rawConsumedSQSMessage = (byte[])null;
             var taskCompletionSource = new TaskCompletionSource();
             consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
             {
@@ -87,7 +87,7 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest
             return new SQSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
                 new SQSClientFactory());
         }
-        
+
         private IApplicationNameService GetApplicationNameService(string source = "test://non")
         {
             var mock = new Mock<IApplicationNameService>();

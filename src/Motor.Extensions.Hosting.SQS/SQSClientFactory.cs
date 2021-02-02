@@ -1,6 +1,5 @@
 using Amazon;
 using Amazon.SQS;
-using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.SQS.Options;
 
 namespace Motor.Extensions.Hosting.SQS
