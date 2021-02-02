@@ -14,8 +14,15 @@ namespace Motor.Extensions.Hosting.SQS
         public IAmazonSQS From(SQSClientOptions clientOptions)
         {
             var amazonSqsConfig = new AmazonSQSConfig();
-            if (!string.IsNullOrWhiteSpace(clientOptions.ServiceUrl)) amazonSqsConfig.ServiceURL = clientOptions.ServiceUrl;
-            if (!string.IsNullOrWhiteSpace(clientOptions.Region)) amazonSqsConfig.RegionEndpoint = RegionEndpoint.GetBySystemName(clientOptions.Region);
+            if (!string.IsNullOrWhiteSpace(clientOptions.ServiceUrl))
+            {
+                amazonSqsConfig.ServiceURL = clientOptions.ServiceUrl;
+            }
+
+            if (!string.IsNullOrWhiteSpace(clientOptions.Region))
+            {
+                amazonSqsConfig.RegionEndpoint = RegionEndpoint.GetBySystemName(clientOptions.Region);
+            }
 
             return new AmazonSQSClient(clientOptions.AwsAccessKeyId, clientOptions.AwsSecretAccessKey, amazonSqsConfig);
         }

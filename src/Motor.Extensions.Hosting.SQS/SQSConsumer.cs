@@ -57,7 +57,9 @@ namespace Motor.Extensions.Hosting.SQS
                 {
                     _logger.LogError(e.Message);
                     if (e.InnerException != null)
+                    {
                         _logger.LogError(e.InnerException.Message);
+                    }
                 }
 
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
@@ -66,7 +68,7 @@ namespace Motor.Extensions.Hosting.SQS
 
         private void SingleMessageHandling(Message message, CancellationToken token)
         {
-            var dataCloudEvent = message.Body.ToMotorCloudEvent(_applicationNameService);
+            var dataCloudEvent = message.Body.ToMotorCloudEvent<TData>(_applicationNameService);
             var taskAwaiter = ConsumeCallbackAsync?.Invoke(dataCloudEvent, token).GetAwaiter();
             taskAwaiter?.OnCompleted(async () =>
             {
@@ -74,12 +76,12 @@ namespace Motor.Extensions.Hosting.SQS
                 switch (processedMessageStatus)
                 {
                     case ProcessedMessageStatus.Success:
-                        await DeleteMessageAsync(message, token);
+                        await DeleteMessageAsync(message, token).ConfigureAwait(false);
                         break;
                     case ProcessedMessageStatus.TemporaryFailure:
                         break;
                     case ProcessedMessageStatus.InvalidInput:
-                        await DeleteMessageAsync(message, token);
+                        await DeleteMessageAsync(message, token).ConfigureAwait(false);
                         break;
                     case ProcessedMessageStatus.CriticalFailure:
                         break;
@@ -96,7 +98,9 @@ namespace Motor.Extensions.Hosting.SQS
             var deleteResult =
                 await _amazonSqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, token);
             if (deleteResult.HttpStatusCode != HttpStatusCode.OK)
+            {
                 _logger.LogDebug("Could not delete message");
+            }
         }
 
         public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> ConsumeCallbackAsync
@@ -117,6 +121,7 @@ namespace Motor.Extensions.Hosting.SQS
 
         public void Dispose()
         {
+            _amazonSqsClient?.Dispose();
         }
     }
 }
