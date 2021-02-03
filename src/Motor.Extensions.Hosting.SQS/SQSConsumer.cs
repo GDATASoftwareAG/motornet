@@ -103,7 +103,7 @@ namespace Motor.Extensions.Hosting.SQS
             }
         }
 
-        public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> ConsumeCallbackAsync
+        public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
         {
             get;
             set;
