@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.101" />
@@ -10,10 +10,12 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
     </ItemGroup>   
-    
-  <ItemGroup>
-    <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
-    <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
-  </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 
 </Project>

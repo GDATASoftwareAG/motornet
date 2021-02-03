@@ -1,7 +1,7 @@
 <Project>
 
     <PropertyGroup>
-        <Version>0.6.1</Version>
+        <Version>0.6.2</Version>
         <LangVersion>9</LangVersion>
         <Nullable>enable</Nullable>
         <WarningsAsErrors>CS8600;CS8602;CS8625;CS8618;CS8604;CS8601</WarningsAsErrors>
@@ -19,7 +19,7 @@
         <Company>G DATA CyberDefense AG</Company>
         <RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
         <PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
-        <PackageTags>microservice hosting rabbitmq kafka http logging tracing</PackageTags>
+        <PackageTags>microservice hosting rabbitmq kafka sqs http logging tracing</PackageTags>
         <PackageIcon>Icon_Motor_NET_128.png</PackageIcon>
     </PropertyGroup>
 
