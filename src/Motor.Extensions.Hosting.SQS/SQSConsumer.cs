@@ -62,7 +62,7 @@ namespace Motor.Extensions.Hosting.SQS
                     }
                 }
 
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                _logger.LogDebug("Worker running at: {time}", DateTimeOffset.Now);
             }
         }
 
