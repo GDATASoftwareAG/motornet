@@ -6,7 +6,7 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.HealthChecks;
 using Xunit;
 
-namespace Motor.Extensions.Hosting_UnitTest
+namespace Motor.Extensions.Hosting_UnitTest.HealthChecks
 {
     public class MessageProcessingHealthCheckTest
     {
@@ -54,7 +54,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             int itemCount)
         {
             var maxTimeSinceLastProcessedMessage = TimeSpan.FromMilliseconds(100);
-            var config = new MessageProcessingHealthCheckOptions
+            var config = new MessageProcessingOptions
             {
                 MaxTimeSinceLastProcessedMessage = maxTimeSinceLastProcessedMessage
             };
@@ -64,7 +64,7 @@ namespace Motor.Extensions.Hosting_UnitTest
                 : DateTimeOffset.UtcNow.Subtract(maxTimeSinceLastProcessedMessage - TimeSpan.FromMilliseconds(50)));
             queue.Setup(q => q.ItemCount).Returns(itemCount);
             return new MessageProcessingHealthCheck<string>(
-                new OptionsWrapper<MessageProcessingHealthCheckOptions>(config),
+                new OptionsWrapper<MessageProcessingOptions>(config),
                 queue.Object);
         }
     }

@@ -12,7 +12,7 @@ namespace Motor.Extensions.Hosting.HealthChecks
         private readonly TimeSpan _maxTimeWithoutAcknowledgedMessage;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
 
-        public MessageProcessingHealthCheck(IOptions<MessageProcessingHealthCheckOptions> options,
+        public MessageProcessingHealthCheck(IOptions<MessageProcessingOptions> options,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue)
         {
             _maxTimeWithoutAcknowledgedMessage = options.Value.MaxTimeSinceLastProcessedMessage;

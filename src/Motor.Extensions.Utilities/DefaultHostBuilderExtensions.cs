@@ -54,19 +54,30 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder ConfigureNoOutputService<TInput>(this IMotorHostBuilder hostBuilder,
-            string healthCheckName = nameof(MessageProcessingHealthCheck<TInput>),
-            string healthCheckConfigSection = "HealthCheck") where TInput : class
+            string healthCheckConfigSection = "HealthChecks",
+            string messageProcessingHealthCheckName = nameof(MessageProcessingHealthCheck<TInput>),
+            string tooManyTemporaryFailuresHealthCheckName = nameof(TooManyTemporaryFailuresHealthCheck<TInput>))
+            where TInput : class
         {
             return hostBuilder
-                .AddHealthCheck<MessageProcessingHealthCheck<TInput>>(healthCheckName)
+                .AddHealthCheck<MessageProcessingHealthCheck<TInput>>(messageProcessingHealthCheckName)
+                .AddHealthCheck<TooManyTemporaryFailuresHealthCheck<TInput>>(tooManyTemporaryFailuresHealthCheckName)
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddQueuedGenericService<TInput>();
                     services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
-                    services.Configure<MessageProcessingHealthCheckOptions>(
-                        hostContext.Configuration.GetSection(healthCheckConfigSection));
                     services
                         .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
+                    services.Configure<MessageProcessingOptions>(
+                        hostContext.Configuration.GetSection(healthCheckConfigSection)
+                            .GetSection(messageProcessingHealthCheckName));
+                    services.AddSingleton<TooManyTemporaryFailuresStatistics<TInput>>();
+                    services
+                        .AddTransient<DelegatingMessageHandler<TInput>,
+                            TooManyTemporaryFailuresDelegatingMessageHandler<TInput>>();
+                    services.Configure<TooManyTemporaryFailuresOptions>(
+                        hostContext.Configuration.GetSection(healthCheckConfigSection)
+                            .GetSection(tooManyTemporaryFailuresHealthCheckName));
                 });
         }
     }
