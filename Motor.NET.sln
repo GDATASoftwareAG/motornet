@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		Readme.md = Readme.md
 		shared.csproj = shared.csproj
+		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Motor.Extensions.Hosting.RabbitMQ", "src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj", "{29797CA7-CF31-4A11-B2DF-FB5F5525493E}"

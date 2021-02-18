@@ -6,7 +6,9 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f74a6fde2c2d490bb60f42590d554e1c)](https://www.codacy.com/gh/GDATASoftwareAG/motornet/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=GDATASoftwareAG/motornet&amp;utm_campaign=Badge_Grade)
 
 ## About Motor.NET
-Motor.NET is a micro-service framework for .NET built on top of [Microsoft Generic Hosting](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1). It provides easy integration of RabbitMQ, Kafka (WIP) and HTTP as well as helpers for logging and tracing.
+
+Motor.NET is a micro-service framework for .NET built on top of [Microsoft Generic Hosting](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1).
+It provides easy integration of RabbitMQ, Kafka (WIP) and HTTP as well as helpers for logging and tracing.
 
 You should be up and running with just a few lines of code.
 
@@ -29,6 +31,13 @@ You find working examples for different use-cases under the [examples](./example
 | Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark:| |
 | Timer | (:heavy_check_mark:) | - | :x: | :x:| |
 | SQS | (:heavy_check_mark:) | - | :x: | :x:| |
+
+## Health Checks
+
+Motor.NET comes by default already with two health checks for message processing services (RabbitMQ, Kafka, Timer, and SQS):
+
+- `MessageProcessingHealthCheck`: Fails when no messages were consumed in a certain time frame from the Motor.NET internal queue although it has at least some messages.
+- `TooManyTemporaryFailuresHealthCheck`: Fails when too many messages led to a failure since the last message was correctly handled (either successful or as invalid input).
 
 ## License
 
