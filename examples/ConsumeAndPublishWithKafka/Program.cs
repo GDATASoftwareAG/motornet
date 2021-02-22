@@ -21,7 +21,7 @@ await MotorHost.CreateDefaultBuilder()
     // Add the incomming communication module. 
     .ConfigureConsumer<InputMessage>((_, builder) =>
     {
-        // In this case the messages are received from RabbitMQ
+        // In this case the messages are received from Kafka
         builder.AddKafka();
         // The encoding of the incoming message, such that the handler is able to deserialize the message
         builder.AddSystemJson();
@@ -29,7 +29,7 @@ await MotorHost.CreateDefaultBuilder()
     // Add the outgoing communication module.
     .ConfigurePublisher<OutputMessage>((_, builder) =>
     {
-        // In this case the messages are send to RabbitMQ
+        // In this case the messages are send to Kafka
         builder.AddKafka();
         // The encoding of the outgoing message, such that the handler is able to serialize the message
         builder.AddSystemJson();
