@@ -14,13 +14,8 @@ namespace Motor.Extensions.Hosting_UnitTest
 {
     public class MultiOutputServiceAdapterTests
     {
-        private static Mock<ILogger<SingleOutputServiceAdapter<string, string>>> FakeLogger =>
-            new();
 
         private static Mock<IMultiOutputService<string, string>> FakeService =>
-            new();
-
-        private static Mock<IMetricsFactory<SingleOutputServiceAdapter<string, string>>> FakeMetrics =>
             new();
 
         private static Mock<ITypedMessagePublisher<string>> FakePublisher => new();
@@ -29,7 +24,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         [Fact]
         public void Ctor_WithMetricsFactory_SummaryIsCreated()
         {
-            var metricsFactoryMock = FakeMetrics;
+            var metricsFactoryMock = new Mock<IMetricsFactory<SingleOutputServiceAdapter<string, string>>>();
 
             GetMessageHandler(metrics: metricsFactoryMock.Object);
 
@@ -130,7 +125,6 @@ namespace Motor.Extensions.Hosting_UnitTest
             Assert.Equal(ProcessedMessageStatus.Success, actual);
         }
 
-
         [Fact]
         public async Task HandleMessageAsync_ConverterReturnsMultipleResults_PublisherIsCalledWithEachResult()
         {
@@ -158,7 +152,6 @@ namespace Motor.Extensions.Hosting_UnitTest
             publisherMock.Verify(
                 x => x.PublishMessageAsync(It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult3),
                     It.IsAny<CancellationToken>()), Times.Once);
-            ;
         }
 
         private async IAsyncEnumerable<MotorCloudEvent<string>> CreateReturnValues(params string[] data)
@@ -170,19 +163,19 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private MultiOutputServiceAdapter<string, string> GetMessageHandler(
-            ILogger<SingleOutputServiceAdapter<string, string>> logger = null,
-            IMetricsFactory<SingleOutputServiceAdapter<string, string>> metrics = null,
-            IMultiOutputService<string, string> service = null,
-            ITypedMessagePublisher<string> publisher = null)
+            ILogger<SingleOutputServiceAdapter<string, string>>? logger = null,
+            IMetricsFactory<SingleOutputServiceAdapter<string, string>>? metrics = null,
+            IMultiOutputService<string, string>? service = null,
+            ITypedMessagePublisher<string>? publisher = null)
         {
-            logger ??= FakeLogger.Object;
+            logger ??= Mock.Of<ILogger<SingleOutputServiceAdapter<string, string>>>();
             service ??= FakeService.Object;
             publisher ??= FakePublisher.Object;
 
             return new MultiOutputServiceAdapter<string, string>(logger, metrics, service, publisher);
         }
 
-        private static MotorCloudEvent<string> CreateMotorEvent(string data = null)
+        private static MotorCloudEvent<string> CreateMotorEvent(string data = "")
         {
             return MotorCloudEvent.CreateTestCloudEvent(data, new Uri("test://non"));
         }

@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             string expected)
         {
             var application =
-                new DefaultApplicationNameService(Assembly.GetAssembly(typeof(DefaultApplicationNameService)));
+                new DefaultApplicationNameService(Assembly.GetAssembly(typeof(DefaultApplicationNameService))!);
 
             var extractedServiceName = application.ExtractServiceName(product, assembly);
 

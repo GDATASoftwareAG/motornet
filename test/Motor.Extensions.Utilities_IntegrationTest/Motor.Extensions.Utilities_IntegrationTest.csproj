@@ -5,6 +5,8 @@
         <Compenent>test</Compenent>
         <IsPackable>false</IsPackable>
         <Product>Motor.NET</Product>
+        <LangVersion>9</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>

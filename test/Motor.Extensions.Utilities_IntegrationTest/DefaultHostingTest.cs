@@ -16,11 +16,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
     public class HomeController : Controller
     {
-        private TestService service;
 
         public HomeController(TestService testService)
         {
-            service = testService ?? throw new ArgumentNullException();
+            if (testService is null)
+                throw new ArgumentNullException();
         }
 
         // 

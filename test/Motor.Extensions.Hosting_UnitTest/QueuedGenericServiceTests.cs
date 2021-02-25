@@ -157,7 +157,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private static IBackgroundTaskQueue<MotorCloudEvent<string>> CreateQueue(
-            MotorCloudEvent<string> dataCloudEvent = null, TaskCompletionSource<ProcessedMessageStatus> status = null)
+            MotorCloudEvent<string>? dataCloudEvent = null, TaskCompletionSource<ProcessedMessageStatus>? status = null)
         {
             var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             queue.Setup(t => t.DequeueAsync(It.IsAny<CancellationToken>()))
@@ -169,10 +169,10 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private static QueuedGenericService<string> CreateQueuedGenericService(
-            INoOutputService<string> service = null,
-            IBackgroundTaskQueue<MotorCloudEvent<string>> backgroundTaskQueue = null,
-            IHostApplicationLifetime hostApplicationLifetime = null,
-            QueuedGenericServiceOptions config = null)
+            INoOutputService<string>? service = null,
+            IBackgroundTaskQueue<MotorCloudEvent<string>>? backgroundTaskQueue = null,
+            IHostApplicationLifetime? hostApplicationLifetime = null,
+            QueuedGenericServiceOptions? config = null)
         {
             var logger = new Mock<ILogger<QueuedGenericService<string>>>();
             hostApplicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
@@ -190,7 +190,7 @@ namespace Motor.Extensions.Hosting_UnitTest
         }
 
         private static BaseDelegatingMessageHandler<string> CreateBaseDelegatingMessageHandler(
-            INoOutputService<string> service = null)
+            INoOutputService<string>? service = null)
         {
             var loggerPrepare = new Mock<ILogger<PrepareDelegatingMessageHandler<string>>>();
             service ??= new Mock<INoOutputService<string>>().Object;

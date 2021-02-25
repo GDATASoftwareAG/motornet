@@ -41,19 +41,16 @@ namespace Motor.Extensions.Hosting_IntegrationTest
     public class GenericHostingTests : IClassFixture<RabbitMQFixture>
     {
         private readonly RabbitMQFixture _fixture;
-        private readonly ITestOutputHelper _outputHelper;
-
         private readonly ActivityListener _listener;
 
         public GenericHostingTests(RabbitMQFixture fixture, ITestOutputHelper outputHelper)
         {
-            _outputHelper = outputHelper;
             _listener = new ActivityListener
             {
                 ShouldListenTo = source => source.Name == OpenTelemetryOptions.DefaultActivitySourceName,
-                Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
                     ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = _ => { _outputHelper.WriteLine("test"); },
+                ActivityStarted = _ => { outputHelper.WriteLine("test"); },
             };
             ActivitySource.AddActivityListener(_listener);
             _fixture = fixture;
@@ -149,7 +146,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             PrepareQueues();
             var traceIsPublished = false;
-            _listener.ActivityStarted = activity => { traceIsPublished = true; };
+            _listener.ActivityStarted = _ => { traceIsPublished = true; };
 
             var host = GetReverseStringService();
             var channel = _fixture.Connection.CreateModel();
@@ -179,7 +176,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 .ConfigurePrometheus()
                 .ConfigureServices((_, services) =>
                 {
-                    services.AddTransient(provider =>
+                    services.AddTransient(_ =>
                     {
                         var mock = new Mock<IApplicationNameService>();
                         mock.Setup(t => t.GetVersion()).Returns("test");
@@ -196,17 +193,17 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                     //services.AddSingleton(provider => tracer);
                     services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
                 })
-                .ConfigureConsumer<string>((context, builder) =>
+                .ConfigureConsumer<string>((_, builder) =>
                 {
                     builder.AddRabbitMQ();
                     builder.AddDeserializer<StringDeserializer>();
                 })
-                .ConfigurePublisher<string>((context, builder) =>
+                .ConfigurePublisher<string>((_, builder) =>
                 {
                     builder.AddRabbitMQ();
                     builder.AddSerializer<StringSerializer>();
                 })
-                .ConfigureAppConfiguration((builder, config) =>
+                .ConfigureAppConfiguration((_, config) =>
                 {
                     config.AddJsonFile("appsettings.json", true, false);
                     config.AddEnvironmentVariables();
@@ -242,7 +239,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         }
 
         private async Task PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
-            MotorCloudEvent<byte[]> cloudEvent = null)
+            MotorCloudEvent<byte[]>? cloudEvent = null)
         {
             var basicProperties = channel.CreateBasicProperties();
             if (cloudEvent is not null)
@@ -261,7 +258,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
             var consumer = new EventingBasicConsumer(channel);
             var messageFromDestinationQueue = string.Empty;
-            consumer.Received += (sender, args) =>
+            consumer.Received += (_, args) =>
             {
                 var bytes = args.Body;
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
@@ -276,8 +273,8 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
             var consumer = new EventingBasicConsumer(channel);
-            IDictionary<string, object> headerFromMessageInDestinationQueue = null;
-            consumer.Received += (sender, args) =>
+            IDictionary<string, object>? headerFromMessageInDestinationQueue = null;
+            consumer.Received += (_, args) =>
             {
                 headerFromMessageInDestinationQueue = args.BasicProperties.Headers;
             };
@@ -301,7 +298,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
         {
             private readonly ILogger<ReverseStringConverter> _logger;
             private readonly IMetricFamily<ISummary> _summary;
-            private static ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName);
+            private static readonly ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName);
 
             public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
                 IMetricsFactory<ReverseStringConverter> metricsFactory)
@@ -310,7 +307,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
             }
 
-            public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
+            public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
                 _logger.LogInformation("log your request");
@@ -321,7 +318,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 }
                 var reversed = tmpChar.Reverse().ToArray();
                 _summary.WithLabels("collect_your_metrics").Observe(1.0);
-                return Task.FromResult(dataCloudEvent.CreateNew(new string(reversed)));
+                return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));
             }
         }
 

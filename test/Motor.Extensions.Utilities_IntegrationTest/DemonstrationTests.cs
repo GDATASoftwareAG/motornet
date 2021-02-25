@@ -75,7 +75,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
             var consumer = new EventingBasicConsumer(channel);
             var messageFromDestinationQueue = string.Empty;
-            consumer.Received += (sender, args) =>
+            consumer.Received += (_, args) =>
             {
                 var bytes = args.Body;
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
@@ -98,14 +98,14 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
             }
 
-            public Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
+            public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
                 _logger.LogInformation("log your request");
                 var tmpChar = dataCloudEvent.TypedData.ToCharArray();
                 var reversed = tmpChar.Reverse().ToArray();
                 _summary.WithLabels("collect_your_metrics").Observe(1.0);
-                return Task.FromResult(dataCloudEvent.CreateNew(new string(reversed)));
+                return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));
             }
         }
     }
