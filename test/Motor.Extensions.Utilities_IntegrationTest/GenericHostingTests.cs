@@ -165,7 +165,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
         private class TimingOutMessageConverter : ISingleOutputService<string, string>
         {
-            public async Task<MotorCloudEvent<string>> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
+            public async Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
                 await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
@@ -195,7 +195,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                     throw new TemporaryFailureException();
                 }
 
-                return Task.FromResult(dataCloudEvent.CreateNew(string.Empty));
+                return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(string.Empty));
             }
         }
     }

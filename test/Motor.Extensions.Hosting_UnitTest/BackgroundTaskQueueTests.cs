@@ -18,7 +18,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var queueBackgroundWorkItem = backgroundTaskQueue.QueueBackgroundWorkItem(message);
 
             var dequeueAsync = await backgroundTaskQueue.DequeueAsync(CancellationToken.None);
-            Assert.Equal(message, dequeueAsync.Item);
+            Assert.Equal(message, dequeueAsync!.Item);
             Assert.Equal(TaskStatus.WaitingForActivation, queueBackgroundWorkItem.Status);
         }
 
@@ -29,7 +29,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             var queueBackgroundWorkItem = backgroundTaskQueue.QueueBackgroundWorkItem("test");
             var dequeueAsync = await backgroundTaskQueue.DequeueAsync(CancellationToken.None);
 
-            dequeueAsync.TaskCompletionStatus.SetResult(ProcessedMessageStatus.Success);
+            dequeueAsync!.TaskCompletionStatus.SetResult(ProcessedMessageStatus.Success);
 
             var processedMessageStatus = await queueBackgroundWorkItem;
             Assert.Equal(TaskStatus.RanToCompletion, queueBackgroundWorkItem.Status);

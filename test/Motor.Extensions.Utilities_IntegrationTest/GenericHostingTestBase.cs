@@ -12,14 +12,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 {
     public abstract class GenericHostingTestBase
     {
-        private readonly Random _random = new Random();
-
+        protected RabbitMQFixture Fixture { get; }
         protected GenericHostingTestBase(RabbitMQFixture fixture)
         {
             Fixture = fixture;
         }
-
-        protected RabbitMQFixture Fixture { get; }
 
         protected void PrepareQueues(int prefetchCount = 1)
         {
@@ -48,7 +45,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         }
 
         protected static void PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
-            IDictionary<string, object> rabbitMqHeaders = null)
+            IDictionary<string, object>? rabbitMqHeaders = null)
         {
             var basicProperties = channel.CreateBasicProperties();
 
