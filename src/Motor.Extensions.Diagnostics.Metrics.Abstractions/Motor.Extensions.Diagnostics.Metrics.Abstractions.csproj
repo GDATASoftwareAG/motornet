@@ -5,7 +5,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Prometheus.Client" Version="4.3.0" />
+        <PackageReference Include="Prometheus.Client" Version="4.4.0" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
