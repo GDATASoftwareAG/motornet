@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Hosting.Kafka\Motor.Extensions.Hosting.Kafka.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Hosting.SQS\Motor.Extensions.Hosting.SQS.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Dockerfile">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
+
+</Project>

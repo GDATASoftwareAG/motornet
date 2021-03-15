@@ -43,11 +43,18 @@ jobs:
       run: dotnet test --no-restore Motor.NET.sln
     - name: Pack
       run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
+    - name: Publish Shifter
+      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts-shifter ./src/Motor.Extensions.Hosting.Shifter/Motor.Extensions.Hosting.Shifter.csproj
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: artifacts
         path: ./artifacts/*.nupkg
+    - name: Upload Artifact Shifter
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts-shifter
+        path: ./artifacts-shifter/*
 
   deploy:
     needs: build
@@ -64,3 +71,14 @@ jobs:
           dotnet-version: 5.0.x
       - name: Push to NuGet Feed
         run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+
+  build-shifter:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: artifacts-shifter
+      - name: build image
+        run: docker build ./artifacts-shifter
