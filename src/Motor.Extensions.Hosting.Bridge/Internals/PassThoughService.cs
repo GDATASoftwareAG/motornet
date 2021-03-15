@@ -4,7 +4,7 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client;
 
-namespace Motor.Extensions.Hosting.Shifter.Internals
+namespace Motor.Extensions.Hosting.Bridge.Internals
 {
     public class PassThoughService : ISingleOutputService<ByteData, ByteData>
     {

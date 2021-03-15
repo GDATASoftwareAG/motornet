@@ -103,7 +103,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.SQ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsumeSQS", "examples\ConsumeSQS\ConsumeSQS.csproj", "{76AF0280-E7F6-4853-A69F-71194F07EA9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.Shifter", "src\Motor.Extensions.Hosting.Shifter\Motor.Extensions.Hosting.Shifter.csproj", "{62234AB3-F8B0-41A0-B3AE-988D7A26F91C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.Bridge", "src\Motor.Extensions.Hosting.Bridge\Motor.Extensions.Hosting.Bridge.csproj", "{62234AB3-F8B0-41A0-B3AE-988D7A26F91C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

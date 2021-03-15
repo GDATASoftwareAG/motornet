@@ -1,7 +1,7 @@
 using System;
 using Motor.Extensions.Conversion.Abstractions;
 
-namespace Motor.Extensions.Hosting.Shifter.Internals
+namespace Motor.Extensions.Hosting.Bridge.Internals
 {
     public class ByteDataConversions : IMessageDeserializer<ByteData>, IMessageSerializer<ByteData>
     {

@@ -43,18 +43,18 @@ jobs:
     #   run: dotnet test --no-restore Motor.NET.sln
     # - name: Pack
     #   run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
-    - name: Publish Shifter
-      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-shifter ./src/Motor.Extensions.Hosting.Shifter/Motor.Extensions.Hosting.Shifter.csproj
+    - name: Publish Bridge
+      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
     # - name: Upload Artifact
     #   uses: actions/upload-artifact@v2
     #   with:
     #     name: artifacts
     #     path: ./artifacts/*.nupkg
-    - name: Upload Artifact Shifter
+    - name: Upload Artifact Bridge
       uses: actions/upload-artifact@v2
       with:
-        name: artifacts-shifter
-        path: ./artifacts-shifter/*
+        name: artifacts-bridge
+        path: ./artifacts-bridge/*
 
   # deploy:
   #   needs: build
@@ -72,14 +72,14 @@ jobs:
   #     - name: Push to NuGet Feed
   #       run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
-  build-shifter:
+  build-bridge:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v1
         with:
-          name: artifacts-shifter
+          name: artifacts-bridge
       - name: Login to Github Registry
         uses: docker/login-action@v1
         with:
@@ -90,7 +90,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: github.event_name == 'release'
-          context: ./artifacts-shifter
-          tags: docker.pkg.github.com/gdatasoftwareag/motornet/shifter:latest,docker.pkg.github.com/gdatasoftwareag/motornet/shifter:${{ github.sha }}
+          context: ./artifacts-bridge
+          tags: docker.pkg.github.com/gdatasoftwareag/motornet/bridge:latest,docker.pkg.github.com/gdatasoftwareag/motornet/bridge:${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
