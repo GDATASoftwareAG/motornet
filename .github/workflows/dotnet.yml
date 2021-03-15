@@ -80,5 +80,12 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: artifacts-shifter
-      - name: build image
-        run: docker build ./artifacts-shifter
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          push: github.event_name == 'release'
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          context: ./artifacts-shifter
+          tags: gdatasoftwareag/motornet/shifter:latest

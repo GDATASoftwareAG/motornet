@@ -8,3 +8,9 @@ ENV DOTNET_ENVIRONMENT=$DOTNET_ENVIRONMENT
 HEALTHCHECK CMD wget --quiet --tries=1 --spider http://localhost:9110/health || exit 1
 
 ENTRYPOINT dotnet /data/Motor.Extensions.Hosting.Shifter.dll
+
+LABEL org.opencontainers.image.title="Motor.NET Shifter Docker Image" \
+      org.opencontainers.image.description="Motor.NET" \
+      org.opencontainers.image.url="https://github.com/GDATASoftwareAG/motornet" \
+      org.opencontainers.image.source="https://github.com/GDATASoftwareAG/motornet/tree/master/src/Motor.Extensions.Hosting.Shifter/" \
+      org.opencontainers.image.license="MIT"
