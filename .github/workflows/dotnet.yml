@@ -39,38 +39,38 @@ jobs:
       run: dotnet restore Motor.NET.sln
     - name: Build
       run: dotnet build --configuration Release --no-restore Motor.NET.sln
-    - name: Test
-      run: dotnet test --no-restore Motor.NET.sln
-    - name: Pack
-      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
+    # - name: Test
+    #   run: dotnet test --no-restore Motor.NET.sln
+    # - name: Pack
+    #   run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
     - name: Publish Shifter
       run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-shifter ./src/Motor.Extensions.Hosting.Shifter/Motor.Extensions.Hosting.Shifter.csproj
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: artifacts
-        path: ./artifacts/*.nupkg
+    # - name: Upload Artifact
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: artifacts
+    #     path: ./artifacts/*.nupkg
     - name: Upload Artifact Shifter
       uses: actions/upload-artifact@v2
       with:
         name: artifacts-shifter
         path: ./artifacts-shifter/*
 
-  deploy:
-    needs: build
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v1
-        with:
-          name: artifacts
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 5.0.x
-      - name: Push to NuGet Feed
-        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+  # deploy:
+  #   needs: build
+  #   if: github.event_name == 'release'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download Artifact
+  #       uses: actions/download-artifact@v1
+  #       with:
+  #         name: artifacts
+  #     - name: Setup .NET
+  #       uses: actions/setup-dotnet@v1
+  #       with:
+  #         dotnet-version: 5.0.x
+  #     - name: Push to NuGet Feed
+  #       run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-shifter:
     needs: build
@@ -84,8 +84,8 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: docker.pkg.github.com
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
