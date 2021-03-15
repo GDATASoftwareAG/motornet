@@ -44,7 +44,7 @@ jobs:
     - name: Pack
       run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
     - name: Publish Shifter
-      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts-shifter ./src/Motor.Extensions.Hosting.Shifter/Motor.Extensions.Hosting.Shifter.csproj
+      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-shifter ./src/Motor.Extensions.Hosting.Shifter/Motor.Extensions.Hosting.Shifter.csproj
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:

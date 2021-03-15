@@ -7,8 +7,10 @@ namespace Motor.Extensions.Hosting.Shifter.Internals
     {
         public ByteData Deserialize(byte[] message)
         {
-            if (message == null || message.Length == 0)
+            if (message is null || message.Length == 0)
+            {
                 throw new ArgumentNullException(nameof(message));
+            }
             return new ByteData(message);
         }
 
