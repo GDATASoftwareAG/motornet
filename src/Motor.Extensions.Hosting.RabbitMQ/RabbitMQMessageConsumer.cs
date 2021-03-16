@@ -95,6 +95,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void DeclareQueue()
         {
+            if (!_options.DeclareQueue)
+            {
+                return;
+            }
             var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
             if (_options.Queue.MaxPriority is not null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
 

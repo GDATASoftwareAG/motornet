@@ -192,6 +192,23 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 Times.Exactly(1));
         }
 
+        [Fact]
+        public async Task StartAsync_DontDeclareQueues_QueueDeclareIsNotCalled()
+        {
+            var channelMock = new Mock<IModel>();
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var cfg = GetConfig(false);
+            cfg.Queue.MessageTtl = null;
+            var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
+            SetConsumerCallback(consumer);
+
+            await consumer.StartAsync();
+
+            channelMock.Verify(x =>
+                    x.QueueDeclare(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<IDictionary<string, object>>()),
+                Times.Never);
+        }
+
         [Theory]
         [InlineData(1)]
         [InlineData(123456)]
@@ -257,9 +274,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             return rabbitConnectionFactoryMock;
         }
 
-        private RabbitMQConsumerOptions<string> GetConfig()
+        private RabbitMQConsumerOptions<string> GetConfig(bool declareQueue = true)
         {
-            return new RabbitMQConsumerOptions<string>
+            return new()
             {
                 Host = "someHost",
                 Port = 12345,
@@ -267,6 +284,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 Password = "pass",
                 VirtualHost = "vHost",
                 PrefetchCount = DefaultPrefetchCount,
+                DeclareQueue = declareQueue,
                 RequestedHeartbeat = TimeSpan.FromSeconds(111),
                 Queue = new RabbitMQQueueOptions
                 {
