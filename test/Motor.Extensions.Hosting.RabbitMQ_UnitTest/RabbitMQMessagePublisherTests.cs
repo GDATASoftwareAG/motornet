@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -18,6 +19,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 {
     public class RabbitMQMessagePublisherTests
     {
+        private const string DefaultExchange = "exchange";
 
         [Fact]
         public async Task PublishMessageAsync_WithConfig_ConnectionFactoryIsSet()
@@ -111,16 +113,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
                 GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
-            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
+            var config = GetConfig();
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, config);
             var message = new byte[0];
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(message));
 
-            modelMock.Verify(x => x.BasicPublish(GetConfig().PublishingTarget.Exchange,
-                GetConfig().PublishingTarget.RoutingKey, true, basicProperties, message));
+            modelMock.Verify(x => x.BasicPublish(config.PublishingTarget.Exchange,
+                config.PublishingTarget.RoutingKey, true, basicProperties, message));
         }
 
-        [Fact(Skip = "Needs It.IsAny<ReadOnlySpan<byte>>() but that is not allowed :(")]
+        [Fact]
         public async Task PublishMessageAsync_CloudEventWithRoutingKeyExtension_MessagePublished()
         {
             const string customExchange = "cloud-event-exchange";
@@ -139,32 +142,56 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 MotorCloudEvent.CreateTestCloudEvent(new byte[0], extensions: extensions));
 
             modelMock.Verify(x => x.BasicPublish(customExchange,
-                customRoutingKey, true, It.IsAny<IBasicProperties>(), It.IsAny<byte[]>()));
+                customRoutingKey, true, It.IsAny<IBasicProperties>(), It.IsAny<ReadOnlyMemory<byte>>()));
+        }
+
+        [Fact]
+        public async Task PublishMessageAsync_CloudEventWithRoutingKeyExtensionAndOverwriteExchange_MessagePublished()
+        {
+            const string customExchange = "cloud-event-exchange";
+            const string customRoutingKey = "cloud-event-routing-key";
+
+            var modelMock = new Mock<IModel>();
+            modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
+            var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, overwriteExchange: true);
+            var extensions = new List<ICloudEventExtension>
+            {
+                new RabbitMQBindingExtension(customExchange, customRoutingKey)
+            };
+
+            await publisher.PublishMessageAsync(
+                MotorCloudEvent.CreateTestCloudEvent(new byte[0], extensions: extensions));
+
+            modelMock.Verify(x => x.BasicPublish(DefaultExchange,
+                customRoutingKey, true, It.IsAny<IBasicProperties>(), It.IsAny<ReadOnlyMemory<byte>>()));
         }
 
         private ITypedMessagePublisher<byte[]> GetPublisher(
             IRabbitMQConnectionFactory connectionFactory = null,
-            RabbitMQPublisherOptions<string> options = null)
+            RabbitMQPublisherOptions<string> options = null,
+            bool overwriteExchange = false)
         {
             connectionFactory ??= GetDefaultConnectionFactoryMock().Object;
-            options ??= GetConfig();
+            options ??= GetConfig(overwriteExchange);
 
             var configMock = new Mock<IOptions<RabbitMQPublisherOptions<string>>>();
             configMock.Setup(x => x.Value).Returns(options);
             return new RabbitMQMessagePublisher<string>(connectionFactory, configMock.Object, new JsonEventFormatter());
         }
 
-        private RabbitMQPublisherOptions<string> GetConfig()
+        private RabbitMQPublisherOptions<string> GetConfig(bool overwriteExchange = false)
         {
-            return new RabbitMQPublisherOptions<string>
+            return new()
             {
                 Host = "host",
                 VirtualHost = "vHost",
                 User = "user",
                 Password = "pw",
+                OverwriteExchange = overwriteExchange,
                 PublishingTarget = new RabbitMQBindingOptions
                 {
-                    Exchange = "exchange",
+                    Exchange = DefaultExchange,
                     RoutingKey = "routingKey"
                 }
             };

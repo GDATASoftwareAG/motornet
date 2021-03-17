@@ -4,5 +4,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ.Options
     {
         public RabbitMQBindingOptions PublishingTarget { get; set; } = new();
         public byte? DefaultPriority { get; set; } = null;
+        public bool OverwriteExchange { get; set; }
     }
 }
