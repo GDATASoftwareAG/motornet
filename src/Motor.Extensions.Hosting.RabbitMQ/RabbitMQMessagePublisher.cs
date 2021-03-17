@@ -34,6 +34,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var publishingTarget = cloudEvent.Extension<RabbitMQBindingExtension>()?.BindingOptions ??
                                    _options.PublishingTarget;
 
+            if (_options.OverwriteExchange)
+            {
+                publishingTarget.Exchange = _options.PublishingTarget.Exchange;
+            }
+
             Channel.BasicPublish(publishingTarget.Exchange, publishingTarget.RoutingKey, true, properties,
                 cloudEvent.TypedData);
         }

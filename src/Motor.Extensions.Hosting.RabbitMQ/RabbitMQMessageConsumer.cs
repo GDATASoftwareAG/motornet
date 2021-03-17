@@ -154,6 +154,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     extensions.Add(new RabbitMQPriorityExtension(priority));
                 }
 
+                if (_options.ExtractBindingKey)
+                {
+                    extensions.Add(new RabbitMQBindingExtension(args.Exchange, args.RoutingKey));
+                }
+
                 var cloudEvent = args.BasicProperties.ExtractCloudEvent<T>(_applicationNameService,
                     _cloudEventFormatter, args.Body, extensions);
 
