@@ -21,17 +21,13 @@ namespace Motor.Extensions.Diagnostics.Metrics
         public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {
-            var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
-            try
+            var processedMessageStatus = new Label<ProcessedMessageStatus>(ProcessedMessageStatus.CriticalFailure);
+            using (new AutoIncCounter(_messageProcessingTotal, processedMessageStatus))
             {
-                processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
-            }
-            finally
-            {
-                _messageProcessingTotal.WithLabels(processedMessageStatus.ToString()).Inc();
+                processedMessageStatus.Value = await base.HandleMessageAsync(dataCloudEvent, token);
             }
 
-            return processedMessageStatus;
+            return processedMessageStatus.Value;
         }
     }
 }

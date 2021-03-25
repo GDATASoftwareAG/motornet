@@ -1,7 +1,7 @@
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client;
@@ -27,16 +27,10 @@ namespace Motor.Extensions.Hosting.Publisher
 
         public async Task PublishMessageAsync(MotorCloudEvent<TOutput> cloudEvent, CancellationToken token = default)
         {
-            var watch = Stopwatch.StartNew();
             byte[] bytes;
-            try
+            using (new AutoObserveStopwatch(_messageSerialization))
             {
                 bytes = _messageSerializer.Serialize(cloudEvent.TypedData);
-            }
-            finally
-            {
-                watch.Stop();
-                _messageSerialization?.Observe(watch.ElapsedMilliseconds);
             }
 
             var bytesEvent = cloudEvent.CreateNew(bytes, true);

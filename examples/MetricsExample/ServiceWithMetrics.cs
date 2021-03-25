@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MetricsExample.DifferentNamespace;
 using MetricsExample.Model;
+using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client;
@@ -12,7 +13,8 @@ namespace MetricsExample
     {
         private readonly IServiceInDifferentNamespace _serviceInDifferentNamespace;
         private readonly ICounter? _counter;
-        private readonly ISummary? _summary;
+        private readonly ISummary? _simpleSummary;
+        private readonly IMetricFamily<ISummary>? _labeledSummary;
 
         public ServiceWithMetrics(IMetricsFactory<ServiceWithMetrics> metricFactory,
             IServiceInDifferentNamespace serviceInDifferentNamespace)
@@ -24,19 +26,32 @@ namespace MetricsExample
                 "Counts the total number of recieved empty strings.");
 
             // Resulting label in Prometheus: metricsexample_fancy_number
-            _summary = metricFactory?.CreateSummary("fancy_number",
+            _simpleSummary = metricFactory?.CreateSummary("fancy_number",
                 "Shows the distribution of fancy numbers.");
+
+            // Resulting label in Prometheus: metricsexample_processing_time
+            _labeledSummary = metricFactory?.CreateSummary("processing_time",
+                "Shows the processing time of fancy inputs.", new[] { "successful" });
         }
 
         public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<InputMessage> inputEvent,
             CancellationToken token = default)
         {
-            // Handle incoming messages
-            // Get the input message from the cloud event
+            /*
+             * Handle incoming messages
+             * Get the input message from the cloud event
+             */
             var input = inputEvent.TypedData;
 
             // Do your magic here .....
-            MagicFunc(input);
+            try
+            {
+                MagicFunc(input);
+            }
+            catch (ThreadInterruptedException)
+            {
+                return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+            }
 
             return Task.FromResult(ProcessedMessageStatus.Success);
         }
@@ -49,9 +64,25 @@ namespace MetricsExample
                 _counter?.Inc();
             }
 
-            _summary?.Observe(input.FancyNumber);
+            _simpleSummary?.Observe(input.FancyNumber);
+
+            var success = new Label<bool>(false);
+            /*
+             * with AutoObserveStopwatch, the metrics are still collected,
+             * even if an exception is thrown within the using scope
+             */
+            using (new AutoObserveStopwatch(_labeledSummary, success))
+            {
+                success.Value = LongRunningDangerousCheck(input);
+            }
 
             _serviceInDifferentNamespace.CountInDifferentNamespace();
+        }
+
+        private static bool LongRunningDangerousCheck(InputMessage input)
+        {
+            Thread.Sleep(100);
+            return input.FancyNumber < 5;
         }
     }
 }
