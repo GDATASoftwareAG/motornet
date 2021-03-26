@@ -7,25 +7,16 @@ namespace Motor.Extensions.Diagnostics.Metrics
 {
     public class AutoIncCounter : IDisposable
     {
-        private readonly ICounter? _unlabeledCounter;
-        private readonly IMetricFamily<ICounter>? _labeledCounter;
-        private readonly AbstractLabel[] _labels = Array.Empty<AbstractLabel>();
+        private readonly Func<ICounter?> _counterDelegate;
 
-        public AutoIncCounter(ICounter? unlabeledCounter)
+        public AutoIncCounter(Func<ICounter?> counterDelegate)
         {
-            _unlabeledCounter = unlabeledCounter;
-        }
-
-        public AutoIncCounter(IMetricFamily<ICounter>? labeledCounter, params AbstractLabel[] labels)
-        {
-            _labeledCounter = labeledCounter;
-            _labels = labels;
+            _counterDelegate = counterDelegate;
         }
 
         public void Dispose()
         {
-            _labeledCounter?.WithLabels(_labels.Select(l => l.ToString()).ToArray()).Inc();
-            _unlabeledCounter?.Inc();
+            _counterDelegate.Invoke()?.Inc();
             GC.SuppressFinalize(this);
         }
     }

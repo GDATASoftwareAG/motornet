@@ -28,7 +28,7 @@ namespace Motor.Extensions.Hosting.Publisher
         public async Task PublishMessageAsync(MotorCloudEvent<TOutput> cloudEvent, CancellationToken token = default)
         {
             byte[] bytes;
-            using (new AutoObserveStopwatch(_messageSerialization))
+            using (new AutoObserveStopwatch(() => _messageSerialization))
             {
                 bytes = _messageSerializer.Serialize(cloudEvent.TypedData);
             }

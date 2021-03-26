@@ -66,14 +66,15 @@ namespace MetricsExample
 
             _simpleSummary?.Observe(input.FancyNumber);
 
-            var success = new Label<bool>(false);
+            var success = false;
             /*
-             * with AutoObserveStopwatch, the metrics are still collected,
-             * even if an exception is thrown within the using scope
+             * With AutoObserveStopwatch, the metrics are still collected,
+             * even if an exception is thrown within the using scope.
+             * For histograms, AutoObserve can be used as a more generic approach.
              */
-            using (new AutoObserveStopwatch(_labeledSummary, success))
+            using (new AutoObserveStopwatch(() => _labeledSummary?.WithLabels(success.ToString())))
             {
-                success.Value = LongRunningDangerousCheck(input);
+                success = LongRunningDangerousCheck(input);
             }
 
             _serviceInDifferentNamespace.CountInDifferentNamespace();

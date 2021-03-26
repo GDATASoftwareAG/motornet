@@ -34,7 +34,7 @@ namespace Motor.Extensions.Hosting
         {
             try
             {
-                using (new AutoObserveStopwatch(_messageProcessing))
+                using (new AutoObserveStopwatch(() => _messageProcessing))
                 {
                     await foreach (var message in _converter.ConvertMessageAsync(dataCloudEvent, token)
                         .ConfigureAwait(false).WithCancellation(token))
