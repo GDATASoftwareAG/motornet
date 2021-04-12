@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Diagnostics.Metrics

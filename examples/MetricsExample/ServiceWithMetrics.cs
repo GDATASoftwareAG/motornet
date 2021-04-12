@@ -71,6 +71,11 @@ namespace MetricsExample
              * With AutoObserveStopwatch, the metrics are still collected,
              * even if an exception is thrown within the using scope.
              * For histograms, AutoObserve can be used as a more generic approach.
+             * 
+             * When using the Rider IDE, you might see a warning here, regarding possible
+             * modifications of the variable `success` in the outer scope. Because this is
+             * exactly what we want to achieve here, you can simply ignore this warning.
+             * Applying the fix suggested by Rider would even break the functionality.
              */
             using (new AutoObserveStopwatch(() => _labeledSummary?.WithLabels(success.ToString())))
             {
