@@ -7,6 +7,12 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Motor.Extensions.Diagnostics.Metrics_UnitTest</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Prometheus.Client" Version="4.4.0" />
