@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Prometheus.Client;
@@ -36,8 +34,7 @@ namespace Motor.Extensions.Hosting
         {
             try
             {
-                var watch = Stopwatch.StartNew();
-                try
+                using (new AutoObserveStopwatch(() => _messageProcessing))
                 {
                     await foreach (var message in _converter.ConvertMessageAsync(dataCloudEvent, token)
                         .ConfigureAwait(false).WithCancellation(token))
@@ -48,11 +45,6 @@ namespace Motor.Extensions.Hosting
                                 .ConfigureAwait(false);
                         }
                     }
-                }
-                finally
-                {
-                    watch.Stop();
-                    _messageProcessing?.Observe(watch.ElapsedMilliseconds);
                 }
 
                 return ProcessedMessageStatus.Success;

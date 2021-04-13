@@ -22,13 +22,9 @@ namespace Motor.Extensions.Diagnostics.Metrics
             CancellationToken token = default)
         {
             var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
-            try
+            using (new AutoIncCounter(() => _messageProcessingTotal.WithLabels(processedMessageStatus.ToString())))
             {
                 processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
-            }
-            finally
-            {
-                _messageProcessingTotal.WithLabels(processedMessageStatus.ToString()).Inc();
             }
 
             return processedMessageStatus;
