@@ -14,22 +14,23 @@ namespace Motor.Extensions.Diagnostics.Metrics
 
     public class MotorMetricsFactory : IMotorMetricsFactory
     {
-        private readonly MetricFactory metricFactory;
+        private readonly MetricFactory _metricFactory;
 
         public MotorMetricsFactory(IOptions<PrometheusOptions> options, IApplicationNameService nameService)
         {
             var prometheusConfig = options.Value ??
                                    throw new ArgumentNullException(nameof(options), "Prometheus config doesn't exist.");
             prometheusConfig.CollectorRegistryInstance ??= Prometheus.Client.Metrics.DefaultCollectorRegistry;
-            metricFactory = new MetricFactory(prometheusConfig.CollectorRegistryInstance);
+            prometheusConfig.CollectorRegistryInstance.GetOrAdd(ThreadPoolGauge.ThreadPoolGaugeConfig, _ => new ThreadPoolGauge());
+            _metricFactory = new MetricFactory(prometheusConfig.CollectorRegistryInstance);
 
-            var counter = metricFactory.CreateCounter("motor_extensions_hosting_build_info",
+            var counter = _metricFactory.CreateCounter("motor_extensions_hosting_build_info",
                 "A metric with a constant '1' value labeled by version, libversion, and framework from which the service was built.",
                 "version", "libversion", "framework");
             counter.WithLabels(nameService.GetVersion(), nameService.GetLibVersion(),
                 RuntimeInformation.FrameworkDescription).Inc();
         }
 
-        public MetricFactory Factory => metricFactory;
+        public MetricFactory Factory => _metricFactory;
     }
 }
