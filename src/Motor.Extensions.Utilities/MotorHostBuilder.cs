@@ -26,9 +26,9 @@ namespace Motor.Extensions.Utilities
                 .AddEnvironmentVariables(MotorHostDefaults.OptionsPrefix)
                 .Build();
 
-            _builder.ConfigureServices(collection =>
+            _builder.ConfigureServices((context, collection) =>
             {
-                collection.Configure<ThreadPoolOptions>("ThreadPool", _config);
+                collection.Configure<ThreadPoolOptions>(context.Configuration.GetSection("ThreadPool"));
                 collection.AddHostedService<ThreadPoolSetupService>();
             });
         }
