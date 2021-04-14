@@ -14,7 +14,7 @@ namespace Motor.Extensions.Diagnostics.Metrics
         };
 
         internal static readonly MetricConfiguration ThreadPoolGaugeConfig = new(
-            "ThreadPoolState",
+            "motor_extensions_diagnostics_metrics_threadpoolstate",
             "Expose information about the internal .NET global ThreadPool",
             Labels,
             false
@@ -26,6 +26,7 @@ namespace Motor.Extensions.Diagnostics.Metrics
             ThreadPool.GetMinThreads(out var minWorkerThreads, out var minCompletionThreads);
             ThreadPool.GetAvailableThreads(out var availableWorkerThreads, out var availableCompletionThreads);
 
+            writer.WriteMetricHeader(ThreadPoolGaugeConfig.Name, MetricType.Gauge, ThreadPoolGaugeConfig.Help);
             WriteSample(writer, minWorkerThreads, nameof(minWorkerThreads));
             WriteSample(writer, minCompletionThreads, nameof(minCompletionThreads));
             WriteSample(writer, maxWorkerThreads, nameof(maxWorkerThreads));
@@ -33,6 +34,7 @@ namespace Motor.Extensions.Diagnostics.Metrics
             WriteSample(writer, ThreadPool.ThreadCount, nameof(ThreadPool.ThreadCount));
             WriteSample(writer, availableWorkerThreads, nameof(availableWorkerThreads));
             WriteSample(writer, availableCompletionThreads, nameof(availableCompletionThreads));
+            writer.EndMetric();
         }
 
         public CollectorConfiguration Configuration => ThreadPoolGaugeConfig;
