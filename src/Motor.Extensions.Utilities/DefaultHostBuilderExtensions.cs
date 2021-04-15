@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.HealthChecks;
@@ -65,7 +65,7 @@ namespace Motor.Extensions.Utilities
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddQueuedGenericService<TInput>();
-                    services.AddTransient<DelegatingMessageHandler<TInput>, TracingDelegatingMessageHandler<TInput>>();
+                    services.AddTransient<DelegatingMessageHandler<TInput>, TelemetryDelegatingMessageHandler<TInput>>();
                     services
                         .AddTransient<DelegatingMessageHandler<TInput>, PrometheusDelegatingMessageHandler<TInput>>();
                     services.Configure<MessageProcessingOptions>(

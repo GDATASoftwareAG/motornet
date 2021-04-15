@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         {
             Container = new ContainerBuilder<GenericContainer>()
                 .ConfigureDockerImageName("rabbitmq:3.7.21")
-                .ConfigureContainer((_ctx, container) =>
+                .ConfigureContainer((_, container) =>
                 {
                     container.Env["RABBITMQ_DEFAULT_USER"] = "guest";
                     container.Env["RABBITMQ_DEFAULT_PASS"] = "guest";

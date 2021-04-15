@@ -16,7 +16,7 @@ using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;
@@ -188,7 +188,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                     services.AddTransient<IMessageSerializer<string>, StringSerializer>();
                     services.AddTransient<IMessageDeserializer<string>, StringDeserializer>();
                     services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
-                    services.AddTransient<DelegatingMessageHandler<string>, TracingDelegatingMessageHandler<string>>();
+                    services.AddTransient<DelegatingMessageHandler<string>, TelemetryDelegatingMessageHandler<string>>();
                     services.AddQueuedGenericService<string>();
                     //services.AddSingleton(provider => tracer);
                     services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
