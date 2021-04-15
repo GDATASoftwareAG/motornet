@@ -7,14 +7,14 @@ using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
 using OpenTelemetry.Trace;
 
-namespace Motor.Extensions.Diagnostics.Tracing
+namespace Motor.Extensions.Diagnostics.Telemetry
 {
-    public class TracingDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
+    public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
         where TInput : class
     {
-        private readonly ILogger<TracingDelegatingMessageHandler<TInput>> _logger;
+        private readonly ILogger<TelemetryDelegatingMessageHandler<TInput>> _logger;
 
-        public TracingDelegatingMessageHandler(ILogger<TracingDelegatingMessageHandler<TInput>> logger)
+        public TelemetryDelegatingMessageHandler(ILogger<TelemetryDelegatingMessageHandler<TInput>> logger)
         {
             Activity.DefaultIdFormat = ActivityIdFormat.W3C;
             Activity.ForceDefaultIdFormat = true;

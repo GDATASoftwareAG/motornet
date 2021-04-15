@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Motor.Extensions.Diagnostics.Tracing
+namespace Motor.Extensions.Diagnostics.Telemetry
 {
     public static class LogEvents
     {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Diagnostics.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
-using Motor.Extensions.Diagnostics.Tracing;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Http;
@@ -34,7 +34,7 @@ namespace Motor.Extensions.Utilities
                         new DefaultApplicationNameService(assembly));
                 })
                 .ConfigureSerilog()
-                .ConfigureJaegerTracing()
+                .ConfigureOpenTelemetry()
                 .ConfigurePrometheus()
                 .ConfigureDefaultHttpClient()
                 .UseConsoleLifetime();
