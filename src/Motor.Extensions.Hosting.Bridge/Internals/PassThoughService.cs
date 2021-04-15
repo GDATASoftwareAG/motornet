@@ -19,7 +19,7 @@ namespace Motor.Extensions.Hosting.Bridge.Internals
             CancellationToken token = default)
         {
             summary.Observe(dataCloudEvent.TypedData.data.Length);
-            return Task.FromResult<MotorCloudEvent<ByteData>?>(dataCloudEvent.CreateNew(dataCloudEvent.TypedData));
+            return Task.FromResult<MotorCloudEvent<ByteData>?>(dataCloudEvent.CreateNew(dataCloudEvent.TypedData, true));
         }
     }
 }
