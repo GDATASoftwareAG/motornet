@@ -26,7 +26,6 @@
         <ProjectReference Include="..\..\src\Motor.Extensions.Diagnostics.Tracing\Motor.Extensions.Diagnostics.Tracing.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.Consumer\Motor.Extensions.Hosting.Consumer.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.Publisher\Motor.Extensions.Hosting.Publisher.csproj" />
-        <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.Hosting\Motor.Extensions.Hosting.csproj" />
         <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Hosting.RabbitMQ_IntegrationTest\Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.csproj" />

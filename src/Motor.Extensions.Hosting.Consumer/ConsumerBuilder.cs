@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,12 @@ namespace Motor.Extensions.Hosting.Consumer
         public void AddDeserializer<TDeserializer>() where TDeserializer : IMessageDeserializer<T>
         {
             _serviceCollection.AddTransient(typeof(IMessageDeserializer<T>), typeof(TDeserializer));
+        }
+
+        public void AddConsumer<TConsumer>(Func<IServiceProvider, TConsumer> implementationFactory) where TConsumer : IMessageConsumer<T>
+        {
+            _serviceCollection.AddTransient<IMessageConsumer<T>>(provider => implementationFactory(provider));
+            _serviceCollection.AddTransient<IMessageDecompressor, NoOpMessageDecompressor>();
         }
 
         public IEnumerator<ServiceDescriptor> GetEnumerator()

@@ -31,6 +31,13 @@ namespace Motor.Extensions.Hosting.Publisher
             PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
         }
 
+        public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory) where TPublisher : class, ITypedMessagePublisher<byte[]>
+        {
+            _serviceCollection.AddTransient(implementationFactory);
+            _serviceCollection.AddTransient<IMessageCompressor, NoOpMessageCompressor>();
+            PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
+        }
+
         public void AddSerializer<TSerializer>() where TSerializer : IMessageSerializer<TOutput>
         {
             _serviceCollection.AddTransient(typeof(IMessageSerializer<TOutput>), typeof(TSerializer));
