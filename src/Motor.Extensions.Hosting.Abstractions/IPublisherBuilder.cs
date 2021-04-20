@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Compression.Abstractions;
@@ -9,13 +10,16 @@ namespace Motor.Extensions.Hosting.Abstractions
     {
         HostBuilderContext Context { get; }
 
-        public void AddPublisher<TPublisher>()
+        void AddPublisher<TPublisher>()
             where TPublisher : ITypedMessagePublisher<byte[]>;
 
-        public void AddSerializer<TSerializer>()
+        void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory)
+            where TPublisher : class, ITypedMessagePublisher<byte[]>;
+
+        void AddSerializer<TSerializer>()
             where TSerializer : IMessageSerializer<T>;
 
-        public void AddCompressor<TCompressor>()
+        void AddCompressor<TCompressor>()
             where TCompressor : IMessageCompressor;
     }
 }

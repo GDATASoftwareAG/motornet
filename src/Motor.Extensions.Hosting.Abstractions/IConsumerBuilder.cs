@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Compression.Abstractions;
@@ -13,6 +14,9 @@ namespace Motor.Extensions.Hosting.Abstractions
             where TConsumer : IMessageConsumer<T>;
 
         void AddDecompressor<TDecompressor>() where TDecompressor : IMessageDecompressor;
+
+        void AddConsumer<TConsumer>(Func<IServiceProvider, TConsumer> implementationFactory)
+            where TConsumer : IMessageConsumer<T>;
 
         public void AddDeserializer<TDeserializer>()
             where TDeserializer : IMessageDeserializer<T>;
