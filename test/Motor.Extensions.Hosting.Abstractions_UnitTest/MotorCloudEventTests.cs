@@ -17,10 +17,10 @@ namespace Motor.Extensions.Hosting.Abstractions_UnitTest
 
             var newEvent = oldEvent.CreateNew(expectedData);
 
-            Assert.NotEqual(oldEvent.Id, newEvent.Id);
+            Assert.Equal(oldEvent.Id, newEvent.Id);
             Assert.NotEqual(oldEvent.Time, newEvent.Time);
             Assert.NotEqual(oldEvent.Type, newEvent.Type);
-            Assert.NotEqual(oldEvent.Source, newEvent.Source);
+            Assert.Equal(oldEvent.Source, newEvent.Source);
         }
 
         [Fact]

@@ -69,21 +69,15 @@ namespace Motor.Extensions.Hosting.Abstractions
             return invoke;
         }
 
-        private static MotorCloudEvent<T> CreateCloudEvent<T>(IApplicationNameService applicationNameService, T data,
-            IEnumerable<ICloudEventExtension>? extensions = null)
-            where T : class
-        {
-            return new(applicationNameService, data, applicationNameService.GetSource(),
-                extensions: extensions?.ToArray() ?? new ICloudEventExtension[0]);
-        }
-
         public MotorCloudEvent<T> CreateNew<T>(T data, bool useOldIdentifier = false)
             where T : class
         {
+            var cloudEventExtensions = Extensions.Select(t => t.Value).ToArray();
             var cloudEvent = useOldIdentifier
                 ? new MotorCloudEvent<T>(_applicationNameService, data, Type, Source, Id, Time,
-                    Extensions.Select(t => t.Value).ToArray())
-                : CreateCloudEvent(_applicationNameService, data, Extensions.Select(t => t.Value));
+                    cloudEventExtensions)
+                : new MotorCloudEvent<T>(_applicationNameService, data, Source, Id, 
+                    extensions: cloudEventExtensions);
             var newAttributes = cloudEvent.GetAttributes();
             foreach (var attribute in GetAttributes())
             {
