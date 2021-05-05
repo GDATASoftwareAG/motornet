@@ -9,17 +9,14 @@ namespace Motor.Extensions.Diagnostics.Tracing
         [Obsolete("Replaced by DistributedTracingExtensionExtensions")]
         public static void SetActivity(this DistributedTracingExtension extension, Activity activity)
         {
-            extension.TraceParent = activity.Id;
-            if (!string.IsNullOrWhiteSpace(activity.TraceStateString))
-            {
-                extension.TraceState = activity.TraceStateString;
-            }
+            Telemetry.DistributedTracingExtensionExtensions.SetActivity(extension, activity);
         }
 
         [Obsolete("Replaced by DistributedTracingExtensionExtensions")]
         public static ActivityContext GetActivityContext(this DistributedTracingExtension extension)
         {
-            return ActivityContext.Parse(extension.TraceParent, extension.TraceState);
+            return Telemetry.DistributedTracingExtensionExtensions
+                .GetActivityContext(extension);
         }
 
     }

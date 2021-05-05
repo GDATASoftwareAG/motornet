@@ -3,10 +3,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
@@ -101,6 +103,9 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
+                var parentContext =
+                    dataCloudEvent.Extension<DistributedTracingExtension>()?.GetActivityContext();
+                Assert.NotNull(parentContext);
                 _logger.LogInformation("log your request");
                 var tmpChar = dataCloudEvent.TypedData.ToCharArray();
                 var reversed = tmpChar.Reverse().ToArray();

@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Utilities.Abstractions;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -21,52 +23,53 @@ namespace Motor.Extensions.Diagnostics.Telemetry
         public static readonly string OpenTelemetry = "OpenTelemetry";
         public static readonly string AttributeMotorNetEnvironment = "motor.net.environment";
         public static readonly string AttributeMotorNetLibraryVersion = "motor.net.libversion";
+        private enum UsedExporter
+        {
+            Oltp,
+            Jaeger
+        }
 
         public static IMotorHostBuilder ConfigureOpenTelemetry(this IMotorHostBuilder hostBuilder)
         {
             hostBuilder
                 .ConfigureServices((hostContext, services) =>
                 {
-                    var otelSection = hostContext.Configuration.GetSection(OtlpExporter);
-                    var jaegerSection = hostContext.Configuration.GetSection(JaegerExporter);
-                    if (otelSection != null)
+                    var usedExport = UsedExporter.Jaeger;
+                    if (hostContext.Configuration.GetSection(OtlpExporter).Exists())
                     {
-                        services.Configure<OtlpExporterOptions>(otelSection);
+                        services.Configure<OtlpExporterOptions>(hostContext.Configuration.GetSection(OtlpExporter));
+                        usedExport = UsedExporter.Oltp;
                     }
-                    else if (jaegerSection != null)
+                    else
                     {
-                        services.Configure<JaegerExporterOptions>(jaegerSection);
-                    }
-
-                    if (jaegerSection == null && otelSection == null)
-                    {
-                        return;
+                        services.Configure<JaegerExporterOptions>(hostContext.Configuration.GetSection(JaegerExporter));
                     }
 
-                    services.Configure<OpenTelemetryOptions>(hostContext.Configuration.GetSection(OpenTelemetry));
+                    var telemetryOptions = new OpenTelemetryOptions();
+                    hostContext.Configuration.GetSection(OpenTelemetry).Bind(telemetryOptions);
+                    services.AddSingleton(telemetryOptions);
                     services.AddOpenTelemetryTracing(builder =>
                     {
                         builder
+                            .AddAspNetCoreInstrumentation(options =>
+                            {
+                                options.Filter = TelemetryRequestFilter(telemetryOptions);
+                            })
                             .Configure((provider, providerBuilder) =>
                             {
-                                var telemetryOptions =
-                                    provider.GetRequiredService<IOptions<OpenTelemetryOptions>>().Value;
                                 var httpClientInstrumentationOptions =
                                     provider.GetService<IOptions<HttpClientInstrumentationOptions>>()?.Value ??
                                     new HttpClientInstrumentationOptions();
                                 var applicationNameService = provider.GetRequiredService<IApplicationNameService>();
                                 var logger = provider.GetRequiredService<ILogger<OpenTelemetryOptions>>();
                                 providerBuilder = providerBuilder
-                                    .AddAspNetCoreInstrumentation(options =>
-                                    {
-                                        options.Filter = TelemetryRequestFilter(telemetryOptions);
-                                    })
                                     .AddHttpClientInstrumentation(options =>
                                     {
                                         options.Enrich = httpClientInstrumentationOptions.Enrich;
                                         options.Filter = httpClientInstrumentationOptions.Filter;
                                         options.SetHttpFlavor = httpClientInstrumentationOptions.SetHttpFlavor;
                                     })
+                                    .AddSource(OpenTelemetryOptions.DefaultActivitySourceName)
                                     .AddSource(telemetryOptions.Sources.ToArray())
                                     .SetResourceBuilder(ResourceBuilder.CreateDefault()
                                         .AddService(applicationNameService.GetFullName(),
@@ -83,20 +86,22 @@ namespace Motor.Extensions.Diagnostics.Telemetry
                                             }
                                         }))
                                     .SetMotorSampler(telemetryOptions);
-                                if (otelSection != null)
+
+                                switch (usedExport)
                                 {
-                                    providerBuilder.AddOtlpExporter(logger, provider);
+                                    case UsedExporter.Oltp:
+                                        providerBuilder.AddOtlpExporter(logger, provider);
+                                        break;
+                                    default:
+                                        providerBuilder.AddJaegerExporter(logger, provider);
+                                        break;
                                 }
-                                else
-                                {
-                                    providerBuilder.AddJaegerExporter(logger, provider);
-                                }
-                            })
-                            .AddSource(OpenTelemetryOptions.DefaultActivitySourceName);
+                            });
                     });
                 });
             return hostBuilder;
         }
+
 
         private static Func<HttpContext, bool> TelemetryRequestFilter(OpenTelemetryOptions openTelemetryOptions) =>
             req => !openTelemetryOptions.FilterOutTelemetryRequests ||
