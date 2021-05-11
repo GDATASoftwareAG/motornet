@@ -2,6 +2,7 @@ using ConsumeAndPublishWithRabbitMQ;
 using ConsumeAndPublishWithRabbitMQ.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Compression.Gzip;
 using Motor.Extensions.Conversion.SystemJson;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;
@@ -25,6 +26,9 @@ await MotorHost.CreateDefaultBuilder()
         builder.AddRabbitMQ();
         // The encoding of the incoming message, such that the handler is able to deserialize the message
         builder.AddSystemJson();
+        // (Optional) Enable support for incoming messages that are gzip compressed. Uncompressed messages will still
+        //  work to make the migration to compression backwards-compatible.
+        builder.AddGzipDecompression();
     })
     // Add the outgoing communication module.
     .ConfigurePublisher<OutputMessage>((_, builder) =>
@@ -33,5 +37,7 @@ await MotorHost.CreateDefaultBuilder()
         builder.AddRabbitMQ();
         // The encoding of the outgoing message, such that the handler is able to serialize the message
         builder.AddSystemJson();
+        // (Optional) Compress the serialized data of the outgoing message with gzip.
+        builder.AddGzipCompression();
     })
     .RunConsoleAsync();

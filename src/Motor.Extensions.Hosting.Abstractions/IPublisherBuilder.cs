@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Hosting.Abstractions
@@ -13,5 +14,8 @@ namespace Motor.Extensions.Hosting.Abstractions
 
         public void AddSerializer<TSerializer>()
             where TSerializer : IMessageSerializer<T>;
+
+        public void AddCompressor<TCompressor>()
+            where TCompressor : IMessageCompressor;
     }
 }

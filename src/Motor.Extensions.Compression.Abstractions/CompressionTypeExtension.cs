@@ -2,48 +2,51 @@ using System;
 using System.Collections.Generic;
 using CloudNative.CloudEvents;
 
-namespace Motor.Extensions.Hosting.Kafka
+namespace Motor.Extensions.Compression.Abstractions
 {
-    public class KafkaTopicExtension : ICloudEventExtension
+    public class CompressionTypeExtension : ICloudEventExtension
     {
-        public const string TopicAttributeName = "topic";
+        private const string CompressionTypeAttributeName = "compressionType";
         private IDictionary<string, object> _attributes = new Dictionary<string, object>();
 
-        public KafkaTopicExtension(string topic)
+        public CompressionTypeExtension(string compressionType)
         {
-            Topic = topic;
+            CompressionType = compressionType;
         }
 
-        public string? Topic
+        public string? CompressionType
         {
-            get => (string?)_attributes[TopicAttributeName];
-            set
-            {
-                if (value is not null) _attributes[TopicAttributeName] = value;
-            }
+            get => (string?)_attributes[CompressionTypeAttributeName];
+            private init => _attributes[CompressionTypeAttributeName] =
+                value ?? throw new ArgumentNullException(nameof(CompressionType));
         }
 
         public void Attach(CloudEvent cloudEvent)
         {
             var eventAttributes = cloudEvent.GetAttributes();
             if (_attributes == eventAttributes)
+            {
                 // already done
                 return;
+            }
 
-            foreach (var attr in _attributes) eventAttributes[attr.Key] = attr.Value;
+            foreach (var (key, value) in _attributes)
+            {
+                eventAttributes[key] = value;
+            }
 
             _attributes = eventAttributes;
         }
 
         public bool ValidateAndNormalize(string key, ref object value)
         {
-            if (key is TopicAttributeName)
+            if (key is CompressionTypeAttributeName)
             {
                 return value switch
                 {
                     null => true,
                     string _ => true,
-                    _ => throw new InvalidOperationException("ErrorTopicValueIsNotAString")
+                    _ => throw new InvalidOperationException("ErrorCompressionTypeValueIsNotAString")
                 };
             }
 
@@ -55,7 +58,7 @@ namespace Motor.Extensions.Hosting.Kafka
 #pragma warning disable CS8603
         public Type GetAttributeType(string name)
         {
-            return name is TopicAttributeName ? typeof(string) : null;
+            return name is CompressionTypeAttributeName ? typeof(string) : null;
         }
     }
 }
