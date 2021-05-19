@@ -1,10 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
+using Motor.Extensions.Diagnostics.Metrics;
+using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Consumer
 {
@@ -13,13 +18,18 @@ namespace Motor.Extensions.Hosting.Consumer
     {
         private readonly IMessageConsumer<TInput> _consumer;
         private readonly IMessageDeserializer<TInput> _deserializer;
+        private readonly Dictionary<string, IMessageDecompressor> _decompressorByCompressionType;
         private readonly ILogger<TypedConsumerService<TInput>> _logger;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
+        private readonly ISummary? _messageDeserialization;
+        private readonly ISummary? _messageDecompression;
 
         public TypedConsumerService(
             ILogger<TypedConsumerService<TInput>> logger,
+            IMetricsFactory<TypedConsumerService<TInput>>? metrics,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
             IMessageDeserializer<TInput> deserializer,
+            IEnumerable<IMessageDecompressor> decompressors,
             IMessageConsumer<TInput> consumer)
         {
             _logger = logger;
@@ -27,6 +37,17 @@ namespace Motor.Extensions.Hosting.Consumer
             _deserializer = deserializer;
             _consumer = consumer;
             _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
+
+            _messageDeserialization =
+                metrics?.CreateSummary("message_deserialization", "Message deserialization duration in ms");
+            _messageDecompression =
+                metrics?.CreateSummary("message_decompression", "Message decompression duration in ms");
+
+            _decompressorByCompressionType = new Dictionary<string, IMessageDecompressor>();
+            foreach (var decompressor in decompressors)
+            {
+                _decompressorByCompressionType[decompressor.CompressionType] = decompressor;
+            }
         }
 
         public override async Task StartAsync(CancellationToken token)
@@ -46,9 +67,22 @@ namespace Motor.Extensions.Hosting.Consumer
         {
             try
             {
-                var deserialize = _deserializer.Deserialize(dataCloudEvent.TypedData);
+                byte[] decompressed;
+                using (new AutoObserveStopwatch(() => _messageDecompression))
+                {
+                    decompressed = await DecompressMessageAsync(
+                        dataCloudEvent.Extension<CompressionTypeExtension>()?.CompressionType ??
+                        NoOpMessageCompressor.NoOpCompressionType, dataCloudEvent.TypedData, token);
+                }
+
+                TInput deserialized;
+                using (new AutoObserveStopwatch(() => _messageDeserialization))
+                {
+                    deserialized = _deserializer.Deserialize(decompressed);
+                }
+
                 return await _queue
-                    .QueueBackgroundWorkItem(dataCloudEvent.CreateNew(deserialize, true))
+                    .QueueBackgroundWorkItem(dataCloudEvent.CreateNew(deserialized, true))
                     .ConfigureAwait(true);
             }
             catch (ArgumentException e)
@@ -61,6 +95,17 @@ namespace Motor.Extensions.Hosting.Consumer
                 _logger.LogError(LogEvents.UnexpectedErrorOnMessageProcessing, e, "Invalid Input");
                 return ProcessedMessageStatus.CriticalFailure;
             }
+        }
+
+        private async Task<byte[]> DecompressMessageAsync(string compressionType, byte[] compressed,
+            CancellationToken cancellationToken)
+        {
+            if (!_decompressorByCompressionType.TryGetValue(compressionType, out var decompressor))
+            {
+                throw new ArgumentException($"Unsupported compressionType {compressionType}");
+            }
+
+            return await decompressor.DecompressAsync(compressed, cancellationToken);
         }
 
         protected override Task ExecuteAsync(CancellationToken token)

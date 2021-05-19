@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Motor.Extensions.Compression.Gzip\Motor.Extensions.Compression.Gzip.csproj" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Conversion.SystemJson\Motor.Extensions.Conversion.SystemJson.csproj" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.RabbitMQ\Motor.Extensions.Hosting.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />

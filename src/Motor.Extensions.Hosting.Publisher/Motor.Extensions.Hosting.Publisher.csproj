@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Motor.Extensions.Compression.Abstractions\Motor.Extensions.Compression.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics.Abstractions\Motor.Extensions.Diagnostics.Metrics.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />

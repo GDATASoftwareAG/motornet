@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 
@@ -22,6 +23,12 @@ namespace Motor.Extensions.Hosting.Consumer
         public void AddConsumer<TConsumer>() where TConsumer : IMessageConsumer<T>
         {
             _serviceCollection.AddTransient(typeof(IMessageConsumer<T>), typeof(TConsumer));
+            _serviceCollection.AddTransient<IMessageDecompressor, NoOpMessageDecompressor>();
+        }
+
+        public void AddDecompressor<TDecompressor>() where TDecompressor : IMessageDecompressor
+        {
+            _serviceCollection.AddTransient(typeof(IMessageDecompressor), typeof(TDecompressor));
         }
 
         public void AddDeserializer<TDeserializer>() where TDeserializer : IMessageDeserializer<T>

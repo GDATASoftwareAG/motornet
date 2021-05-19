@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 
@@ -25,12 +27,18 @@ namespace Motor.Extensions.Hosting.Publisher
         public void AddPublisher<TPublisher>() where TPublisher : ITypedMessagePublisher<byte[]>
         {
             _serviceCollection.AddTransient(typeof(TPublisher));
+            _serviceCollection.AddTransient<IMessageCompressor, NoOpMessageCompressor>();
             PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
         }
 
         public void AddSerializer<TSerializer>() where TSerializer : IMessageSerializer<TOutput>
         {
             _serviceCollection.AddTransient(typeof(IMessageSerializer<TOutput>), typeof(TSerializer));
+        }
+
+        public void AddCompressor<TCompressor>() where TCompressor : IMessageCompressor
+        {
+            _serviceCollection.Replace(ServiceDescriptor.Transient(typeof(IMessageCompressor), typeof(TCompressor)));
         }
 
         public IEnumerator<ServiceDescriptor> GetEnumerator()

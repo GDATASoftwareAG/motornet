@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Motor.Extensions.Compression.Abstractions\Motor.Extensions.Compression.Abstractions.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
+
+</Project>

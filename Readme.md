@@ -24,13 +24,13 @@ You find working examples for different use-cases under the [examples](./example
 
 ## Support Matrix
 
-| Component | Consume | Publish | CloudEvents | Metrics | Custom |
-| --- | --- | --- | --- | --- | --- |
-| RabbitMQ | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing |
-| Kafka | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
-| Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark:| |
-| Timer | (:heavy_check_mark:) | - | :x: | :x:| |
-| SQS | (:heavy_check_mark:) | - | :x: | :x:| |
+| Component | Consume | Publish | CloudEvents | Metrics | Compression | Custom |
+| --- | --- | --- | --- | --- | --- | --- |
+| RabbitMQ | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing |
+| Kafka | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
+| Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark: | :x: | |
+| Timer | (:heavy_check_mark:) | - | :x: | :x: | :x: | |
+| SQS | (:heavy_check_mark:) | - | :x: | :x: | :x: | |
 
 ## Health Checks
 
@@ -39,6 +39,16 @@ Motor.NET comes by default already with two health checks for message processing
 - `MessageProcessingHealthCheck`: Fails when no messages were consumed in a certain time frame from the Motor.NET internal queue although it has at least some messages.
 - `TooManyTemporaryFailuresHealthCheck`: Fails when too many messages led to a failure since the last message was correctly handled (either successful or as invalid input).
 
+## Compression (Optional)
+
+[Gzip][gzip] compression can optionally be enabled for consumers and publishers. By enabling it for a publisher, the payload of
+all published messages will be compressed. Enabling it for a consumer will allow the consumer to decompress these
+messages. Consumers can however still consume uncompressed messages. This should make it easy to enable compression in
+an existing environment that does not use compression yet. It just needs to be enabled first for the consumers and
+afterwards for the publishers.
+
 ## License
 
 Motor.NET is provided under the [MIT](./LICENSE) license.
+
+[gzip]: https://www.gnu.org/software/gzip/
