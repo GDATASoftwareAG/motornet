@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka.Options;
 using Prometheus.Client;
 
@@ -18,18 +19,18 @@ namespace Motor.Extensions.Hosting.Kafka
     public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
     {
         private readonly IApplicationNameService _applicationNameService;
-        private readonly ICloudEventFormatter _cloudEventFormatter;
+        private readonly CloudEventFormatter _cloudEventFormatter;
         private readonly KafkaConsumerOptions<TData> _options;
         private readonly IMetricFamily<IGauge>? _consumerLagGauge;
         private readonly IMetricFamily<ISummary>? _consumerLagSummary;
         private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
-        private IConsumer<string, byte[]>? _consumer;
+        private IConsumer<string?, byte[]>? _consumer;
 
         public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
             IOptions<KafkaConsumerOptions<TData>> config,
             IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
             IApplicationNameService applicationNameService,
-            ICloudEventFormatter cloudEventFormatter)
+            CloudEventFormatter cloudEventFormatter)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
@@ -51,7 +52,7 @@ namespace Motor.Extensions.Hosting.Kafka
         {
             if (ConsumeCallbackAsync is null) throw new InvalidOperationException("ConsumeCallback is null");
 
-            var consumerBuilder = new ConsumerBuilder<string, byte[]>(_options)
+            var consumerBuilder = new ConsumerBuilder<string?, byte[]>(_options)
                 .SetLogHandler((_, logMessage) => WriteLog(logMessage))
                 .SetStatisticsHandler((_, json) => WriteStatistics(json));
 
@@ -142,11 +143,11 @@ namespace Motor.Extensions.Hosting.Kafka
             }
         }
 
-        private void SingleMessageHandling(CancellationToken token, ConsumeResult<string, byte[]> msg)
+        private void SingleMessageHandling(CancellationToken token, ConsumeResult<string?, byte[]> msg)
         {
             _logger.LogDebug(
                 $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
-            var cloudEvent = msg.ToMotorCloudEvent<TData>(_applicationNameService, _cloudEventFormatter);
+            var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
 
             var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, token).GetAwaiter();
             taskAwaiter?.OnCompleted(() =>
@@ -177,6 +178,11 @@ namespace Motor.Extensions.Hosting.Kafka
                     _logger.LogError($"Commit error: {e.Error.Reason}");
                 }
             });
+        }
+
+        public MotorCloudEvent<byte[]> KafkaMessageToCloudEvent(Message<string?, byte[]> msg)
+        {
+            return msg.ToMotorCloudEvent(_applicationNameService, _cloudEventFormatter);
         }
 
         private void Dispose(bool disposing)

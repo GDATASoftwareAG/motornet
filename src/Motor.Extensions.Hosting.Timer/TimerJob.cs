@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Quartz;
 
 namespace Motor.Extensions.Hosting.Timer
@@ -15,7 +16,7 @@ namespace Motor.Extensions.Hosting.Timer
             var applicationNameService = dataMap["ApplicationNameService"] as IApplicationNameService ??
                                          throw new ArgumentNullException("context.JobDetail.JobDataMap[\"ApplicationNameService\"]");
             await job.QueueBackgroundWorkItem(new MotorCloudEvent<IJobExecutionContext>(applicationNameService, context,
-                nameof(IJobExecutionContext), new Uri("timer://notset")));
+                new Uri("timer://notset")));
         }
     }
 }

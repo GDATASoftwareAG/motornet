@@ -5,6 +5,7 @@ using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Publisher
@@ -32,12 +33,12 @@ namespace Motor.Extensions.Hosting.Publisher
                 metrics?.CreateSummary("message_compression", "Message compression duration in ms");
         }
 
-        public async Task PublishMessageAsync(MotorCloudEvent<TOutput> cloudEvent, CancellationToken token = default)
+        public async Task PublishMessageAsync(MotorCloudEvent<TOutput> motorCloudEvent, CancellationToken token = default)
         {
             byte[] bytes, compressedBytes;
             using (new AutoObserveStopwatch(() => _messageSerialization))
             {
-                bytes = _messageSerializer.Serialize(cloudEvent.TypedData);
+                bytes = _messageSerializer.Serialize(motorCloudEvent.TypedData);
             }
 
             using (new AutoObserveStopwatch(() => _messageCompression))
@@ -45,8 +46,8 @@ namespace Motor.Extensions.Hosting.Publisher
                 compressedBytes = await _messageCompressor.CompressAsync(bytes, token);
             }
 
-            var bytesEvent = cloudEvent.CreateNew(compressedBytes, true);
-            bytesEvent.GetExtensionOrCreate(() => new CompressionTypeExtension(_messageCompressor.CompressionType));
+            var bytesEvent = motorCloudEvent.CreateNew(compressedBytes, true);
+            bytesEvent.SetCompressionType(_messageCompressor.CompressionType);
             await _bytesMessagePublisher.PublishMessageAsync(bytesEvent, token);
         }
     }

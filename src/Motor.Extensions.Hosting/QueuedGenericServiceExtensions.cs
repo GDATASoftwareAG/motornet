@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Internal;
 
 namespace Motor.Extensions.Hosting

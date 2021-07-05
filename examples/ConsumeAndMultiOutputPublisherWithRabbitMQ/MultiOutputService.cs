@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConsumeAndMultiOutputPublisherWithRabbitMQ.Model;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace ConsumeAndMultiOutputPublisherWithRabbitMQ
 {

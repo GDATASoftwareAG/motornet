@@ -5,7 +5,7 @@
 	</PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="CloudNative.CloudEvents" Version="1.3.80" />
+        <PackageReference Include="CloudNative.CloudEvents" Version="2.1.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     </ItemGroup>
@@ -13,6 +13,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Motor.Extensions.Compression.Abstractions\Motor.Extensions.Compression.Abstractions.csproj" />
       <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
+      <ProjectReference Include="..\Motor.Extensions.Hosting.CloudEvents\Motor.Extensions.Hosting.CloudEvents.csproj" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConsumeSQS.Model;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace ConsumeSQS
 {

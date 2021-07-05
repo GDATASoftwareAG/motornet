@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -18,7 +17,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ
     {
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;
-        private readonly ICloudEventFormatter _cloudEventFormatter;
         private readonly RabbitMQConsumerOptions<T> _options;
         private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
@@ -30,15 +28,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             IRabbitMQConnectionFactory<T> connectionFactory,
             IOptions<RabbitMQConsumerOptions<T>> config,
             IHostApplicationLifetime applicationLifetime,
-            IApplicationNameService applicationNameService,
-            ICloudEventFormatter cloudEventFormatter)
+            IApplicationNameService applicationNameService)
         {
             _logger = logger;
             _connectionFactory = connectionFactory;
             _options = config.Value;
             _applicationLifetime = applicationLifetime;
             _applicationNameService = applicationNameService;
-            _cloudEventFormatter = cloudEventFormatter;
         }
 
         public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
@@ -143,21 +139,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             try
             {
-                var extensions = new List<ICloudEventExtension>();
+                var cloudEvent = args.BasicProperties.ExtractCloudEvent(_applicationNameService, args.Body);
 
                 if (args.BasicProperties.IsPriorityPresent())
                 {
-                    var priority = args.BasicProperties.Priority;
-                    extensions.Add(new RabbitMQPriorityExtension(priority));
+                    cloudEvent.SetRabbitMQPriority(args.BasicProperties.Priority);
                 }
 
                 if (_options.ExtractBindingKey)
                 {
-                    extensions.Add(new RabbitMQBindingExtension(args.Exchange, args.RoutingKey));
+                    cloudEvent.SetRabbitMQBinding(args.Exchange, args.RoutingKey);
                 }
-
-                var cloudEvent = args.BasicProperties.ExtractCloudEvent<T>(_applicationNameService,
-                    _cloudEventFormatter, args.Body, extensions);
 
                 var task = ConsumeCallbackAsync?.Invoke(cloudEvent, _stoppingToken)?
                     .ConfigureAwait(false)

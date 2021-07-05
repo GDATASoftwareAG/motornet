@@ -1,9 +1,11 @@
 using System;
+
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 
@@ -11,7 +13,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public class RabbitMQMessagePublisher<T> : ITypedMessagePublisher<byte[]>
     {
-        private readonly ICloudEventFormatter _cloudEventFormatter;
+        private readonly CloudEventFormatter _cloudEventFormatter;
         private readonly RabbitMQPublisherOptions<T> _options;
         private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private IModel? _channel;
@@ -20,7 +22,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public RabbitMQMessagePublisher(
             IRabbitMQConnectionFactory<T> connectionFactory,
             IOptions<RabbitMQPublisherOptions<T>> config,
-            ICloudEventFormatter cloudEventFormatter
+            CloudEventFormatter cloudEventFormatter
         )
         {
             _connectionFactory = connectionFactory;
@@ -28,7 +30,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             _options = config.Value;
         }
 
-        public async Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
+        public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
         {
             if (!_connected)
             {
@@ -42,22 +44,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
             var properties = _channel.CreateBasicProperties();
             properties.DeliveryMode = 2;
-            properties.Update(cloudEvent, _options, _cloudEventFormatter);
+            properties.Update(motorCloudEvent, _options);
 
-            var publishingTarget = cloudEvent.Extension<RabbitMQBindingExtension>()?.BindingOptions ?? _options.PublishingTarget;
+            var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
+            var routingKey = motorCloudEvent.GetRabbitMQRoutingKey() ?? _options.PublishingTarget.RoutingKey;
 
             if (_options.OverwriteExchange)
             {
-                publishingTarget.Exchange = _options.PublishingTarget.Exchange;
+                exchange = _options.PublishingTarget.Exchange;
             }
 
-            _channel.BasicPublish(
-                publishingTarget.Exchange,
-                publishingTarget.RoutingKey,
-                true,
-                properties,
-                cloudEvent.TypedData
-            );
+            _channel.BasicPublish(exchange, routingKey, true, properties,
+                _cloudEventFormatter.EncodeBinaryModeEventData(motorCloudEvent.ConvertToCloudEvent()));
         }
 
         private Task StartAsync()

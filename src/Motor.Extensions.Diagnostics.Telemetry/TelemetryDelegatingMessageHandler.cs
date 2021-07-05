@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using OpenTelemetry.Trace;
 
 namespace Motor.Extensions.Diagnostics.Telemetry
@@ -24,12 +25,7 @@ namespace Motor.Extensions.Diagnostics.Telemetry
         public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
             CancellationToken token = default)
         {
-            ActivityContext parentContext = default;
-            var extension = dataCloudEvent.GetExtensionOrCreate(() => new DistributedTracingExtension());
-            if (extension.TraceParent is not null)
-            {
-                parentContext = extension.GetActivityContext();
-            }
+            var parentContext = dataCloudEvent.GetActivityContext();
             using var activity = OpenTelemetryOptions.ActivitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
             if (activity is null) return await base.HandleMessageAsync(dataCloudEvent, token);
 
@@ -40,7 +36,7 @@ namespace Motor.Extensions.Diagnostics.Telemetry
                 var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
                 try
                 {
-                    extension.SetActivity(activity);
+                    dataCloudEvent.SetActivity(activity);
                     processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
                 }
                 finally

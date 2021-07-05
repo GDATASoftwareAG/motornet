@@ -8,6 +8,7 @@ using Amazon.SQS.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.SQS.Options;
 
 namespace Motor.Extensions.Hosting.SQS
@@ -68,7 +69,7 @@ namespace Motor.Extensions.Hosting.SQS
 
         private void SingleMessageHandling(Message message, CancellationToken token)
         {
-            var dataCloudEvent = message.Body.ToMotorCloudEvent<TData>(_applicationNameService);
+            var dataCloudEvent = message.Body.ToMotorCloudEvent(_applicationNameService);
             var taskAwaiter = ConsumeCallbackAsync?.Invoke(dataCloudEvent, token).GetAwaiter();
             taskAwaiter?.OnCompleted(async () =>
             {

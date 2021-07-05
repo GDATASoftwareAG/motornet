@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.Extensions;
+using CloudNative.CloudEvents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,6 +19,7 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.TestUtilities;
@@ -73,18 +74,35 @@ namespace Motor.Extensions.Hosting_IntegrationTest
 
             await host.StartAsync();
 
-            var extensions = new List<ICloudEventExtension>();
             var randomActivity = CreateRandomActivity();
-            var distributedTracingExtension = new DistributedTracingExtension();
-            distributedTracingExtension.SetActivity(randomActivity);
-            extensions.Add(distributedTracingExtension);
-            var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(new byte[0], extensions: extensions);
+            var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
+            motorCloudEvent.SetActivity(randomActivity);
             await consumer.AddMessage(motorCloudEvent);
 
-            var ctx = publisher.Events.First().Extension<DistributedTracingExtension>().GetActivityContext();
+            var ctx = publisher.Events.First().GetActivityContext();
 
             Assert.Equal(randomActivity.Context.TraceId, ctx.TraceId);
             Assert.NotEqual(randomActivity.Context.SpanId, ctx.SpanId);
+            await host.StopAsync();
+        }
+
+        [Fact(Timeout = 20000)]
+        public async Task StartAsync_CreateCustomExtension_ExtensionIsPassedThrough()
+        {
+            var consumer = new InMemoryConsumer<string>();
+            var publisher = new InMemoryPublisher<string>();
+            var host = GetReverseStringService(consumer, publisher);
+
+            await host.StartAsync();
+
+            var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
+            motorCloudEvent.SetSomeCustomExtension(DateTimeOffset.MaxValue);
+
+            await consumer.AddMessage(motorCloudEvent);
+
+            var receivedCloudEvent = publisher.Events.First();
+
+            Assert.Equal(DateTimeOffset.MaxValue, receivedCloudEvent.GetSomeCustomExtension());
             await host.StopAsync();
         }
 
@@ -98,9 +116,9 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await ConsumeMessage(consumer, "test");
 
             Assert.Single(publisher.Events);
-            var ctx = publisher.Events.First().Extension<DistributedTracingExtension>();
+            var ctx = publisher.Events.First().GetActivityContext();
 
-            Assert.NotNull(ctx.TraceParent);
+            Assert.NotNull(ctx.TraceId);
             await host.StopAsync();
         }
 
@@ -224,5 +242,27 @@ namespace Motor.Extensions.Hosting_IntegrationTest
                 return Encoding.UTF8.GetString(message);
             }
         }
+    }
+
+    public static class SomeCustomExtension
+    {
+        public static CloudEventAttribute SomeCustomExtensionAttribute { get; } =
+            CloudEventAttribute.CreateExtension("somecustomextension", CloudEventAttributeType.Timestamp);
+
+        public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
+            new[] { SomeCustomExtensionAttribute }.ToList().AsReadOnly();
+
+        public static MotorCloudEvent<TData> SetSomeCustomExtension<TData>(this MotorCloudEvent<TData> cloudEvent,
+            DateTimeOffset? value) where TData : class
+        {
+            Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
+            cloudEvent[SomeCustomExtensionAttribute] = value;
+            return cloudEvent;
+        }
+
+        public static DateTimeOffset GetSomeCustomExtension<TData>(this MotorCloudEvent<TData> cloudEvent)
+            where TData : class =>
+            (DateTimeOffset?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[SomeCustomExtensionAttribute] ??
+            DateTimeOffset.MinValue;
     }
 }

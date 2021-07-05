@@ -11,6 +11,7 @@ using Moq;
 using Motor.Extensions.Diagnostics.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;

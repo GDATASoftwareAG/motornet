@@ -1,4 +1,5 @@
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Hosting.Abstractions;
@@ -10,7 +11,7 @@ namespace Motor.Extensions.Hosting.Kafka
     {
         public static void AddKafkaWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config) where T : notnull
         {
-            builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.Configure<KafkaConsumerOptions<T>>(config);
             builder.AddConsumer<KafkaMessageConsumer<T>>();
         }
@@ -22,7 +23,7 @@ namespace Motor.Extensions.Hosting.Kafka
 
         public static void AddKafkaWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config) where T : notnull
         {
-            builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.AddPublisher<KafkaMessagePublisher<T>>();
             builder.Configure<KafkaPublisherOptions<T>>(config);
         }
