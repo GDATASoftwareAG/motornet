@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
 using Xunit;

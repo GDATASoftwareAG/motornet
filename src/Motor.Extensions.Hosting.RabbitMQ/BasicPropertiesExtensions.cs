@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 
@@ -10,40 +11,41 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 {
     public static class BasicPropertiesExtensions
     {
-        public static readonly string CloudEventPrefix = "cloudEvents:";
+        public static string CloudEventPrefix => "cloudEvents:";
 
-        public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
-            RabbitMQPublisherOptions<T> options, ICloudEventFormatter cloudEventFormatter)
+        private static readonly List<CloudEventAttribute> IgnoredAttributes = new();
+
+        static BasicPropertiesExtensions()
         {
-            var messagePriority = cloudEvent.Extension<RabbitMQPriorityExtension>()?.Priority ??
-                                  options.DefaultPriority;
-            if (messagePriority.HasValue)
-                self.Priority = messagePriority.Value;
-            var dictionary = new Dictionary<string, object>();
-
-            foreach (var attr in cloudEvent.GetAttributes())
-            {
-                if (string.Equals(attr.Key, CloudEventAttributes.DataAttributeName(cloudEvent.SpecVersion))
-                    || string.Equals(attr.Key,
-                        CloudEventAttributes.DataContentTypeAttributeName(cloudEvent.SpecVersion))
-                    || string.Equals(attr.Key, RabbitMQPriorityExtension.PriorityAttributeName)
-                    || string.Equals(attr.Key, RabbitMQBindingExtension.ExchangeAttributeName)
-                    || string.Equals(attr.Key, RabbitMQBindingExtension.RoutingKeyAttributeName))
-                    continue;
-                dictionary.Add($"{CloudEventPrefix}{attr.Key}",
-                    cloudEventFormatter.EncodeAttribute(cloudEvent.SpecVersion, attr.Key, attr.Value,
-                        cloudEvent.GetExtensions().Values));
-            }
-
-            self.Headers = dictionary;
+            IgnoredAttributes.AddRange(RabbitMQBindingExtension.AllAttributes);
+            IgnoredAttributes.AddRange(RabbitMQPriorityExtension.AllAttributes);
         }
 
-        public static MotorCloudEvent<byte[]> ExtractCloudEvent<T>(this IBasicProperties self,
-            IApplicationNameService applicationNameService, ICloudEventFormatter cloudEventFormatter,
-            ReadOnlyMemory<byte> body,
-            IReadOnlyCollection<ICloudEventExtension> extensions)
+        public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
+            RabbitMQPublisherOptions<T> options)
         {
-            var specVersion = CloudEventsSpecVersion.V1_0;
+            var messagePriority = cloudEvent.GetRabbitMQPriority() ?? options.DefaultPriority;
+            if (messagePriority.HasValue)
+                self.Priority = messagePriority.Value;
+
+            var headers = new Dictionary<string, object>();
+
+            foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
+            {
+                if (IgnoredAttributes.Contains(key))
+                {
+                    continue;
+                }
+
+                headers.Add($"{CloudEventPrefix}{key.Name}", Encoding.UTF8.GetBytes(key.Format(value)));
+            }
+
+            self.Headers = headers;
+        }
+
+        public static MotorCloudEvent<byte[]> ExtractCloudEvent(this IBasicProperties self,
+            IApplicationNameService applicationNameService, ReadOnlyMemory<byte> body)
+        {
             var attributes = new Dictionary<string, object>();
             IDictionary<string, object> headers = new Dictionary<string, object>();
             if (self.IsHeadersPresent() && self.Headers is not null)
@@ -51,31 +53,37 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 headers = self.Headers;
             }
 
-            foreach (var header in headers
+            foreach (var (key, value) in headers
                 .Where(t => t.Key.StartsWith(CloudEventPrefix))
                 .Select(t =>
                     new KeyValuePair<string, object>(
-                        t.Key.Substring(CloudEventPrefix.Length),
+                        t.Key[CloudEventPrefix.Length..],
                         t.Value)))
             {
-                if (string.Equals(header.Key, CloudEventAttributes.DataContentTypeAttributeName(specVersion),
-                        StringComparison.InvariantCultureIgnoreCase)
-                    || string.Equals(header.Key, CloudEventAttributes.SpecVersionAttributeName(specVersion),
-                        StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(key, CloudEventsSpecVersion.SpecVersionAttribute.Name,
+                    StringComparison.InvariantCultureIgnoreCase))
+                {
                     continue;
+                }
 
-                attributes.Add(header.Key, header.Value);
+                attributes.Add(key, value);
             }
 
+            var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(), new Uri("rabbitmq://notset"));
+
             if (attributes.Count == 0)
-                return new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(), typeof(T).Name,
-                    new Uri("rabbitmq://notset"), extensions: extensions.ToArray());
+            {
+                return cloudEvent;
+            }
 
-            var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(), extensions);
-
-            foreach (var attribute in attributes)
-                cloudEvent.GetAttributes().Add(attribute.Key, cloudEventFormatter.DecodeAttribute(
-                    cloudEvent.SpecVersion, attribute.Key, (byte[])attribute.Value, extensions));
+            foreach (var (key, value) in attributes)
+            {
+                if (value is byte[] byteValue)
+                {
+                    cloudEvent.SetAttributeFromString(key.ToLowerInvariant(),
+                        Encoding.UTF8.GetString(byteValue));
+                }
+            }
 
             return cloudEvent;
         }

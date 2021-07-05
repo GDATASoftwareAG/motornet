@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using Moq;
-using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.Abstractions_UnitTest
+namespace Motor.Extensions.Hosting.CloudEvents_UnitTest
 {
     public class MotorCloudEventTests
     {
         [Fact]
         public void CreateNew_UseFromOld_IdAndDateAreNewCreated()
         {
-            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String",
+            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ",
                 new Uri("test://non"));
             var expectedData = new List<string>();
 
@@ -27,21 +27,33 @@ namespace Motor.Extensions.Hosting.Abstractions_UnitTest
         public void CreateNew_UseOldIdentifierFromOld_IdAndDateAreNewCreated()
         {
             var oldEvent =
-                new MotorCloudEvent<string>(GetApplicationNameService(), " ", "String", new Uri("test://non"));
+                new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
             var expectedData = new List<string>();
 
             var newEvent = oldEvent.CreateNew(expectedData, true);
 
             Assert.Equal(oldEvent.Id, newEvent.Id);
             Assert.Equal(oldEvent.Time, newEvent.Time);
-            Assert.Equal(oldEvent.Type, newEvent.Type);
             Assert.Equal(oldEvent.Source, newEvent.Source);
+        }
+
+        [Fact]
+        public void CreateNew_UseOldIdentifierFromOld_TypeMatchesActualDataType()
+        {
+            var oldEvent =
+                new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+            var expectedData = new List<string>();
+
+            var newEvent = oldEvent.CreateNew(expectedData, true);
+
+            Assert.Equal(nameof(String), oldEvent.Type);
+            Assert.Equal(typeof(List<string>).Name, newEvent.Type);
         }
 
         [Fact]
         public void CreateNew_UseFromOld_DataIsUpdated()
         {
-            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ", "String",
+            var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ",
                 new Uri("test://non"));
             var expectedData = new List<string>();
 

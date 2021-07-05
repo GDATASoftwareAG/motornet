@@ -7,6 +7,7 @@ using Moq;
 using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.TestUtilities;
 using Xunit;
@@ -81,7 +82,7 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
         byte[]? inputMessage = null)
         {
             var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(inputMessage ?? Array.Empty<byte>());
-            cloudEvent.GetExtensionOrCreate(() => new CompressionTypeExtension(compressionType));
+            cloudEvent.SetCompressionType(compressionType);
             return cloudEvent;
         }
 

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Diagnostics.Metrics
