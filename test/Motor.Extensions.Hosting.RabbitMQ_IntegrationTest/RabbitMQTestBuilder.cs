@@ -43,8 +43,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         private RabbitMQFixture Fixture;
         private bool isBuilt;
         private readonly IList<Message> messages = new List<Message>();
-        private string QueueName;
-        private string RoutingKey;
+        internal string QueueName { get; init; }
+        internal string RoutingKey { get; init; }
 
         public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
         {
@@ -184,9 +184,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 throw new InvalidOperationException();
             var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
             var connectionFactoryMock = new Mock<IConnectionFactory>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<T>>()))
+
+            rabbitConnectionFactoryMock
+                .Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<T>>()))
                 .Returns(connectionFactoryMock.Object);
-            connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
+
+            connectionFactoryMock
+                .Setup(x => x.CreateConnection())
+                .Returns(Fixture.Connection);
+
             var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetConsumerConfig<T>());
             applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;

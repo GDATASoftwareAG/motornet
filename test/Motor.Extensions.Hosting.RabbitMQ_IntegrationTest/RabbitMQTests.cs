@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ;
+using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using Xunit;
 using RMQ = RabbitMQ.Client;
+using Opts = Microsoft.Extensions.Options.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 {
@@ -27,7 +30,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         {
             var builder = RabbitMQTestBuilder
                 .CreateWithoutQueueDeclare(_fixture)
-                .WithConsumerCallback((context, bytes) => Task.FromResult(ProcessedMessageStatus.Success))
+                .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success))
                 .Build();
             var consumer = builder.GetConsumer<string>();
 
@@ -46,7 +49,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSinglePublishedMessage(priority, message)
-                .WithConsumerCallback((motorEvent, token) =>
+                .WithConsumerCallback((motorEvent, _) =>
                 {
                     consumedPriority = motorEvent.Extension<RabbitMQPriorityExtension>().Priority;
                     consumedMessage = motorEvent.TypedData;
@@ -93,7 +96,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithoutQueueDeclare(_fixture)
                 .WithSingleRandomPublishedMessage()
-                .WithConsumerCallback((context, bytes) => Task.FromResult(ProcessedMessageStatus.Success))
+                .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success))
                 .Build();
             var consumer = builder.GetConsumer<string>();
 
@@ -111,7 +114,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
-                .WithConsumerCallback(async (context, bytes) =>
+                .WithConsumerCallback(async (_, _) =>
                 {
                     await Task.CompletedTask;
                     await Task.Delay(TimeSpan.FromSeconds(messageProcessingTimeSeconds));
@@ -135,7 +138,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSingleRandomPublishedMessage()
-                .WithConsumerCallback((context, bytes) =>
+                .WithConsumerCallback((_, _) =>
                 {
                     consumerCounter++;
                     return Task.FromResult(consumerCounter == 1
@@ -157,7 +160,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSingleRandomPublishedMessage()
-                .WithConsumerCallback((context, bytes) => Task.FromResult(ProcessedMessageStatus.InvalidInput))
+                .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.InvalidInput))
                 .Build();
             var consumer = builder.GetConsumer<string>();
 
@@ -174,7 +177,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSingleRandomPublishedMessage()
-                .WithConsumerCallback((context, bytes) => throw new Exception())
+                .WithConsumerCallback((_, _) => throw new Exception())
                 .Build();
 
             var applicationLifetimeMock = new Mock<IHostApplicationLifetime>();
@@ -192,7 +195,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSingleRandomPublishedMessage()
-                .WithConsumerCallback((context, bytes) => Task.FromResult(ProcessedMessageStatus.CriticalFailure))
+                .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.CriticalFailure))
                 .Build();
 
             var applicationLifetimeMock = new Mock<IHostApplicationLifetime>();
@@ -208,7 +211,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         {
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
-                .WithConsumerCallback(async (context, bytes) =>
+                .WithConsumerCallback(async (_, _) =>
                 {
                     await Task.Delay(4000);
                     return ProcessedMessageStatus.CriticalFailure;
@@ -224,5 +227,111 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             Assert.Equal(RabbitMQTestBuilder.PrefetchCount, builder.MessageInConsumerQueue());
         }
 
+        [Fact]
+        public async Task QueueMonitor_GetCurrentState_QueueEmpty_EmptyResult()
+        {
+            #region setup
+            var builder = RabbitMQTestBuilder
+                .CreateWithQueueDeclare(_fixture)
+                .Build();
+
+            var connFactory = new Mock<RMQ.IConnectionFactory>();
+            connFactory.Setup(fac => fac.CreateConnection())
+                .Returns(_fixture.Connection);
+
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
+            rabbitConnectionFactoryMock
+                .Setup(factory => factory.From(It.IsAny<RabbitMQConsumerOptions<string>>()))
+                .Returns(connFactory.Object);
+            #endregion
+
+            var monitor = new RabbitMQQueueMonitor<string>(
+                Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
+                Opts.Create(new RabbitMQConsumerOptions<string>
+                {
+                    Queue =
+                    {
+                        Name = builder.QueueName
+                    }
+                }),
+                rabbitConnectionFactoryMock.Object
+            );
+
+            var state = await monitor.GetCurrentState();
+            Assert.Equal(builder.QueueName, state.QueueName);
+            Assert.InRange(state.ReadyMessages, 0, Int64.MaxValue);
+        }
+
+        [Fact]
+        public async Task QueueMonitor_GetCurrentState_SingleMessage_CorrespondingResult()
+        {
+            #region setup
+            var builder = RabbitMQTestBuilder
+                .CreateWithQueueDeclare(_fixture)
+                .WithSingleRandomPublishedMessage()
+                .Build();
+
+            var connFactory = new Mock<RMQ.IConnectionFactory>();
+            connFactory.Setup(fac => fac.CreateConnection())
+                .Returns(_fixture.Connection);
+
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
+            rabbitConnectionFactoryMock
+                .Setup(factory => factory.From(It.IsAny<RabbitMQConsumerOptions<string>>()))
+                .Returns(connFactory.Object);
+            #endregion
+
+            var monitor = new RabbitMQQueueMonitor<string>(
+                Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
+                Opts.Create(new RabbitMQConsumerOptions<string>
+                {
+                    Queue =
+                    {
+                        Name = builder.QueueName
+                    }
+                }),
+                rabbitConnectionFactoryMock.Object
+            );
+
+            var state = await monitor.GetCurrentState();
+            Assert.Equal(builder.QueueName, state.QueueName);
+            Assert.Equal(1, state.ReadyMessages);
+        }
+
+        [Fact]
+        public async Task QueueMonitor_GetCurrentState_MultipleMessages_CorrespondingResult()
+        {
+            #region setup
+            var builder = RabbitMQTestBuilder
+                .CreateWithQueueDeclare(_fixture)
+                .WithMultipleRandomPublishedMessage()
+                .Build();
+
+            var connFactory = new Mock<RMQ.IConnectionFactory>();
+            connFactory.Setup(fac => fac.CreateConnection())
+                .Returns(_fixture.Connection);
+
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
+            rabbitConnectionFactoryMock
+                .Setup(factory => factory.From(It.IsAny<RabbitMQConsumerOptions<string>>()))
+                .Returns(connFactory.Object);
+            #endregion
+
+            var monitor = new RabbitMQQueueMonitor<string>(
+                Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
+                Opts.Create(new RabbitMQConsumerOptions<string>
+                {
+                    Queue =
+                    {
+                        Name = builder.QueueName
+                    }
+                }),
+                rabbitConnectionFactoryMock.Object
+            );
+
+            var state = await monitor.GetCurrentState();
+            Assert.Equal(builder.QueueName, state.QueueName);
+            Assert.InRange(state.ReadyMessages, 2, Int64.MaxValue);
+        }
     }
 }

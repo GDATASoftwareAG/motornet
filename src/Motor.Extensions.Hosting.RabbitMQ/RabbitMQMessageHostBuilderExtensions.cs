@@ -1,6 +1,7 @@
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Motor.Extensions.Diagnostics.Queue.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 
@@ -14,6 +15,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
             builder.Configure<RabbitMQConsumerOptions<T>>(config);
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
+            builder.AddSingleton<IQueueMonitor, RabbitMQQueueMonitor<T>>();
         }
 
         public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer") where T : notnull
