@@ -32,7 +32,7 @@ namespace Motor.Extensions.Diagnostics.Queue.Metrics
                 .Select(m => m.GetCurrentState());
             var states = Task.WhenAll(tasks).Result;
             writer.WriteMetricHeader(QueueMonitorGaugeConfig.Name, MetricType.Gauge, QueueMonitorGaugeConfig.Help);
-            foreach (var (queueName, readyMessages) in states)
+            foreach (var (queueName, readyMessages, _) in states)
             {
                 writer.WriteSample(readyMessages, string.Empty, Labels, new[] { queueName });
             }

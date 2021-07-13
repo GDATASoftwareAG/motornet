@@ -14,20 +14,22 @@ using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public class RabbitMQMessageConsumer<T> : RabbitMQConnectionHandler, IMessageConsumer<T> where T : notnull
+    public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
     {
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
         private readonly RabbitMQConsumerOptions<T> _options;
-        private readonly IRabbitMQConnectionFactory _connectionFactory;
+        private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
         private CancellationToken _stoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
-            IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerOptions<T>> config,
-            IHostApplicationLifetime applicationLifetime, IApplicationNameService applicationNameService,
+            IRabbitMQConnectionFactory<T> connectionFactory,
+            IOptions<RabbitMQConsumerOptions<T>> config,
+            IHostApplicationLifetime applicationLifetime,
+            IApplicationNameService applicationNameService,
             ICloudEventFormatter cloudEventFormatter)
         {
             _logger = logger;
@@ -54,9 +56,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             ThrowIfNoCallbackConfigured();
             ThrowIfConsumerAlreadyStarted();
-            SetConnectionFactory();
-            EstablishConnection();
-            EstablishChannel();
+            var _ = _connectionFactory.CurrentChannel;
             ConfigureChannel();
             DeclareQueue();
             StartConsumerOnChannel();
@@ -66,7 +66,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public Task StopAsync(CancellationToken token = default)
         {
             _started = false;
-            Channel?.Close();
+            _connectionFactory.Dispose();
             return Task.CompletedTask;
         }
 
@@ -83,14 +83,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 throw new InvalidOperationException("Cannot start consuming as the consumer was already started!");
         }
 
-        private void SetConnectionFactory()
-        {
-            ConnectionFactory = _connectionFactory.From(_options);
-        }
-
         private void ConfigureChannel()
         {
-            Channel?.BasicQos(0, _options.PrefetchCount, false);
+            _connectionFactory.CurrentChannel.BasicQos(0, _options.PrefetchCount, false);
         }
 
         private void DeclareQueue()
@@ -99,12 +94,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             {
                 return;
             }
+
             var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
             if (_options.Queue.MaxPriority is not null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
 
             if (_options.Queue.MaxLength is not null) arguments.Add("x-max-length", _options.Queue.MaxLength);
 
-            if (_options.Queue.MaxLengthBytes is not null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
+            if (_options.Queue.MaxLengthBytes is not null)
+                arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
 
             if (_options.Queue.MessageTtl is not null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
 
@@ -119,7 +116,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     throw new ArgumentOutOfRangeException();
             }
 
-            Channel?.QueueDeclare(
+            _connectionFactory.CurrentChannel.QueueDeclare(
                 _options.Queue.Name,
                 _options.Queue.Durable,
                 false,
@@ -127,7 +124,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 arguments
             );
             foreach (var routingKeyConfig in _options.Queue.Bindings)
-                Channel?.QueueBind(
+                _connectionFactory.CurrentChannel.QueueBind(
                     _options.Queue.Name,
                     routingKeyConfig.Exchange,
                     routingKeyConfig.RoutingKey,
@@ -136,10 +133,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void StartConsumerOnChannel()
         {
-            var consumer = new EventingBasicConsumer(Channel);
+            var consumer = new EventingBasicConsumer(_connectionFactory.CurrentChannel);
             consumer.Received += (_, args) => ConsumerCallback(args);
             _started = true;
-            Channel.BasicConsume(_options.Queue.Name, false, consumer);
+            _connectionFactory.CurrentChannel.BasicConsume(_options.Queue.Name, false, consumer);
         }
 
         private void ConsumerCallback(BasicDeliverEventArgs args)
@@ -173,13 +170,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     switch (processedMessageStatus)
                     {
                         case ProcessedMessageStatus.Success:
-                            Channel?.BasicAck(args.DeliveryTag, false);
+                            _connectionFactory.CurrentChannel.BasicAck(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.TemporaryFailure:
-                            Channel?.BasicReject(args.DeliveryTag, true);
+                            _connectionFactory.CurrentChannel.BasicReject(args.DeliveryTag, true);
                             break;
                         case ProcessedMessageStatus.InvalidInput:
-                            Channel?.BasicReject(args.DeliveryTag, false);
+                            _connectionFactory.CurrentChannel.BasicReject(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.CriticalFailure:
                             _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
