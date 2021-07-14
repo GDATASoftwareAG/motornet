@@ -12,9 +12,19 @@ namespace Motor.Extensions.Diagnostics.Queue.Metrics
     {
         private static readonly string[] Labels = { "queue" };
 
-        internal static readonly MetricConfiguration QueueMonitorGaugeConfig = new(
+        internal static readonly CollectorConfiguration QueueMonitorCollectorConfig =
+            new("motor_extensions_diagnostics_queue_metrics");
+
+        private static readonly MetricConfiguration QueueMonitorGaugeConfig = new(
             "motor_extensions_diagnostics_queue_metrics_messages_ready",
             "Expose information about how many messages are ready to be processed",
+            Labels,
+            false
+        );
+
+        private static readonly MetricConfiguration ConsumersMonitorGaugeConfig = new(
+            "motor_extensions_diagnostics_queue_metrics_active_consumers",
+            "Expose information about how many active consumers are listening on the queue",
             Labels,
             false
         );
@@ -31,6 +41,20 @@ namespace Motor.Extensions.Diagnostics.Queue.Metrics
             var tasks = _queueMonitors
                 .Select(m => m.GetCurrentState());
             var states = Task.WhenAll(tasks).Result;
+            WriteQueuesMetric(writer, states);
+            WriteConsumersMetric(writer, states);
+        }
+
+        public CollectorConfiguration Configuration => QueueMonitorCollectorConfig;
+
+        public IReadOnlyList<string> MetricNames => new[]
+        {
+            QueueMonitorGaugeConfig.Name,
+            ConsumersMonitorGaugeConfig.Name
+        };
+
+        private static void WriteQueuesMetric(IMetricsWriter writer, IEnumerable<QueueState> states)
+        {
             writer.WriteMetricHeader(QueueMonitorGaugeConfig.Name, MetricType.Gauge, QueueMonitorGaugeConfig.Help);
             foreach (var (queueName, readyMessages, _) in states)
             {
@@ -40,8 +64,15 @@ namespace Motor.Extensions.Diagnostics.Queue.Metrics
             writer.EndMetric();
         }
 
-        public CollectorConfiguration Configuration => QueueMonitorGaugeConfig;
+        private static void WriteConsumersMetric(IMetricsWriter writer, IEnumerable<QueueState> states)
+        {
+            writer.WriteMetricHeader(ConsumersMonitorGaugeConfig.Name, MetricType.Gauge, ConsumersMonitorGaugeConfig.Help);
+            foreach (var (queueName, _, consumerCount) in states)
+            {
+                writer.WriteSample(consumerCount, string.Empty, Labels, new[] { queueName });
+            }
 
-        public IReadOnlyList<string> MetricNames => new[] { QueueMonitorGaugeConfig.Name };
+            writer.EndMetric();
+        }
     }
 }
