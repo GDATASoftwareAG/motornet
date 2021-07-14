@@ -30,8 +30,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public async Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
         {
-            if (!_connected) await StartAsync().ConfigureAwait(false);
-            if (_channel is null) throw new InvalidOperationException("Channel is not created.");
+            if (!_connected)
+            {
+                await StartAsync().ConfigureAwait(false);
+            }
+
+            if (_channel is null)
+            {
+                throw new InvalidOperationException("Channel is not created.");
+            }
+
             var properties = _channel.CreateBasicProperties();
             properties.DeliveryMode = 2;
             properties.Update(cloudEvent, _options, _cloudEventFormatter);

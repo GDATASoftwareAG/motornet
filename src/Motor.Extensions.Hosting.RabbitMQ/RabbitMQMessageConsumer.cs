@@ -23,6 +23,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
+        private IModel? _channel;
         private CancellationToken _stoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
@@ -56,7 +57,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             ThrowIfNoCallbackConfigured();
             ThrowIfConsumerAlreadyStarted();
-            var _ = _connectionFactory.CurrentChannel;
+            _channel = _connectionFactory.CurrentChannel;
             ConfigureChannel();
             DeclareQueue();
             StartConsumerOnChannel();
@@ -85,7 +86,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void ConfigureChannel()
         {
-            _connectionFactory.CurrentChannel.BasicQos(0, _options.PrefetchCount, false);
+            _channel?.BasicQos(0, _options.PrefetchCount, false);
         }
 
         private void DeclareQueue()
@@ -100,8 +101,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
             if (_options.Queue.MaxLength is not null) arguments.Add("x-max-length", _options.Queue.MaxLength);
 
-            if (_options.Queue.MaxLengthBytes is not null)
-                arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
+            if (_options.Queue.MaxLengthBytes is not null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
 
             if (_options.Queue.MessageTtl is not null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
 
@@ -116,7 +116,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     throw new ArgumentOutOfRangeException();
             }
 
-            _connectionFactory.CurrentChannel.QueueDeclare(
+            _channel?.QueueDeclare(
                 _options.Queue.Name,
                 _options.Queue.Durable,
                 false,
@@ -124,7 +124,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 arguments
             );
             foreach (var routingKeyConfig in _options.Queue.Bindings)
-                _connectionFactory.CurrentChannel.QueueBind(
+                _channel?.QueueBind(
                     _options.Queue.Name,
                     routingKeyConfig.Exchange,
                     routingKeyConfig.RoutingKey,
@@ -133,10 +133,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void StartConsumerOnChannel()
         {
-            var consumer = new EventingBasicConsumer(_connectionFactory.CurrentChannel);
+            var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += (_, args) => ConsumerCallback(args);
             _started = true;
-            _connectionFactory.CurrentChannel.BasicConsume(_options.Queue.Name, false, consumer);
+            _channel.BasicConsume(_options.Queue.Name, false, consumer);
         }
 
         private void ConsumerCallback(BasicDeliverEventArgs args)
@@ -170,17 +170,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     switch (processedMessageStatus)
                     {
                         case ProcessedMessageStatus.Success:
-                            _connectionFactory.CurrentChannel.BasicAck(args.DeliveryTag, false);
+                            _channel?.BasicAck(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.TemporaryFailure:
-                            _connectionFactory.CurrentChannel.BasicReject(args.DeliveryTag, true);
+                            _channel?.BasicReject(args.DeliveryTag, true);
                             break;
                         case ProcessedMessageStatus.InvalidInput:
-                            _connectionFactory.CurrentChannel.BasicReject(args.DeliveryTag, false);
+                            _channel?.BasicReject(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.CriticalFailure:
                             _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
-                                "Message consume fails with critical failure.");
+                                "Message consume fails with critical failure");
                             _applicationLifetime.StopApplication();
                             break;
                         default:
@@ -191,7 +191,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
             catch (Exception e)
             {
-                _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume.");
+                _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume");
                 _applicationLifetime.StopApplication();
             }
         }

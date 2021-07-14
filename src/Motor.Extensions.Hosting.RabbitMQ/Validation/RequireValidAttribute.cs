@@ -19,7 +19,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ.Validation
             foreach (var value in e)
             {
                 var result = ValidateObject(value, validationContext);
-                if (result != ValidationResult.Success) return result;
+                if (result != ValidationResult.Success)
+                {
+                    return result;
+                }
             }
 
             return ValidationResult.Success;
