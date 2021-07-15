@@ -30,13 +30,11 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
             var headers = new Dictionary<string, object>();
 
-            foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
-            {
-                if (IgnoredAttributes.Contains(key))
-                {
-                    continue;
-                }
+            var attributesToConsider = cloudEvent.GetPopulatedAttributes()
+                .Where(t => !IgnoredAttributes.Contains(t.Key));
 
+            foreach (var (key, value) in attributesToConsider)
+            {
                 headers.Add($"{CloudEventPrefix}{key.Name}", Encoding.UTF8.GetBytes(key.Format(value)));
             }
 
@@ -53,19 +51,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 headers = self.Headers;
             }
 
-            foreach (var (key, value) in headers
+            var cloudEventHeaders = headers
                 .Where(t => t.Key.StartsWith(CloudEventPrefix))
-                .Select(t =>
-                    new KeyValuePair<string, object>(
-                        t.Key[CloudEventPrefix.Length..],
-                        t.Value)))
-            {
-                if (string.Equals(key, CloudEventsSpecVersion.SpecVersionAttribute.Name,
-                    StringComparison.InvariantCultureIgnoreCase))
-                {
-                    continue;
-                }
+                .Select(t => (Key: t.Key[CloudEventPrefix.Length..], t.Value))
+                .Where(t => !t.Key.Equals(CloudEventsSpecVersion.SpecVersionAttribute.Name, StringComparison.InvariantCultureIgnoreCase));
 
+            foreach (var (key, value) in cloudEventHeaders)
+            {
                 attributes.Add(key, value);
             }
 

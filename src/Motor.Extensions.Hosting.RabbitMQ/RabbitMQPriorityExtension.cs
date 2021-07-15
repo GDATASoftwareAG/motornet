@@ -23,8 +23,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public static byte? GetRabbitMQPriority<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            var priority = (int?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQPriorityAttribute];
-            return priority is null or < 0 or > 255 ? null : (byte)priority;
+            return Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQPriorityAttribute] switch
+            {
+                int and (< 0 or > 255) => null,
+                int priority => (byte)priority,
+                _ => null
+            };
         }
     }
 }

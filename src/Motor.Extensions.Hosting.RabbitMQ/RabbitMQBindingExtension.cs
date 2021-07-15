@@ -28,12 +28,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public static string? GetRabbitMQExchange<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            return (string?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute];
+            return Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as string;
         }
 
         public static string? GetRabbitMQRoutingKey<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            return (string?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute];
+            return Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as string;
         }
     }
 }

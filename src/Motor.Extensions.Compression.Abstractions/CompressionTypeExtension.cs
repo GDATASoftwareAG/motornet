@@ -22,7 +22,7 @@ namespace Motor.Extensions.Compression.Abstractions
         }
 
         public static string GetCompressionType<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class =>
-            (string?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[CompressionTypeAttribute] ??
+            Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[CompressionTypeAttribute] as string ??
             NoOpMessageCompressor.NoOpCompressionType;
     }
 }
