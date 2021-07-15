@@ -1,6 +1,6 @@
 using System;
 
-namespace Motor.Extensions.Hosting.Abstractions
+namespace Motor.Extensions.Hosting.CloudEvents
 {
     public interface IApplicationNameService
     {

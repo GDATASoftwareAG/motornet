@@ -1,4 +1,5 @@
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Motor.Extensions.Hosting.Abstractions;
@@ -10,7 +11,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
     {
         public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config) where T : notnull
         {
-            builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
             builder.Configure<RabbitMQConsumerOptions<T>>(config);
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
@@ -23,7 +24,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public static void AddRabbitMQWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config) where T : notnull
         {
-            builder.AddTransient<ICloudEventFormatter, JsonEventFormatter>();
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.AddTransient<IRabbitMQConnectionFactory, RabbitMQConnectionFactory>();
             builder.AddPublisher<RabbitMQMessagePublisher<T>>();
             builder.Configure<RabbitMQPublisherOptions<T>>(config);

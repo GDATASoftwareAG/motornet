@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.Hosting.Internal
 {
@@ -29,7 +30,7 @@ namespace Motor.Extensions.Hosting.Internal
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(LogEvents.InvalidInput, ex, "Invalid input (first 100 chars): {message}",
-                    dataCloudEvent.Data.ToString()?.Take(100));
+                    dataCloudEvent.Data?.ToString()?.Take(100));
                 processedMessageStatus = ProcessedMessageStatus.InvalidInput;
             }
             catch (TemporaryFailureException ex)

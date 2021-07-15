@@ -46,9 +46,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var builder = RabbitMQTestBuilder
                 .CreateWithQueueDeclare(_fixture)
                 .WithSinglePublishedMessage(priority, message)
-                .WithConsumerCallback((motorEvent, token) =>
+                .WithConsumerCallback((motorEvent, _) =>
                 {
-                    consumedPriority = motorEvent.Extension<RabbitMQPriorityExtension>().Priority;
+                    consumedPriority = motorEvent.GetRabbitMQPriority();
                     consumedMessage = motorEvent.TypedData;
                     return Task.FromResult(ProcessedMessageStatus.Success);
                 })
@@ -74,16 +74,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
             const byte priority = 222;
             var message = new byte[] { 3, 2, 1 };
-            var extensions = new List<ICloudEventExtension>
-            {
-                new RabbitMQPriorityExtension(priority)
-            };
 
-            await publisher.PublishMessageAsync(
-                MotorCloudEvent.CreateTestCloudEvent(message, extensions: extensions.ToArray()));
+            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(message);
+            cloudEvent.SetRabbitMQPriority(priority);
+
+            await publisher.PublishMessageAsync(cloudEvent);
 
             var results = await builder.GetMessageFromQueue();
-            Assert.Equal(priority, results.Extension<RabbitMQPriorityExtension>().Priority);
+            Assert.Equal(priority, results.GetRabbitMQPriority());
             Assert.Equal(message, results.Data);
         }
 

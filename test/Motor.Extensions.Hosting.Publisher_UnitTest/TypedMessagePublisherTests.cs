@@ -4,6 +4,7 @@ using Moq;
 using Motor.Extensions.Compression.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.TestUtilities;
 using Xunit;

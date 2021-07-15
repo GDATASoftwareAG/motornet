@@ -9,6 +9,7 @@ using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Consumer
@@ -71,8 +72,7 @@ namespace Motor.Extensions.Hosting.Consumer
                 using (new AutoObserveStopwatch(() => _messageDecompression))
                 {
                     decompressed = await DecompressMessageAsync(
-                        dataCloudEvent.Extension<CompressionTypeExtension>()?.CompressionType ??
-                        NoOpMessageCompressor.NoOpCompressionType, dataCloudEvent.TypedData, token);
+                        dataCloudEvent.GetCompressionType(), dataCloudEvent.TypedData, token);
                 }
 
                 TInput deserialized;
