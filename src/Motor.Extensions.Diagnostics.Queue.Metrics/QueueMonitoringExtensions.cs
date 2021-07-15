@@ -12,8 +12,8 @@ namespace Motor.Extensions.Diagnostics.Queue.Metrics
             var motorsFactory = app.ApplicationServices.GetService<IMotorMetricsFactory>();
             var queueMonitors = app.ApplicationServices.GetServices<IQueueMonitor>();
             motorsFactory?.CollectorRegistry.GetOrAdd(
-                QueueMonitorGauge.QueueMonitorCollectorConfig,
-                _ => new QueueMonitorGauge(queueMonitors)
+                QueueMonitorMetricsCollector.QueueMonitorCollectorConfig,
+                _ => new QueueMonitorMetricsCollector(queueMonitors)
             );
 
             return app;
