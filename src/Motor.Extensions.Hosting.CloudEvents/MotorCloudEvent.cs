@@ -23,15 +23,21 @@ namespace Motor.Extensions.Hosting.CloudEvents
             IApplicationNameService applicationNameService,
             TData data,
             Uri source,
-            string? id = null,
-            DateTimeOffset? time = null,
+            params KeyValuePair<CloudEventAttribute, object>[] extensions) : this(applicationNameService, data, source,
+            null, null, extensions)
+        {
+        }
+
+        public MotorCloudEvent(
+            IApplicationNameService applicationNameService,
+            TData data,
+            Uri source,
+            string? id,
+            DateTimeOffset? time,
             params KeyValuePair<CloudEventAttribute, object>[] extensions)
         {
             BaseEvent = new CloudEvent(CloudEventsSpecVersion.Default);
-            foreach (var (key, value) in extensions)
-            {
-                BaseEvent[key] = value;
-            }
+            foreach (var (key, value) in extensions) BaseEvent[key] = value;
             BaseEvent.Id = id ?? Guid.NewGuid().ToString();
             BaseEvent.Type = typeof(TData).Name;
             BaseEvent.Source = source;

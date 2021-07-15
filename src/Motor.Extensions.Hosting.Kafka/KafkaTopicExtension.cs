@@ -22,6 +22,6 @@ namespace Motor.Extensions.Hosting.Kafka
         }
 
         public static string? GetKafkaTopic<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class =>
-            (string?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[KafkaTopicAttribute];
+            Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[KafkaTopicAttribute] as string;
     }
 }

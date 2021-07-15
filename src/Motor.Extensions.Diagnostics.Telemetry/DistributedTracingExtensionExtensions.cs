@@ -31,9 +31,12 @@ namespace Motor.Extensions.Diagnostics.Telemetry
         public static ActivityContext GetActivityContext<TData>(this MotorCloudEvent<TData> extension)
             where TData : class
         {
-            var traceParent = (string?)extension[TraceParentAttribute];
-            var traceState = (string?)extension[TraceStateAttribute];
-            return traceParent is null ? default : ActivityContext.Parse(traceParent, traceState);
+            if (extension[TraceParentAttribute] is not string traceParent)
+            {
+                return default;
+            }
+            var traceState = extension[TraceStateAttribute] as string;
+            return ActivityContext.Parse(traceParent, traceState);
         }
     }
 }
