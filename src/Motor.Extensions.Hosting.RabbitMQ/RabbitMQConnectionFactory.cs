@@ -1,83 +1,57 @@
 using System;
-using System.Linq;
+using System.ComponentModel.DataAnnotations;
+using System.Threading;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public interface IRabbitMQConnectionFactory
+    public interface IRabbitMQConnectionFactory<T> : IDisposable
     {
-        IConnectionFactory From<T>(RabbitMQConsumerOptions<T> consumerOptions);
-        IConnectionFactory From<T>(RabbitMQPublisherOptions<T> publisherOptions);
+        /// <summary>
+        /// Username to use when authenticating to the server.
+        /// </summary>
+        string UserName { get; }
+
+        /// <summary>
+        /// Password to use when authenticating to the server.
+        /// </summary>
+        string Password { get; }
+
+        /// <summary>
+        /// Virtual host to access during this connection.
+        /// </summary>
+        string VirtualHost { get; }
+
+        IConnection CurrentConnection { get; }
+        IModel CurrentChannel { get; }
+        IConnection CreateConnection();
+        IModel CreateModel();
     }
 
-    public class RabbitMQConnectionFactory : IRabbitMQConnectionFactory
+    public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<TC>
     {
-        public IConnectionFactory From<T>(RabbitMQConsumerOptions<T> consumerOptions)
+        private readonly IConnectionFactory _connectionFactory;
+        private readonly Lazy<IConnection> _lazyConnection;
+        private readonly Lazy<IModel> _lazyChannel;
+
+        public RabbitMQConnectionFactory(IConnectionFactory connectionFactory)
         {
-            ThrowIfConfigInvalid(consumerOptions);
-            return FromConfig(consumerOptions);
+            _connectionFactory = connectionFactory;
+            _lazyConnection = new Lazy<IConnection>(
+                () => _connectionFactory.CreateConnection(),
+                LazyThreadSafetyMode.ExecutionAndPublication
+            );
+            _lazyChannel = new Lazy<IModel>(
+                () => CurrentConnection.CreateModel(),
+                LazyThreadSafetyMode.ExecutionAndPublication
+            );
         }
 
-        public IConnectionFactory From<T>(RabbitMQPublisherOptions<T> publisherOptions)
+        public static IRabbitMQConnectionFactory<TC> From<TO>(TO options) where TO : RabbitMQBaseOptions
         {
-            ThrowIfConfigInvalid(publisherOptions);
-            return FromConfig(publisherOptions);
-        }
-
-        private void ThrowIfConfigInvalid<T>(RabbitMQConsumerOptions<T> options)
-        {
-            ThrowIfInvalid(options);
-            ThrowIfInvalid(options.Queue);
-        }
-
-        private void ThrowIfConfigInvalid<T>(RabbitMQPublisherOptions<T> options)
-        {
-            ThrowIfInvalid(options);
-            ThrowIfInvalid(options.PublishingTarget);
-        }
-
-        private void ThrowIfInvalid(RabbitMQBaseOptions baseOptions)
-        {
-            if (baseOptions is null)
-                throw new ArgumentNullException(nameof(baseOptions));
-            if (string.IsNullOrWhiteSpace(baseOptions.Host))
-                throw new ArgumentException(nameof(baseOptions.Host));
-            if (string.IsNullOrWhiteSpace(baseOptions.User))
-                throw new ArgumentException(nameof(baseOptions.User));
-            if (string.IsNullOrWhiteSpace(baseOptions.Password))
-                throw new ArgumentException(nameof(baseOptions.Password));
-            if (string.IsNullOrWhiteSpace(baseOptions.VirtualHost))
-                throw new ArgumentException(nameof(baseOptions.VirtualHost));
-        }
-
-        private void ThrowIfInvalid(RabbitMQQueueOptions queueOptions)
-        {
-            if (queueOptions is null)
-                throw new ArgumentException(nameof(queueOptions));
-            if (string.IsNullOrWhiteSpace(queueOptions.Name))
-                throw new ArgumentException(nameof(queueOptions.Name));
-            if (queueOptions.Bindings is null)
-                return;
-            if (!queueOptions.Bindings.Any())
-                return;
-            foreach (var binding in queueOptions.Bindings)
-            {
-                if (string.IsNullOrWhiteSpace(binding.Exchange))
-                    throw new ArgumentException(nameof(binding.Exchange));
-                if (string.IsNullOrWhiteSpace(binding.RoutingKey))
-                    throw new ArgumentException(nameof(binding.RoutingKey));
-            }
-        }
-
-        private void ThrowIfInvalid(RabbitMQBindingOptions rabbitMqBindingOptions)
-        {
-            if (rabbitMqBindingOptions is null)
-                throw new ArgumentException(nameof(rabbitMqBindingOptions));
-            if (string.IsNullOrWhiteSpace(rabbitMqBindingOptions.Exchange))
-                throw new ArgumentException(nameof(rabbitMqBindingOptions.Exchange));
-            if (string.IsNullOrWhiteSpace(rabbitMqBindingOptions.RoutingKey))
-                throw new ArgumentException(nameof(rabbitMqBindingOptions.RoutingKey));
+            Validator.ValidateObject(options, new ValidationContext(options), true);
+            return new RabbitMQConnectionFactory<TC>(FromConfig(options));
         }
 
         private static IConnectionFactory FromConfig(RabbitMQBaseOptions baseOptions)
@@ -91,6 +65,30 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 Password = baseOptions.Password,
                 RequestedHeartbeat = baseOptions.RequestedHeartbeat
             };
+        }
+
+        public string UserName => _connectionFactory.UserName;
+        public string Password => _connectionFactory.Password;
+        public string VirtualHost => _connectionFactory.VirtualHost;
+
+        public IConnection CurrentConnection => _lazyConnection.Value;
+
+        public IModel CurrentChannel => _lazyChannel.Value;
+
+        public IConnection CreateConnection() => _connectionFactory.CreateConnection();
+
+        public IModel CreateModel() => CurrentConnection.CreateModel();
+
+        public void Dispose()
+        {
+            if (_lazyChannel.IsValueCreated)
+            {
+                _lazyChannel.Value.Dispose();
+            }
+            if (_lazyConnection.IsValueCreated)
+            {
+                _lazyConnection.Value.Dispose();
+            }
         }
     }
 }

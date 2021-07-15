@@ -43,8 +43,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         private RabbitMQFixture Fixture;
         private bool isBuilt;
         private readonly IList<Message> messages = new List<Message>();
-        private string QueueName;
-        private string RoutingKey;
+        internal string QueueName { get; init; }
+        internal string RoutingKey { get; init; }
 
         public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
         {
@@ -65,8 +65,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             return q;
         }
 
-        public RabbitMQTestBuilder WithConsumerCallback(
-            Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
+        public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
         {
             Callback = callback;
             createQueue = true;
@@ -156,7 +155,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
         {
-            return new RabbitMQConsumerOptions<T>
+            return new()
             {
                 Host = "host",
                 User = "guest",
@@ -182,18 +181,40 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         {
             if (!isBuilt)
                 throw new InvalidOperationException();
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
-            var connectionFactoryMock = new Mock<IConnectionFactory>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<T>>()))
-                .Returns(connectionFactoryMock.Object);
-            connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
-            var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
-            optionsMock.Setup(x => x.Value).Returns(GetConsumerConfig<T>());
-            applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
-            var loggerMock = new Mock<ILogger<RabbitMQMessageConsumer<T>>>();
 
-            var consumer = new RabbitMQMessageConsumer<T>(loggerMock.Object, rabbitConnectionFactoryMock.Object,
-                optionsMock.Object, applicationLifetime, null, new JsonEventFormatter())
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
+            var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
+            var channel = Fixture.Connection.CreateModel();
+
+            applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentConnection)
+                .Returns(Fixture.Connection);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentChannel)
+                .Returns(channel);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.Dispose())
+                .Callback(() =>
+                {
+                    channel.Dispose();
+                });
+
+            optionsMock
+                .Setup(x => x.Value)
+                .Returns(GetConsumerConfig<T>());
+
+            var consumer = new RabbitMQMessageConsumer<T>(
+                Mock.Of<ILogger<RabbitMQMessageConsumer<T>>>(),
+                rabbitConnectionFactoryMock.Object,
+                optionsMock.Object,
+                applicationLifetime,
+                null,
+                new JsonEventFormatter()
+            )
             {
                 ConsumeCallbackAsync = Callback
             };
@@ -220,11 +241,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
         {
             if (!isBuilt)
                 throw new InvalidOperationException();
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
-            var connectionFactoryMock = new Mock<IConnectionFactory>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherOptions<T>>()))
-                .Returns(connectionFactoryMock.Object);
-            connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(Fixture.Connection);
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
+
+            var channel = Fixture.Connection.CreateModel();
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentConnection)
+                .Returns(Fixture.Connection);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentChannel)
+                .Returns(channel);
+
             var optionsMock = new Mock<IOptions<RabbitMQPublisherOptions<T>>>();
             optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
             return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
@@ -233,7 +261,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
 
         private RabbitMQPublisherOptions<T> GetPublisherConfig<T>()
         {
-            return new RabbitMQPublisherOptions<T>
+            return new()
             {
                 Host = "host",
                 User = "guest",

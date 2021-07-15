@@ -1,0 +1,13 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/dotnet/format
+    rev: "v5.1.225507"  # Specify a tag or sha here, or run "pre-commit autoupdate" 
+    hooks:
+      - id: dotnet-format
+        args:
+          - ""
+          - --folder
+          - --check
+          - --verbosity=detailed
+          - --include

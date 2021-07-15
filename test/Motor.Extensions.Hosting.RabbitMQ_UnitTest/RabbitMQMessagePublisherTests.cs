@@ -24,44 +24,42 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [Fact]
         public async Task PublishMessageAsync_WithConfig_ConnectionFactoryIsSet()
         {
-            var mock = GetDefaultConnectionFactoryMock();
+            var mock = GetDefaultConnectionFactoryMock<string>();
             var config = GetConfig();
             var publisher = GetPublisher(mock.Object, config);
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
-            mock.Verify(x => x.From(config), Times.Exactly(1));
+            mock.VerifyGet(x => x.CurrentChannel, Times.Exactly(1));
         }
 
         [Fact]
         public async Task PublishMessageAsync_WithConfig_ConnectionEstablished()
         {
-            var connectionFactoryMock = new Mock<IConnectionFactory>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(connectionFactoryMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>();
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
-            connectionFactoryMock.Verify(x => x.CreateConnection(), Times.Exactly(1));
+            rabbitConnectionFactoryMock.VerifyGet(x => x.CurrentChannel, Times.Exactly(1));
         }
 
         [Fact]
         public async Task PublishMessageAsync_WithConfig_ChannelEstablished()
         {
-            var connectionMock = new Mock<IConnection>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(connectionMock: connectionMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>();
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
 
-            connectionMock.Verify(x => x.CreateModel(), Times.Exactly(1));
+            rabbitConnectionFactoryMock.Verify(x => x.CurrentChannel, Times.Exactly(1));
         }
 
         [Fact]
         public async Task PublishMessageAsync_WithConfig_BasicPropertiesAreCreated()
         {
             var modelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
 
             await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(new byte[0]));
@@ -76,7 +74,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var modelMock = new Mock<IModel>();
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
-                GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
+                GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
 
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
             const byte priority = 1;
@@ -98,7 +96,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Equal(2, basicProperties.DeliveryMode);
             Assert.Equal(priority, basicProperties.Priority);
-            var traceparent = Encoding.UTF8.GetString((byte[])basicProperties.Headers[$"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"]).Trim('"');
+            var traceparent = Encoding.UTF8.GetString((byte[])basicProperties.Headers[
+                    $"{BasicPropertiesExtensions.CloudEventPrefix}{DistributedTracingExtension.TraceParentAttributeName}"])
+                .Trim('"');
             var activityContext = ActivityContext.Parse(traceparent, null);
             Assert.Equal(activity.Context.TraceId, activityContext.TraceId);
             Assert.Equal(activity.Context.SpanId, activityContext.SpanId);
@@ -112,7 +112,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var modelMock = new Mock<IModel>();
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
             var rabbitConnectionFactoryMock =
-                GetDefaultConnectionFactoryMock(modelMock: modelMock, basicProperties: basicProperties);
+                GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
             var config = GetConfig();
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, config);
             var message = new byte[0];
@@ -131,7 +131,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             var modelMock = new Mock<IModel>();
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object);
             var extensions = new List<ICloudEventExtension>
             {
@@ -153,7 +153,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             var modelMock = new Mock<IModel>();
             modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(modelMock: modelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
             var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, overwriteExchange: true);
             var extensions = new List<ICloudEventExtension>
             {
@@ -168,16 +168,20 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         }
 
         private ITypedMessagePublisher<byte[]> GetPublisher(
-            IRabbitMQConnectionFactory connectionFactory = null,
+            IRabbitMQConnectionFactory<string> factory = null,
             RabbitMQPublisherOptions<string> options = null,
             bool overwriteExchange = false)
         {
-            connectionFactory ??= GetDefaultConnectionFactoryMock().Object;
             options ??= GetConfig(overwriteExchange);
+            factory ??= GetDefaultConnectionFactoryMock<string>().Object;
 
             var configMock = new Mock<IOptions<RabbitMQPublisherOptions<string>>>();
             configMock.Setup(x => x.Value).Returns(options);
-            return new RabbitMQMessagePublisher<string>(connectionFactory, configMock.Object, new JsonEventFormatter());
+            return new RabbitMQMessagePublisher<string>(
+                factory,
+                configMock.Object,
+                new JsonEventFormatter()
+            );
         }
 
         private RabbitMQPublisherOptions<string> GetConfig(bool overwriteExchange = false)
@@ -197,20 +201,29 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             };
         }
 
-        private Mock<IRabbitMQConnectionFactory> GetDefaultConnectionFactoryMock(
-            Mock<IConnectionFactory> connectionFactoryMock = null, Mock<IConnection> connectionMock = null,
-            Mock<IModel> modelMock = null, IBasicProperties basicProperties = null)
+        private Mock<IRabbitMQConnectionFactory<T>> GetDefaultConnectionFactoryMock<T>(
+            Mock<IConnection> connectionMock = null,
+            Mock<IModel> modelMock = null,
+            IBasicProperties basicProperties = null
+        )
         {
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
-            connectionFactoryMock ??= new Mock<IConnectionFactory>();
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
             connectionMock ??= new Mock<IConnection>();
             modelMock ??= new Mock<IModel>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQPublisherOptions<string>>()))
-                .Returns(connectionFactoryMock.Object);
-            connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(connectionMock.Object);
-            connectionMock.Setup(x => x.CreateModel()).Returns(modelMock.Object);
-            modelMock.Setup(x => x.CreateBasicProperties())
+
+            connectionMock
+                .Setup(x => x.CreateModel())
+                .Returns(modelMock.Object);
+
+            modelMock
+                .Setup(x => x.CreateBasicProperties())
                 .Returns(basicProperties ?? new Mock<IBasicProperties>().Object);
+
+            rabbitConnectionFactoryMock.Setup(f => f.CurrentConnection).Returns(connectionMock.Object);
+            rabbitConnectionFactoryMock.Setup(f => f.CurrentChannel).Returns(modelMock.Object);
+            rabbitConnectionFactoryMock.Setup(f => f.CreateConnection()).Returns(connectionMock.Object);
+            rabbitConnectionFactoryMock.Setup(f => f.CreateModel()).Returns(modelMock.Object);
+
             return rabbitConnectionFactoryMock;
         }
     }

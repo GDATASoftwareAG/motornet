@@ -14,20 +14,23 @@ using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public class RabbitMQMessageConsumer<T> : RabbitMQConnectionHandler, IMessageConsumer<T> where T : notnull
+    public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
     {
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;
         private readonly ICloudEventFormatter _cloudEventFormatter;
         private readonly RabbitMQConsumerOptions<T> _options;
-        private readonly IRabbitMQConnectionFactory _connectionFactory;
+        private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
+        private IModel? _channel;
         private CancellationToken _stoppingToken;
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
-            IRabbitMQConnectionFactory connectionFactory, IOptions<RabbitMQConsumerOptions<T>> config,
-            IHostApplicationLifetime applicationLifetime, IApplicationNameService applicationNameService,
+            IRabbitMQConnectionFactory<T> connectionFactory,
+            IOptions<RabbitMQConsumerOptions<T>> config,
+            IHostApplicationLifetime applicationLifetime,
+            IApplicationNameService applicationNameService,
             ICloudEventFormatter cloudEventFormatter)
         {
             _logger = logger;
@@ -54,9 +57,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             ThrowIfNoCallbackConfigured();
             ThrowIfConsumerAlreadyStarted();
-            SetConnectionFactory();
-            EstablishConnection();
-            EstablishChannel();
+            _channel = _connectionFactory.CurrentChannel;
             ConfigureChannel();
             DeclareQueue();
             StartConsumerOnChannel();
@@ -66,7 +67,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public Task StopAsync(CancellationToken token = default)
         {
             _started = false;
-            Channel?.Close();
+            _connectionFactory.Dispose();
             return Task.CompletedTask;
         }
 
@@ -83,14 +84,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 throw new InvalidOperationException("Cannot start consuming as the consumer was already started!");
         }
 
-        private void SetConnectionFactory()
-        {
-            ConnectionFactory = _connectionFactory.From(_options);
-        }
-
         private void ConfigureChannel()
         {
-            Channel?.BasicQos(0, _options.PrefetchCount, false);
+            _channel?.BasicQos(0, _options.PrefetchCount, false);
         }
 
         private void DeclareQueue()
@@ -99,6 +95,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             {
                 return;
             }
+
             var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
             if (_options.Queue.MaxPriority is not null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
 
@@ -119,7 +116,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     throw new ArgumentOutOfRangeException();
             }
 
-            Channel?.QueueDeclare(
+            _channel?.QueueDeclare(
                 _options.Queue.Name,
                 _options.Queue.Durable,
                 false,
@@ -127,7 +124,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 arguments
             );
             foreach (var routingKeyConfig in _options.Queue.Bindings)
-                Channel?.QueueBind(
+                _channel?.QueueBind(
                     _options.Queue.Name,
                     routingKeyConfig.Exchange,
                     routingKeyConfig.RoutingKey,
@@ -136,10 +133,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private void StartConsumerOnChannel()
         {
-            var consumer = new EventingBasicConsumer(Channel);
+            var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += (_, args) => ConsumerCallback(args);
             _started = true;
-            Channel.BasicConsume(_options.Queue.Name, false, consumer);
+            _channel.BasicConsume(_options.Queue.Name, false, consumer);
         }
 
         private void ConsumerCallback(BasicDeliverEventArgs args)
@@ -173,17 +170,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                     switch (processedMessageStatus)
                     {
                         case ProcessedMessageStatus.Success:
-                            Channel?.BasicAck(args.DeliveryTag, false);
+                            _channel?.BasicAck(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.TemporaryFailure:
-                            Channel?.BasicReject(args.DeliveryTag, true);
+                            _channel?.BasicReject(args.DeliveryTag, true);
                             break;
                         case ProcessedMessageStatus.InvalidInput:
-                            Channel?.BasicReject(args.DeliveryTag, false);
+                            _channel?.BasicReject(args.DeliveryTag, false);
                             break;
                         case ProcessedMessageStatus.CriticalFailure:
                             _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
-                                "Message consume fails with critical failure.");
+                                "Message consume fails with critical failure");
                             _applicationLifetime.StopApplication();
                             break;
                         default:
@@ -194,7 +191,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
             catch (Exception e)
             {
-                _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume.");
+                _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume");
                 _applicationLifetime.StopApplication();
             }
         }

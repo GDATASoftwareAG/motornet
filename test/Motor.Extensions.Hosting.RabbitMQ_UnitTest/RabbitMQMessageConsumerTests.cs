@@ -59,20 +59,20 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_CallbackConfigured_ConnectionFactoryIsSet()
         {
             var cfg = GetConfig();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock();
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>();
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
             SetConsumerCallback(consumer);
 
             await consumer.StartAsync();
 
-            rabbitConnectionFactoryMock.Verify(x => x.From(cfg), Times.Exactly(1));
+            rabbitConnectionFactoryMock.VerifyGet(x => x.CurrentChannel, Times.AtLeastOnce);
         }
 
         [Fact]
         public async Task StartAsync_CallbackConfigured_ChannelConfigured()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object);
             SetConsumerCallback(consumer);
 
@@ -85,7 +85,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_CallbackConfigured_QueueDeclaredAndBind()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             var expectedArguments = GetExpectedArgumentsFromConfig(cfg.Queue);
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
@@ -105,7 +105,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_ConsumerConfigWithHasTwoBindings_QueueIsBoundTwice()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
             SetConsumerCallback(consumer);
@@ -124,7 +124,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_CallbackConfigured_ChannelConsumed()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, GetConfig());
             SetConsumerCallback(consumer);
 
@@ -139,7 +139,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_DeclareQueueWithoutMaxPriority_QueueDeclared()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             cfg.Queue.MaxPriority = null;
             var expectedArguments = GetExpectedArgumentsFromConfig(cfg.Queue);
@@ -158,7 +158,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_DeclareQueueWithoutMaxLength_QueueDeclared()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             cfg.Queue.MaxLength = null;
             var expectedArguments = GetExpectedArgumentsFromConfig(cfg.Queue);
@@ -177,7 +177,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_DeclareQueueWithoutMessageTtl_QueueDeclared()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             cfg.Queue.MessageTtl = null;
             var expectedArguments = GetExpectedArgumentsFromConfig(cfg.Queue);
@@ -196,7 +196,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_DontDeclareQueues_QueueDeclareIsNotCalled()
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig(false);
             cfg.Queue.MessageTtl = null;
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
@@ -205,7 +205,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             await consumer.StartAsync();
 
             channelMock.Verify(x =>
-                    x.QueueDeclare(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<IDictionary<string, object>>()),
+                    x.QueueDeclare(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(),
+                        It.IsAny<IDictionary<string, object>>()),
                 Times.Never);
         }
 
@@ -216,7 +217,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         public async Task StartAsync_DeclareQueueWithMaxLengthBytes_QueueDeclared(long maxLengthBytes)
         {
             var channelMock = new Mock<IModel>();
-            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock(channelMock: channelMock);
+            var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
             var cfg = GetConfig();
             cfg.Queue.MaxLengthBytes = maxLengthBytes;
             var consumer = GetRabbitMQMessageConsumer(rabbitConnectionFactoryMock.Object, cfg);
@@ -241,10 +242,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         }
 
         private IMessageConsumer<string> GetRabbitMQMessageConsumer(
-            IRabbitMQConnectionFactory rabbitMqConnectionFactory = null,
+            IRabbitMQConnectionFactory<string> rabbitMqConnectionFactory = null,
             RabbitMQConsumerOptions<string> options = null, IHostApplicationLifetime applicationLifetime = null)
         {
-            rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock().Object;
+            rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock<string>().Object;
             applicationLifetime ??= FakeApplicationLifetime;
             var optionsWrapper = new OptionsWrapper<RabbitMQConsumerOptions<string>>(options ?? GetConfig());
 
@@ -259,18 +260,34 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             return mock.Object;
         }
 
-        private Mock<IRabbitMQConnectionFactory> GetDefaultConnectionFactoryMock(
-            Mock<IConnectionFactory> connectionFactoryMock = null, Mock<IConnection> connectionMock = null,
+        private Mock<IRabbitMQConnectionFactory<T>> GetDefaultConnectionFactoryMock<T>(
+            Mock<IConnection> connectionMock = null,
             Mock<IModel> channelMock = null)
         {
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory>();
-            connectionFactoryMock ??= new Mock<IConnectionFactory>();
+            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
             connectionMock ??= new Mock<IConnection>();
             channelMock ??= new Mock<IModel>();
-            rabbitConnectionFactoryMock.Setup(x => x.From(It.IsAny<RabbitMQConsumerOptions<string>>()))
-                .Returns(connectionFactoryMock.Object);
-            connectionFactoryMock.Setup(x => x.CreateConnection()).Returns(connectionMock.Object);
-            connectionMock.Setup(x => x.CreateModel()).Returns(channelMock.Object);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentConnection)
+                .Returns(connectionMock.Object);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CurrentChannel)
+                .Returns(channelMock.Object);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CreateConnection())
+                .Returns(connectionMock.Object);
+
+            rabbitConnectionFactoryMock
+                .Setup(f => f.CreateModel())
+                .Returns(channelMock.Object);
+
+            connectionMock
+                .Setup(x => x.CreateModel())
+                .Returns(channelMock.Object);
+
             return rabbitConnectionFactoryMock;
         }
 

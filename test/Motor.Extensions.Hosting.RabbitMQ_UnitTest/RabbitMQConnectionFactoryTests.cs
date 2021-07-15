@@ -1,6 +1,9 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using Moq;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
+using RabbitMQ.Client;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
@@ -10,9 +13,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [Fact]
         public void FromConsumerConfig_NullConfig_Throws()
         {
-            var factory = new RabbitMQConnectionFactory();
-
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQConsumerOptions<string>)null));
+            Assert.Throws<ArgumentNullException>(() =>
+                RabbitMQConnectionFactory<string>.From((RabbitMQConsumerOptions<string>)null));
         }
 
         [Theory]
@@ -22,10 +24,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyHost_Throws(string host)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig(host, "user", "password", "vHost", "name", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -35,10 +36,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyUser_Throws(string user)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", user, "password", "vHost", "name", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -48,10 +48,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyPassword_Throws(string password)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", "user", password, "vHost", "name", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -61,16 +60,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyVirtualHost_Throws(string vHost)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", "user", "password", vHost, "name", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Fact]
         public void FromConsumerConfig_NoQueueConfig_Throws()
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = new RabbitMQConsumerOptions<string>
             {
                 Host = "host",
@@ -80,7 +77,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 Queue = null
             };
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -90,10 +87,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyQueueName_Throws(string name)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", "user", "password", "vHost", name, "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -103,10 +99,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyExchange_Throws(string exchange)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", "user", "password", "vHost", "qName", exchange, "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -116,10 +111,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromConsumerConfig_NullOrEmptyRoutingKey_Throws(string routingKey)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig("host", "user", "password", "vHost", "qName", "exchange", routingKey);
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Fact]
@@ -130,11 +124,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             const string password = "password";
             const string vHost = "vHost";
             const int port = 1000;
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetConsumerConfig(host, user, password, vHost, "test", "exchange", "test");
             cfg.Port = port;
 
-            var connectionFactory = factory.From(cfg);
+            var connectionFactory = RabbitMQConnectionFactory<string>.From(cfg);
 
             Assert.Equal(user, connectionFactory.UserName);
             Assert.Equal(password, connectionFactory.Password);
@@ -144,9 +137,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [Fact]
         public void FromPublisherConfig_NullConfig_Throws()
         {
-            var factory = new RabbitMQConnectionFactory();
-
-            Assert.Throws<ArgumentNullException>(() => factory.From((RabbitMQPublisherOptions<string>)null));
+            Assert.Throws<ArgumentNullException>(() =>
+                RabbitMQConnectionFactory<string>.From((RabbitMQPublisherOptions<string>)null));
         }
 
         [Theory]
@@ -156,10 +148,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyHost_Throws(string host)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig(host, "user", "password", "vHost", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -169,10 +160,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyUser_Throws(string user)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig("host", user, "password", "vHost", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -182,10 +172,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyPassword_Throws(string password)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig("host", "user", password, "vHost", "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -195,16 +184,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyVirtualHost_Throws(string vHost)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig("host", "user", "password", vHost, "exchange", "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Fact]
         public void FromPublisherConfig_NullPublishingTarget_Throws()
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = new RabbitMQPublisherOptions<string>
             {
                 Host = "host",
@@ -214,7 +201,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
                 PublishingTarget = null
             };
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -224,10 +211,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyExchange_Throws(string exchange)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig("host", "user", "password", "vHost", exchange, "routingKey");
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Theory]
@@ -237,10 +223,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         [InlineData(null)]
         public void FromPublisherConfig_NullOrEmptyRoutingKey_Throws(string routingKey)
         {
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig("host", "user", "password", "vHost", "exchange", routingKey);
 
-            Assert.Throws<ArgumentException>(() => factory.From(cfg));
+            Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
         }
 
         [Fact]
@@ -251,22 +236,108 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             const string password = "password";
             const string vHost = "vHost";
             const int port = 1000;
-            var factory = new RabbitMQConnectionFactory();
             var cfg = GetPublisherConfig(host, user, password, vHost, "exchange", "test");
             cfg.Port = port;
 
-            var connectionFactory = factory.From(cfg);
+            var connectionFactory = RabbitMQConnectionFactory<string>.From(cfg);
 
             Assert.Equal(user, connectionFactory.UserName);
             Assert.Equal(password, connectionFactory.Password);
             Assert.Equal(vHost, connectionFactory.VirtualHost);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void CreateConnection_ConnectionFactoryMock_AlwaysCreateNewConnection(int times)
+        {
+            var connectionFactoryMock = new Mock<IConnectionFactory>();
+            var rabbitFactory = new RabbitMQConnectionFactory<string>(connectionFactoryMock.Object);
+
+            for (var i = 0; i < times; i++)
+            {
+                rabbitFactory.CreateConnection();
+            }
+
+            connectionFactoryMock.Verify(f => f.CreateConnection(), Times.Exactly(times));
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void CurrentConnection_ConnectionFactoryMock_CreateConnectionOnlyOnce(int times)
+        {
+            var connectionMock = Mock.Of<IConnection>();
+            var connectionFactoryMock = new Mock<IConnectionFactory>();
+            connectionFactoryMock
+                .Setup(f => f.CreateConnection())
+                .Returns(connectionMock);
+            var rabbitFactory = new RabbitMQConnectionFactory<string>(connectionFactoryMock.Object);
+
+            for (var i = 0; i < times; i++)
+            {
+                var _ = rabbitFactory.CurrentConnection;
+            }
+
+            connectionFactoryMock.Verify(f => f.CreateConnection(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void CreateChannel_ConnectionFactoryMock_AlwaysCreateNewChannel(int times)
+        {
+            var connectionMock = new Mock<IConnection>();
+            var connectionFactoryMock = new Mock<IConnectionFactory>();
+            connectionFactoryMock
+                .Setup(f => f.CreateConnection())
+                .Returns(connectionMock.Object);
+            var rabbitFactory = new RabbitMQConnectionFactory<string>(connectionFactoryMock.Object);
+
+            for (var i = 0; i < times; i++)
+            {
+                rabbitFactory.CreateModel();
+            }
+
+            connectionMock.Verify(c => c.CreateModel(), Times.Exactly(times));
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void CurrentChannel_ConnectionFactoryMock_CreateChannelOnlyOnce(int times)
+        {
+            var connectionMock = new Mock<IConnection>();
+            var connectionFactoryMock = new Mock<IConnectionFactory>();
+            var channelMock = Mock.Of<IModel>();
+
+            connectionFactoryMock
+                .Setup(f => f.CreateConnection())
+                .Returns(connectionMock.Object);
+
+            connectionMock
+                .Setup(c => c.CreateModel())
+                .Returns(channelMock);
+
+            var rabbitFactory = new RabbitMQConnectionFactory<string>(connectionFactoryMock.Object);
+
+            for (var i = 0; i < times; i++)
+            {
+                var _ = rabbitFactory.CurrentChannel;
+            }
+
+            connectionMock.Verify(c => c.CreateModel(), Times.Once);
+        }
+
         private RabbitMQConsumerOptions<string> GetConsumerConfig(string host, string user, string password,
             string virtualHost,
             string name, string exchange, string routingKey)
         {
-            return new RabbitMQConsumerOptions<string>
+            return new()
             {
                 Host = host,
                 VirtualHost = virtualHost,
@@ -290,7 +361,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
         private RabbitMQPublisherOptions<string> GetPublisherConfig(string host, string user, string password,
             string virtualHost, string exchange, string routingKey)
         {
-            return new RabbitMQPublisherOptions<string>
+            return new()
             {
                 Host = host,
                 Password = password,
