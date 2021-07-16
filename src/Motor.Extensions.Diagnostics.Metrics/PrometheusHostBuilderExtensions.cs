@@ -10,12 +10,11 @@ namespace Motor.Extensions.Diagnostics.Metrics
     {
         public static IMotorHostBuilder ConfigurePrometheus(this IMotorHostBuilder hostBuilder)
         {
-            hostBuilder
-                .ConfigureServices((_, services) =>
-                {
-                    services.AddSingleton(typeof(IMetricsFactory<>), typeof(MetricsFactory<>));
-                    services.AddSingleton<IMotorMetricsFactory, MotorMetricsFactory>();
-                });
+            hostBuilder.ConfigureServices((_, services) =>
+            {
+                services.AddSingleton(typeof(IMetricsFactory<>), typeof(MetricsFactory<>));
+                services.AddSingleton<IMotorMetricsFactory, MotorMetricsFactory>();
+            });
             return hostBuilder;
         }
 
