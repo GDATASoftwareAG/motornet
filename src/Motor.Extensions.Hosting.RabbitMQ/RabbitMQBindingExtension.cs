@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.Core;
 using Motor.Extensions.Hosting.CloudEvents;
+using CloudEventValidation = CloudNative.CloudEvents.Core.Validation;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
@@ -20,7 +20,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public static MotorCloudEvent<TData> SetRabbitMQBinding<TData>(this MotorCloudEvent<TData> cloudEvent,
             string? exchange, string? routingKey) where TData : class
         {
-            Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
+            CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent));
             cloudEvent[RabbitMQExchangeAttribute] = exchange;
             cloudEvent[RabbitMQRoutingKeyAttribute] = routingKey;
             return cloudEvent;
@@ -28,12 +28,14 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         public static string? GetRabbitMQExchange<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            return Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as string;
+            return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as
+                string;
         }
 
         public static string? GetRabbitMQRoutingKey<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            return Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as string;
+            return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as
+                string;
         }
     }
 }
