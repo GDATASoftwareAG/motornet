@@ -31,7 +31,7 @@ using Xunit.Abstractions;
 
 namespace Motor.Extensions.Hosting_IntegrationTest
 {
-    public class GenericHostingTests
+    public class GenericHostingTests : IDisposable
     {
         private readonly ActivityListener _listener;
 
@@ -47,13 +47,13 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             ActivitySource.AddActivityListener(_listener);
         }
 
-        [Fact(Timeout = 20000)]
+        [Fact]
         public async Task
             StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
         {
             var consumer = new InMemoryConsumer<string>();
             var publisher = new InMemoryPublisher<string>();
-            var host = GetReverseStringService(consumer, publisher);
+            using var host = GetReverseStringService(consumer, publisher);
 
             var message = "12345";
 
@@ -65,12 +65,12 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await host.StopAsync();
         }
 
-        [Fact(Timeout = 20000)]
+        [Fact]
         public async Task StartAsync_CreateSpanAsReference_ContextIsReferenced()
         {
             var consumer = new InMemoryConsumer<string>();
             var publisher = new InMemoryPublisher<string>();
-            var host = GetReverseStringService(consumer, publisher);
+            using var host = GetReverseStringService(consumer, publisher);
 
             await host.StartAsync();
 
@@ -86,12 +86,12 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await host.StopAsync();
         }
 
-        [Fact(Timeout = 20000)]
+        [Fact]
         public async Task StartAsync_CreateCustomExtension_ExtensionIsPassedThrough()
         {
             var consumer = new InMemoryConsumer<string>();
             var publisher = new InMemoryPublisher<string>();
-            var host = GetReverseStringService(consumer, publisher);
+            using var host = GetReverseStringService(consumer, publisher);
 
             await host.StartAsync();
 
@@ -106,23 +106,23 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             await host.StopAsync();
         }
 
-        [Fact(Timeout = 20000)]
+        [Fact]
         public async Task StartAsync_CreateSpanWithoutReference_NewSpanIsCreated()
         {
             var consumer = new InMemoryConsumer<string>();
             var publisher = new InMemoryPublisher<string>();
-            var host = GetReverseStringService(consumer, publisher);
+            using var host = GetReverseStringService(consumer, publisher);
             await host.StartAsync();
             await ConsumeMessage(consumer, "test");
 
             Assert.Single(publisher.Events);
             var ctx = publisher.Events.First().GetActivityContext();
 
-            Assert.NotNull(ctx.TraceId);
+            Assert.NotEqual(default, ctx.TraceId);
             await host.StopAsync();
         }
 
-        [Fact(Timeout = 20000)]
+        [Fact]
         public async Task StartAsync_CreateSpan_ActivityListenerGotTrace()
         {
             var consumer = new InMemoryConsumer<string>();
@@ -130,7 +130,7 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             var traceIsPublished = false;
             _listener.ActivityStarted = _ => { traceIsPublished = true; };
 
-            var host = GetReverseStringService(consumer, publisher);
+            using var host = GetReverseStringService(consumer, publisher);
 
             await host.StartAsync();
             await ConsumeMessage(consumer, "12345");
@@ -241,6 +241,11 @@ namespace Motor.Extensions.Hosting_IntegrationTest
             {
                 return Encoding.UTF8.GetString(message);
             }
+        }
+
+        public void Dispose()
+        {
+            _listener.Dispose();
         }
     }
 
