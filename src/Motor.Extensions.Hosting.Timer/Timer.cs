@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Quartz;
 using Quartz.Impl;
 

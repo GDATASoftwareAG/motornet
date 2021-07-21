@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents.Extensions;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Diagnostics.Tracing;
 using OpenTelemetryExample.Model;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace OpenTelemetryExample
 {
@@ -29,7 +31,7 @@ namespace OpenTelemetryExample
             }
 
             // Extract ActivityContext from the incoming CloudEvent
-            var parentContext = inputEvent.Extension<DistributedTracingExtension>()?.GetActivityContext() ?? default;
+            var parentContext = inputEvent.GetActivityContext();
 
             // Create new Activity with extracted ActivityContext as parent
             using var activity =

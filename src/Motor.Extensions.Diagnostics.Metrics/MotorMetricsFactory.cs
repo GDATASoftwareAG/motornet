@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 using Prometheus.Client.AspNetCore;
 using Prometheus.Client.Collectors;

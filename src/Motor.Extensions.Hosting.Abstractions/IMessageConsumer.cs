@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.Hosting.Abstractions
 {

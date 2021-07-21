@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
@@ -250,7 +250,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
             var optionsWrapper = new OptionsWrapper<RabbitMQConsumerOptions<string>>(options ?? GetConfig());
 
             return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
-                applicationLifetime, GetApplicationNameService(), new JsonEventFormatter());
+                applicationLifetime, GetApplicationNameService());
         }
 
         private IApplicationNameService GetApplicationNameService(string source = "test://non")
@@ -329,7 +329,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
         private void SetConsumerCallback(IMessageConsumer<string> consumer)
         {
-            consumer.ConsumeCallbackAsync = (context, bytes) => Task.FromResult(ProcessedMessageStatus.Success);
+            consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Success);
         }
     }
 }

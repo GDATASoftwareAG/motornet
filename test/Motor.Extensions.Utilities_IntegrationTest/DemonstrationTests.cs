@@ -3,13 +3,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
@@ -37,7 +37,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             PrepareQueues();
 
             const string message = "12345";
-            var host = GetReverseStringService();
+            using var host = GetReverseStringService();
             var channel = Fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
 
@@ -103,9 +103,8 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
                 CancellationToken token = default)
             {
-                var parentContext =
-                    dataCloudEvent.Extension<DistributedTracingExtension>()?.GetActivityContext();
-                Assert.NotNull(parentContext);
+                var parentContext = dataCloudEvent.GetActivityContext();
+                Assert.NotEqual(default, parentContext);
                 _logger.LogInformation("log your request");
                 var tmpChar = dataCloudEvent.TypedData.ToCharArray();
                 var reversed = tmpChar.Reverse().ToArray();

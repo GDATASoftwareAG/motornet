@@ -2,12 +2,13 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka;
 using Motor.Extensions.Hosting.Kafka.Options;
 using Motor.Extensions.TestUtilities;
@@ -86,7 +87,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var publisher = GetPublisher<byte[]>("wrong_topic");
             var motorCloudEvent =
                 MotorCloudEvent.CreateTestCloudEvent(message).CreateNew(Encoding.UTF8.GetBytes(message));
-            motorCloudEvent.GetExtensionOrCreate(() => new KafkaTopicExtension(topic));
+            motorCloudEvent.SetKafkaTopic(topic);
             await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
             var consumer = GetConsumer<byte[]>(topic);
             string id = null;

@@ -1,104 +1,41 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using CloudNative.CloudEvents;
-using Motor.Extensions.Hosting.RabbitMQ.Options;
+using Motor.Extensions.Hosting.CloudEvents;
+using CloudEventValidation = CloudNative.CloudEvents.Core.Validation;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
-    public class RabbitMQBindingExtension : ICloudEventExtension
+    public static class RabbitMQBindingExtension
     {
-        public const string RoutingKeyAttributeName = "bindingRoutingKey";
-        public const string ExchangeAttributeName = "bindingExchange";
-        private IDictionary<string, object> _attributes = new Dictionary<string, object>();
+        public static CloudEventAttribute RabbitMQExchangeAttribute { get; } =
+            CloudEventAttribute.CreateExtension("bindingexchange", CloudEventAttributeType.String);
 
+        public static CloudEventAttribute RabbitMQRoutingKeyAttribute { get; } =
+            CloudEventAttribute.CreateExtension("bindingroutingkey", CloudEventAttributeType.String);
 
-        public RabbitMQBindingExtension(string exchange, string routingKey)
+        public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
+            new[] { RabbitMQExchangeAttribute, RabbitMQRoutingKeyAttribute }.ToList().AsReadOnly();
+
+        public static MotorCloudEvent<TData> SetRabbitMQBinding<TData>(this MotorCloudEvent<TData> cloudEvent,
+            string? exchange, string? routingKey) where TData : class
         {
-            Exchange = exchange;
-            RoutingKey = routingKey;
+            CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent));
+            cloudEvent[RabbitMQExchangeAttribute] = exchange;
+            cloudEvent[RabbitMQRoutingKeyAttribute] = routingKey;
+            return cloudEvent;
         }
 
-
-        public string? Exchange
+        public static string? GetRabbitMQExchange<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            get => (string?)_attributes[ExchangeAttributeName];
-            set
-            {
-                if (value is not null) _attributes[ExchangeAttributeName] = value;
-            }
+            return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as
+                string;
         }
 
-        public string? RoutingKey
+        public static string? GetRabbitMQRoutingKey<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
         {
-            get => (string?)_attributes[RoutingKeyAttributeName];
-            set
-            {
-                if (value is not null) _attributes[RoutingKeyAttributeName] = value;
-            }
-        }
-
-        public RabbitMQBindingOptions? BindingOptions => Exchange != null && RoutingKey != null
-            ? new RabbitMQBindingOptions
-            {
-                Exchange = Exchange,
-                RoutingKey = RoutingKey
-            }
-            : null;
-
-        public void Attach(CloudEvent cloudEvent)
-        {
-            var eventAttributes = cloudEvent.GetAttributes();
-            if (_attributes == eventAttributes)
-            {
-                // already done
-                return;
-            }
-
-            foreach (var attr in _attributes) eventAttributes[attr.Key] = attr.Value;
-
-            _attributes = eventAttributes;
-        }
-
-        public bool ValidateAndNormalize(string key, ref dynamic value)
-        {
-            switch (key)
-            {
-                case RoutingKeyAttributeName:
-                    switch (value)
-                    {
-                        case null:
-                            return true;
-                        case string _:
-                            return true;
-                        default:
-                            throw new InvalidOperationException("ErrorRoutingKeyValueIsNotAString");
-                    }
-                case ExchangeAttributeName:
-                    switch (value)
-                    {
-                        case null:
-                            return true;
-                        case string _:
-                            return true;
-                        default:
-                            throw new InvalidOperationException("ErrorExchangeValueIsNotAString");
-                    }
-            }
-
-            return false;
-        }
-
-        // Disabled null check because CloudEvent SDK doesn't 
-        // implement null-checks
-#pragma warning disable CS8603
-        public Type GetAttributeType(string name)
-        {
-            return name switch
-            {
-                RoutingKeyAttributeName => typeof(string),
-                ExchangeAttributeName => typeof(string),
-                _ => null
-            };
+            return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as
+                string;
         }
     }
 }

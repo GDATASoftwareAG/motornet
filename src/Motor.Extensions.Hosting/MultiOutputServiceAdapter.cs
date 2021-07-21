@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting

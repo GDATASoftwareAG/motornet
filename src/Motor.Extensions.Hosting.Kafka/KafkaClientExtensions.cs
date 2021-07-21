@@ -2,27 +2,36 @@ using System;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Kafka;
 using Confluent.Kafka;
-using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.Hosting.Kafka
 {
     internal static class KafkaClientExtensions
     {
-        public static MotorCloudEvent<byte[]> ToMotorCloudEvent<T>(this ConsumeResult<string, byte[]> message,
-            IApplicationNameService applicationNameService, ICloudEventFormatter cloudEventFormatter)
+        public static MotorCloudEvent<byte[]> ToMotorCloudEvent(this Message<string?, byte[]> message,
+            IApplicationNameService applicationNameService, CloudEventFormatter cloudEventFormatter)
         {
-            if (!message.Message.IsCloudEvent())
-                return new MotorCloudEvent<byte[]>(applicationNameService, message.Message.Value, typeof(T).Name,
-                    new Uri("kafka://notset"));
-            var cloudEvent = message.Message.ToCloudEvent(cloudEventFormatter);
-            var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
-                cloudEvent.Type, cloudEvent.Source, cloudEvent.Id, cloudEvent.Time);
-            var newAttributes = motorCloudEvent.GetAttributes();
-            foreach (var (key, value) in cloudEvent.GetAttributes())
+            if (!message.IsCloudEvent())
             {
-                if (!newAttributes.ContainsKey(key))
+                return new MotorCloudEvent<byte[]>(applicationNameService, message.Value, new Uri("kafka://notset"));
+            }
+
+            var cloudEvent = message.ToCloudEvent(cloudEventFormatter);
+            if (cloudEvent.Data is null)
+            {
+                throw new ArgumentException("Data property of CloudEvent is null");
+            }
+            if (cloudEvent.Source is null)
+            {
+                throw new ArgumentException("Source property of CloudEvent is null");
+            }
+            var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
+                cloudEvent.Source, cloudEvent.Id, cloudEvent.Time);
+            foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
+            {
+                if (motorCloudEvent.GetAttribute(key.Name) is null)
                 {
-                    newAttributes.Add(key, value);
+                    motorCloudEvent[key] = value;
                 }
             }
 

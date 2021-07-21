@@ -76,7 +76,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Conversion
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Conversion.SystemJson_UnitTest", "test\Motor.Extensions.Conversion.SystemJson_UnitTest\Motor.Extensions.Conversion.SystemJson_UnitTest.csproj", "{1595E570-D495-41C8-BDAC-8DE71550A15A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.Abstractions_UnitTest", "test\Motor.Extensions.Hosting.Abstractions_UnitTest\Motor.Extensions.Hosting.Abstractions_UnitTest.csproj", "{269BEA88-85A9-42CF-B9A1-E2C8DAF6B662}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.CloudEvents_UnitTest", "test\Motor.Extensions.Hosting.CloudEvents_UnitTest\Motor.Extensions.Hosting.CloudEvents_UnitTest.csproj", "{269BEA88-85A9-42CF-B9A1-E2C8DAF6B662}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.HealthChecks", "src\Motor.Extensions.Diagnostics.HealthChecks\Motor.Extensions.Diagnostics.HealthChecks.csproj", "{E0E0412E-98EC-4B86-853D-CF400FE4F74B}"
 EndProject
@@ -121,6 +121,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.Queue.Abstractions", "src\Motor.Extensions.Diagnostics.Queue.Abstractions\Motor.Extensions.Diagnostics.Queue.Abstractions.csproj", "{67271302-6660-4B59-A478-409E3012EFB9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.Queue.Metrics", "src\Motor.Extensions.Diagnostics.Queue.Metrics\Motor.Extensions.Diagnostics.Queue.Metrics.csproj", "{B2A23024-1C00-4946-836A-5135E520D823}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.CloudEvents", "src\Motor.Extensions.Hosting.CloudEvents\Motor.Extensions.Hosting.CloudEvents.csproj", "{87818839-601A-4D13-ADDC-368E2D4684C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -756,6 +757,18 @@ Global
 		{B2A23024-1C00-4946-836A-5135E520D823}.Release|x64.Build.0 = Release|Any CPU
 		{B2A23024-1C00-4946-836A-5135E520D823}.Release|x86.ActiveCfg = Release|Any CPU
 		{B2A23024-1C00-4946-836A-5135E520D823}.Release|x86.Build.0 = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|x64.Build.0 = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Debug|x86.Build.0 = Debug|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x64.ActiveCfg = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x64.Build.0 = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x86.ActiveCfg = Release|Any CPU
+		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -813,6 +826,7 @@ Global
 		{C1385EB8-4F54-4869-83A0-72D85A5E986C} = {ADD2EBBA-A839-4E4A-9253-CDE29A372F07}
 		{67271302-6660-4B59-A478-409E3012EFB9} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 		{B2A23024-1C00-4946-836A-5135E520D823} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
+		{87818839-601A-4D13-ADDC-368E2D4684C7} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5E91C34C-3AEC-4084-BA02-753C9236AA34}

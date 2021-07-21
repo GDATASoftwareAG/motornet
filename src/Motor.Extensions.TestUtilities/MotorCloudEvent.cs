@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using CloudNative.CloudEvents;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.TestUtilities
 {
     public class MotorCloudEvent
     {
-        public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null,
-            IEnumerable<ICloudEventExtension>? extensions = null)
+        public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null)
             where T : class
         {
             var applicationNameService = new TestApplicationNameService(source);
-            return new MotorCloudEvent<T>(applicationNameService, data, typeof(T).Name,
-                applicationNameService.GetSource(), extensions: extensions?.ToArray() ?? Array.Empty<ICloudEventExtension>());
+            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource());
         }
 
         private class TestApplicationNameService : IApplicationNameService

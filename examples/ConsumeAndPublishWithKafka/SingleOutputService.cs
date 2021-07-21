@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConsumeAndPublishWithKafka.Model;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 
 namespace ConsumeAndPublishWithKafka
 {

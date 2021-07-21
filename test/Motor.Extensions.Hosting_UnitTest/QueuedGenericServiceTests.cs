@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Internal;
 using Motor.Extensions.TestUtilities;
 using Xunit;

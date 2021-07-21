@@ -6,6 +6,7 @@ using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities.Abstractions;
 

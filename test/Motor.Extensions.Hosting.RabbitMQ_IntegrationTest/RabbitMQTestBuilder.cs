@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
+using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
@@ -212,8 +213,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 rabbitConnectionFactoryMock.Object,
                 optionsMock.Object,
                 applicationLifetime,
-                null,
-                new JsonEventFormatter()
+                null
             )
             {
                 ConsumeCallbackAsync = Callback
@@ -282,7 +282,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             using (var channel = Fixture.Connection.CreateModel())
             {
                 var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (sender, args) =>
+                consumer.Received += (_, args) =>
                 {
                     priority = args.BasicProperties.Priority;
                     message = args.Body.ToArray();
@@ -292,12 +292,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 await Task.Delay(TimeSpan.FromSeconds(2));
             }
 
-            var extensions = new List<ICloudEventExtension>
-            {
-                new RabbitMQPriorityExtension(priority)
-            };
+            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(message);
+            cloudEvent.SetRabbitMQPriority(priority);
 
-            return MotorCloudEvent.CreateTestCloudEvent(message, extensions: extensions.ToArray());
+            return cloudEvent;
         }
     }
 }
