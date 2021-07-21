@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -21,18 +21,18 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
         {
             var inputMessage = new byte[] { 1, 2, 3 };
             var inputEvent = MotorCloudEvent.CreateTestCloudEvent(inputMessage);
-            var fakeDecompressor = new Mock<IMessageDecompressor>();
-            var decompressedMessage = new byte[] { 4, 5, 6 };
-            fakeDecompressor.Setup(f => f.DecompressAsync(inputMessage, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(decompressedMessage);
-            fakeDecompressor.Setup(m => m.CompressionType).Returns(NoOpMessageCompressor.NoOpCompressionType);
+            var fakeDecoder = new Mock<IMessageDecoder>();
+            var decodedMessage = new byte[] { 4, 5, 6 };
+            fakeDecoder.Setup(f => f.DecodeAsync(inputMessage, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(decodedMessage);
+            fakeDecoder.Setup(m => m.Encoding).Returns(NoOpMessageEncoder.NoEncoding);
             var preprocessedMessage = "test";
             var fakeDeserializer = new Mock<IMessageDeserializer<string>>();
-            fakeDeserializer.Setup(f => f.Deserialize(decompressedMessage)).Returns(preprocessedMessage);
+            fakeDeserializer.Setup(f => f.Deserialize(decodedMessage)).Returns(preprocessedMessage);
             var mockQueue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
             fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
-            CreateConsumerService(mockQueue.Object, fakeDeserializer.Object, fakeDecompressor.Object,
+            CreateConsumerService(mockQueue.Object, fakeDeserializer.Object, fakeDecoder.Object,
                 fakeMessageConsumer.Object);
 
             await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
@@ -43,80 +43,82 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
         }
 
         [Fact]
-        public async Task SingleMessageConsumeAsync_UnknownCompressionTypeInInput_InvalidInput()
+        public async Task SingleMessageConsumeAsync_UnknownEncodingInInput_InvalidInput()
         {
-            var inputEvent = CreateMotorCloudEventWithCompressionType("unknown-compression-type");
-            var fakeDecompressor = new Mock<IMessageDecompressor>();
-            fakeDecompressor.Setup(m => m.CompressionType).Returns("other-compression-type");
+            var inputEvent = CreateMotorCloudEventWithEncoding("unknown-encoding");
+            var fakeDecoder = new Mock<IMessageDecoder>();
+            fakeDecoder.Setup(m => m.Encoding).Returns("other-encoding");
             var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
             fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
-            CreateConsumerService(decompressor: fakeDecompressor.Object, consumer: fakeMessageConsumer.Object);
+            CreateConsumerService(decoder: fakeDecoder.Object, consumer: fakeMessageConsumer.Object);
 
-            var actual = await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
+            var actual =
+                await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
 
             Assert.Equal(ProcessedMessageStatus.InvalidInput, actual);
         }
 
         [Fact]
-        public async Task SingleMessageConsumeAsync_MultipleDecompressors_Success()
+        public async Task SingleMessageConsumeAsync_MultipleDecoders_Success()
         {
-            const string usedCompressionType = "used-compression";
-            var inputEvent = CreateMotorCloudEventWithCompressionType(usedCompressionType);
-            var unusedDecompressor = CreateDecompressor("unused-compression");
-            var usedDecompressor = CreateDecompressor(usedCompressionType);
+            const string usedEncoding = "used-encoding";
+            var inputEvent = CreateMotorCloudEventWithEncoding(usedEncoding);
+            var unusedDecoder = CreateDecoder("unused-encoding");
+            var usedDecoder = CreateDecoder(usedEncoding);
             var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
             fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
             CreateConsumerService(
-                decompressors: new List<IMessageDecompressor> { unusedDecompressor.Object, usedDecompressor.Object },
+                decoders: new List<IMessageDecoder> { unusedDecoder.Object, usedDecoder.Object },
                 consumer: fakeMessageConsumer.Object);
 
-            var actual = await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
+            var actual =
+                await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
 
             Assert.Equal(ProcessedMessageStatus.Success, actual);
-            usedDecompressor.Verify(m => m.DecompressAsync(inputEvent.TypedData, It.IsAny<CancellationToken>()));
-            unusedDecompressor.Verify(m => m.DecompressAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+            usedDecoder.Verify(m => m.DecodeAsync(inputEvent.TypedData, It.IsAny<CancellationToken>()));
+            unusedDecoder.Verify(m => m.DecodeAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
-        private static MotorCloudEvent<byte[]> CreateMotorCloudEventWithCompressionType(string compressionType,
+        private static MotorCloudEvent<byte[]> CreateMotorCloudEventWithEncoding(string encoding,
         byte[]? inputMessage = null)
         {
             var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(inputMessage ?? Array.Empty<byte>());
-            cloudEvent.SetCompressionType(compressionType);
+            cloudEvent.SetEncoding(encoding);
             return cloudEvent;
         }
 
-        private static Mock<IMessageDecompressor> CreateDecompressor(string compressionType, byte[]? expectedInput = null,
-            byte[]? decompressedOutput = null)
+        private static Mock<IMessageDecoder> CreateDecoder(string encoding, byte[]? expectedInput = null,
+            byte[]? decodedOutput = null)
         {
-            var fakeDecompressor = new Mock<IMessageDecompressor>();
-            fakeDecompressor.Setup(f =>
-                    f.DecompressAsync(expectedInput ?? It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(decompressedOutput ?? Array.Empty<byte>());
-            fakeDecompressor.Setup(m => m.CompressionType).Returns(compressionType);
-            return fakeDecompressor;
+            var fakeDecoder = new Mock<IMessageDecoder>();
+            fakeDecoder.Setup(f =>
+                    f.DecodeAsync(expectedInput ?? It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(decodedOutput ?? Array.Empty<byte>());
+            fakeDecoder.Setup(m => m.Encoding).Returns(encoding);
+            return fakeDecoder;
         }
 
         private static void CreateConsumerService(IBackgroundTaskQueue<MotorCloudEvent<string>>? queue = null,
             IMessageDeserializer<string>? deserializer = null,
-            IMessageDecompressor? decompressor = null,
+            IMessageDecoder? decoder = null,
             IMessageConsumer<string>? consumer = null)
         {
             CreateConsumerService(queue, deserializer,
-                decompressor is null ? null : new List<IMessageDecompressor> { decompressor }, consumer);
+                decoder is null ? null : new List<IMessageDecoder> { decoder }, consumer);
         }
 
         private static void CreateConsumerService(IBackgroundTaskQueue<MotorCloudEvent<string>>? queue = null,
             IMessageDeserializer<string>? deserializer = null,
-            IEnumerable<IMessageDecompressor>? decompressors = null,
+            IEnumerable<IMessageDecoder>? decoders = null,
             IMessageConsumer<string>? consumer = null)
         {
             queue ??= Mock.Of<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             deserializer ??= Mock.Of<IMessageDeserializer<string>>();
-            decompressors ??= new List<IMessageDecompressor> { Mock.Of<IMessageDecompressor>() };
+            decoders ??= new List<IMessageDecoder> { Mock.Of<IMessageDecoder>() };
             consumer ??= Mock.Of<IMessageConsumer<string>>();
             var _ = new TypedConsumerService<string>(Mock.Of<ILogger<TypedConsumerService<string>>>(), null, queue,
-                deserializer, decompressors, consumer);
+                deserializer, decoders, consumer);
         }
     }
 }

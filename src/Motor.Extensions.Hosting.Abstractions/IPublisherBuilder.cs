@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Hosting.Abstractions
@@ -19,7 +19,7 @@ namespace Motor.Extensions.Hosting.Abstractions
         void AddSerializer<TSerializer>()
             where TSerializer : IMessageSerializer<T>;
 
-        void AddCompressor<TCompressor>()
-            where TCompressor : IMessageCompressor;
+        void AddEncoder<TEncoder>()
+            where TEncoder : IMessageEncoder;
     }
 }

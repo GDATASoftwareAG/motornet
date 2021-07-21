@@ -139,17 +139,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             try
             {
-                var cloudEvent = args.BasicProperties.ExtractCloudEvent(_applicationNameService, args.Body);
-
-                if (args.BasicProperties.IsPriorityPresent())
-                {
-                    cloudEvent.SetRabbitMQPriority(args.BasicProperties.Priority);
-                }
-
-                if (_options.ExtractBindingKey)
-                {
-                    cloudEvent.SetRabbitMQBinding(args.Exchange, args.RoutingKey);
-                }
+                var cloudEvent = args.ExtractCloudEvent(_applicationNameService, args.Body, _options.ExtractBindingKey);
 
                 var task = ConsumeCallbackAsync?.Invoke(cloudEvent, _stoppingToken)?
                     .ConfigureAwait(false)

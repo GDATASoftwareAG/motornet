@@ -2,30 +2,30 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Compression.Gzip;
+using Motor.Extensions.ContentEncoding.Gzip;
 using Xunit;
 
-namespace Motor.Extensions.Compression.Gzip_UnitTest
+namespace Motor.Extensions.ContentEncoding.Gzip_UnitTest
 {
-    public class GzipMessageCompressorTests
+    public class GzipMessageEncoderTests
     {
         [Fact]
-        public async Task Compress_SomeUncompressedMessage_CompressedMessage()
+        public async Task Encode_SomeUnencodedMessage_EncodedMessage()
         {
-            var compressor = CreateCompressor();
-            var uncompressed = new byte[] { 1, 2, 3 };
+            var encoder = CreateEncoder();
+            var unencoded = new byte[] { 1, 2, 3 };
 
-            var compressed = await compressor.CompressAsync(uncompressed, CancellationToken.None);
+            var encoded = await encoder.EncodeAsync(unencoded, CancellationToken.None);
 
-            Assert.Equal(uncompressed, await DecompressInputAsync(compressed));
+            Assert.Equal(unencoded, await DecodeInputAsync(encoded));
         }
 
-        private static GzipMessageCompressor CreateCompressor()
+        private static GzipMessageEncoder CreateEncoder()
         {
             return new();
         }
 
-        private static async Task<byte[]> DecompressInputAsync(byte[] compressed)
+        private static async Task<byte[]> DecodeInputAsync(byte[] compressed)
         {
             var compressedStream = new MemoryStream(compressed);
 

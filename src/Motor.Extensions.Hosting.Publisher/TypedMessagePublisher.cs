@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
@@ -16,38 +16,38 @@ namespace Motor.Extensions.Hosting.Publisher
     {
         private readonly TPublisher _bytesMessagePublisher;
         private readonly ISummary? _messageSerialization;
-        private readonly ISummary? _messageCompression;
+        private readonly ISummary? _messageEncoding;
         private readonly IMessageSerializer<TOutput> _messageSerializer;
-        private readonly IMessageCompressor _messageCompressor;
+        private readonly IMessageEncoder _messageEncoder;
 
         public TypedMessagePublisher(IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
             TPublisher bytesMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
-            IMessageCompressor messageCompressor)
+            IMessageEncoder messageEncoder)
         {
             _bytesMessagePublisher = bytesMessagePublisher;
             _messageSerializer = messageSerializer;
-            _messageCompressor = messageCompressor;
+            _messageEncoder = messageEncoder;
             _messageSerialization =
                 metrics?.CreateSummary("message_serialization", "Message serialization duration in ms");
-            _messageCompression =
-                metrics?.CreateSummary("message_compression", "Message compression duration in ms");
+            _messageEncoding =
+                metrics?.CreateSummary("message_encoding", "Message encoding duration in ms");
         }
 
         public async Task PublishMessageAsync(MotorCloudEvent<TOutput> motorCloudEvent, CancellationToken token = default)
         {
-            byte[] bytes, compressedBytes;
+            byte[] bytes, encodedBytes;
             using (new AutoObserveStopwatch(() => _messageSerialization))
             {
                 bytes = _messageSerializer.Serialize(motorCloudEvent.TypedData);
             }
 
-            using (new AutoObserveStopwatch(() => _messageCompression))
+            using (new AutoObserveStopwatch(() => _messageEncoding))
             {
-                compressedBytes = await _messageCompressor.CompressAsync(bytes, token);
+                encodedBytes = await _messageEncoder.EncodeAsync(bytes, token);
             }
 
-            var bytesEvent = motorCloudEvent.CreateNew(compressedBytes, true);
-            bytesEvent.SetCompressionType(_messageCompressor.CompressionType);
+            var bytesEvent = motorCloudEvent.CreateNew(encodedBytes, true);
+            bytesEvent.SetEncoding(_messageEncoder.Encoding);
             await _bytesMessagePublisher.PublishMessageAsync(bytesEvent, token);
         }
     }

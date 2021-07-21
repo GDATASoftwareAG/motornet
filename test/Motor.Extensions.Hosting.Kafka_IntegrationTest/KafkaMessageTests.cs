@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka;
 using Motor.Extensions.Hosting.Kafka.Options;
@@ -38,30 +40,30 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
             var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-            Assert.Equal(MotorCloudEventInfo.RequiredAttributes.Count(),
+            Assert.Equal(GetRequiredAttributes().Count(),
                 outputCloudEvent.GetPopulatedAttributes().Count());
-            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes)
+            foreach (var requiredAttribute in GetRequiredAttributes())
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
         }
 
         [Fact]
-        public void Update_CompressionTypeExtension_RequiredAttributesAndCompressionTypeAttributeInHeader()
+        public void Update_EncodingExtension_RequiredAttributesAndEncodingAttributeInHeader()
         {
             var publisher = GetKafkaPublisher<byte[]>();
             var consumer = GetKafkaConsumer<byte[]>();
             var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
-            inputCloudEvent.SetCompressionType("someCompressionType");
+            inputCloudEvent.SetEncoding("someEncoding");
 
             var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
             var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-            Assert.Equal(MotorCloudEventInfo.RequiredAttributes.Count() + 1,
+            Assert.Equal(GetRequiredAttributes().Count() + 1,
                 outputCloudEvent.GetPopulatedAttributes().Count());
-            Assert.Equal(inputCloudEvent[CompressionTypeExtension.CompressionTypeAttribute],
-                outputCloudEvent[CompressionTypeExtension.CompressionTypeAttribute]);
-            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes)
+            Assert.Equal(inputCloudEvent[EncodingExtension.EncodingAttribute],
+                outputCloudEvent[EncodingExtension.EncodingAttribute]);
+            foreach (var requiredAttribute in GetRequiredAttributes())
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
@@ -94,6 +96,12 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var mock = new Mock<IApplicationNameService>();
             mock.Setup(t => t.GetSource()).Returns(new Uri(source));
             return mock.Object;
+        }
+
+        private static IEnumerable<CloudEventAttribute> GetRequiredAttributes()
+        {
+            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent("");
+            return cloudEvent.GetPopulatedAttributes().Select(a => a.Key);
         }
 
         private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")

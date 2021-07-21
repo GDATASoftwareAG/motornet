@@ -110,18 +110,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Utilities_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.Telemetry", "src\Motor.Extensions.Diagnostics.Telemetry\Motor.Extensions.Diagnostics.Telemetry.csproj", "{6BCF181C-1BAA-4B9C-8E32-EB46409CDF01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Compression.Abstractions", "src\Motor.Extensions.Compression.Abstractions\Motor.Extensions.Compression.Abstractions.csproj", "{EDCD789B-FD17-449E-80D5-70E6E93F35F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.ContentEncoding.Abstractions", "src\Motor.Extensions.ContentEncoding.Abstractions\Motor.Extensions.ContentEncoding.Abstractions.csproj", "{EDCD789B-FD17-449E-80D5-70E6E93F35F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Compression.Gzip", "src\Motor.Extensions.Compression.Gzip\Motor.Extensions.Compression.Gzip.csproj", "{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.ContentEncoding.Gzip_UnitTest", "test\Motor.Extensions.ContentEncoding.Gzip_UnitTest\Motor.Extensions.ContentEncoding.Gzip_UnitTest.csproj", "{7A219941-ABC1-4586-9C6E-8D268D13F96F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Compression.Gzip_UnitTest", "test\Motor.Extensions.Compression.Gzip_UnitTest\Motor.Extensions.Compression.Gzip_UnitTest.csproj", "{7A219941-ABC1-4586-9C6E-8D268D13F96F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Compression.Abstractions_UnitTest", "test\Motor.Extensions.Compression.Abstractions_UnitTest\Motor.Extensions.Compression.Abstractions_UnitTest.csproj", "{C1385EB8-4F54-4869-83A0-72D85A5E986C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.ContentEncoding.Abstractions_UnitTest", "test\Motor.Extensions.ContentEncoding.Abstractions_UnitTest\Motor.Extensions.ContentEncoding.Abstractions_UnitTest.csproj", "{C1385EB8-4F54-4869-83A0-72D85A5E986C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.Queue.Abstractions", "src\Motor.Extensions.Diagnostics.Queue.Abstractions\Motor.Extensions.Diagnostics.Queue.Abstractions.csproj", "{67271302-6660-4B59-A478-409E3012EFB9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Diagnostics.Queue.Metrics", "src\Motor.Extensions.Diagnostics.Queue.Metrics\Motor.Extensions.Diagnostics.Queue.Metrics.csproj", "{B2A23024-1C00-4946-836A-5135E520D823}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.CloudEvents", "src\Motor.Extensions.Hosting.CloudEvents\Motor.Extensions.Hosting.CloudEvents.csproj", "{87818839-601A-4D13-ADDC-368E2D4684C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.ContentEncoding.Gzip", "src\Motor.Extensions.ContentEncoding.Gzip\Motor.Extensions.ContentEncoding.Gzip.csproj", "{3417B7EB-04AD-4C52-B2A5-0817C1D44196}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -697,18 +698,6 @@ Global
 		{EDCD789B-FD17-449E-80D5-70E6E93F35F1}.Release|x64.Build.0 = Release|Any CPU
 		{EDCD789B-FD17-449E-80D5-70E6E93F35F1}.Release|x86.ActiveCfg = Release|Any CPU
 		{EDCD789B-FD17-449E-80D5-70E6E93F35F1}.Release|x86.Build.0 = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|x64.Build.0 = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Debug|x86.Build.0 = Debug|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|x64.ActiveCfg = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|x64.Build.0 = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|x86.ActiveCfg = Release|Any CPU
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC}.Release|x86.Build.0 = Release|Any CPU
 		{7A219941-ABC1-4586-9C6E-8D268D13F96F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A219941-ABC1-4586-9C6E-8D268D13F96F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A219941-ABC1-4586-9C6E-8D268D13F96F}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -769,6 +758,18 @@ Global
 		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x64.Build.0 = Release|Any CPU
 		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x86.ActiveCfg = Release|Any CPU
 		{87818839-601A-4D13-ADDC-368E2D4684C7}.Release|x86.Build.0 = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|x64.Build.0 = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Debug|x86.Build.0 = Debug|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|x64.ActiveCfg = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|x64.Build.0 = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|x86.ActiveCfg = Release|Any CPU
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -821,12 +822,12 @@ Global
 		{B51A4631-F1C4-44A6-9F3C-F0AD0AE65697} = {ADD2EBBA-A839-4E4A-9253-CDE29A372F07}
 		{6BCF181C-1BAA-4B9C-8E32-EB46409CDF01} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 		{EDCD789B-FD17-449E-80D5-70E6E93F35F1} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
-		{ADAEFE79-278A-4945-9FBD-4D0DA81237FC} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 		{7A219941-ABC1-4586-9C6E-8D268D13F96F} = {ADD2EBBA-A839-4E4A-9253-CDE29A372F07}
 		{C1385EB8-4F54-4869-83A0-72D85A5E986C} = {ADD2EBBA-A839-4E4A-9253-CDE29A372F07}
 		{67271302-6660-4B59-A478-409E3012EFB9} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 		{B2A23024-1C00-4946-836A-5135E520D823} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 		{87818839-601A-4D13-ADDC-368E2D4684C7} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
+		{3417B7EB-04AD-4C52-B2A5-0817C1D44196} = {749B1421-3177-4C7A-A66B-541BD4E925B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5E91C34C-3AEC-4084-BA02-753C9236AA34}

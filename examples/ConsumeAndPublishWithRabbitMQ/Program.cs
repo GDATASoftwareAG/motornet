@@ -2,7 +2,7 @@ using ConsumeAndPublishWithRabbitMQ;
 using ConsumeAndPublishWithRabbitMQ.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Motor.Extensions.Compression.Gzip;
+using Motor.Extensions.ContentEncoding.Gzip;
 using Motor.Extensions.Conversion.SystemJson;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Consumer;

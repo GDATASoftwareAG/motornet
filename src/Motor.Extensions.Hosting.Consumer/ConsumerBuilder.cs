@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 
@@ -24,12 +24,12 @@ namespace Motor.Extensions.Hosting.Consumer
         public void AddConsumer<TConsumer>() where TConsumer : IMessageConsumer<T>
         {
             _serviceCollection.AddTransient(typeof(IMessageConsumer<T>), typeof(TConsumer));
-            _serviceCollection.AddTransient<IMessageDecompressor, NoOpMessageDecompressor>();
+            _serviceCollection.AddTransient<IMessageDecoder, NoOpMessageDecoder>();
         }
 
-        public void AddDecompressor<TDecompressor>() where TDecompressor : IMessageDecompressor
+        public void AddDecoder<TDecoder>() where TDecoder : IMessageDecoder
         {
-            _serviceCollection.AddTransient(typeof(IMessageDecompressor), typeof(TDecompressor));
+            _serviceCollection.AddTransient(typeof(IMessageDecoder), typeof(TDecoder));
         }
 
         public void AddDeserializer<TDeserializer>() where TDeserializer : IMessageDeserializer<T>
@@ -40,7 +40,7 @@ namespace Motor.Extensions.Hosting.Consumer
         public void AddConsumer<TConsumer>(Func<IServiceProvider, TConsumer> implementationFactory) where TConsumer : IMessageConsumer<T>
         {
             _serviceCollection.AddTransient<IMessageConsumer<T>>(provider => implementationFactory(provider));
-            _serviceCollection.AddTransient<IMessageDecompressor, NoOpMessageDecompressor>();
+            _serviceCollection.AddTransient<IMessageDecoder, NoOpMessageDecoder>();
         }
 
         public IEnumerator<ServiceDescriptor> GetEnumerator()
