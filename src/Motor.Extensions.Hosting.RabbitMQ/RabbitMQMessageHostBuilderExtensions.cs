@@ -15,7 +15,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.Configure<RabbitMQConsumerOptions<T>>(config);
-            builder.AddSingleton(sp => RabbitMQConnectionFactory<T>.From(sp.GetRequiredService<IOptions<RabbitMQConsumerOptions<T>>>().Value));
+            builder.AddSingleton(sp =>
+                RabbitMQConnectionFactory<T>.From(sp.GetRequiredService<IOptions<RabbitMQConsumerOptions<T>>>().Value));
             builder.AddConsumer<RabbitMQMessageConsumer<T>>();
             builder.AddSingleton<IQueueMonitor, RabbitMQQueueMonitor<T>>();
         }
@@ -29,7 +30,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
             builder.Configure<RabbitMQPublisherOptions<T>>(config);
-            builder.AddSingleton(sp => RabbitMQConnectionFactory<T>.From(sp.GetRequiredService<IOptions<RabbitMQConsumerOptions<T>>>().Value));
+            builder.AddSingleton(sp =>
+                RabbitMQConnectionFactory<T>.From(sp.GetRequiredService<IOptions<RabbitMQPublisherOptions<T>>>()
+                    .Value));
             builder.AddPublisher<RabbitMQMessagePublisher<T>>();
         }
 
