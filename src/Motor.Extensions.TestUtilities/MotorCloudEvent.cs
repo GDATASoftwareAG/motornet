@@ -13,7 +13,8 @@ namespace Motor.Extensions.TestUtilities
             where T : class
         {
             var applicationNameService = new TestApplicationNameService(source);
-            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource());
+            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource())
+                .SetMotorVersion();
         }
 
         private class TestApplicationNameService : IApplicationNameService

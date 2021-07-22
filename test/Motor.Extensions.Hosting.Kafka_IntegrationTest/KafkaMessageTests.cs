@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
@@ -40,9 +38,9 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
             var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-            Assert.Equal(GetRequiredAttributes().Count(),
+            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count(),
                 outputCloudEvent.GetPopulatedAttributes().Count());
-            foreach (var requiredAttribute in GetRequiredAttributes())
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
@@ -59,11 +57,11 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
             var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-            Assert.Equal(GetRequiredAttributes().Count() + 1,
+            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count() + 1,
                 outputCloudEvent.GetPopulatedAttributes().Count());
             Assert.Equal(inputCloudEvent[EncodingExtension.EncodingAttribute],
                 outputCloudEvent[EncodingExtension.EncodingAttribute]);
-            foreach (var requiredAttribute in GetRequiredAttributes())
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
@@ -72,6 +70,8 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
         /*
          * Helper Methods
          */
+
+        private static Version CurrentMotorVersion => typeof(KafkaMessageTests).Assembly.GetName().Version;
 
         private static KafkaMessagePublisher<TData> GetKafkaPublisher<TData>()
         {
@@ -98,15 +98,9 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
             return mock.Object;
         }
 
-        private static IEnumerable<CloudEventAttribute> GetRequiredAttributes()
-        {
-            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent("");
-            return cloudEvent.GetPopulatedAttributes().Select(a => a.Key);
-        }
-
         private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")
         {
-            return new KafkaConsumerOptions<T>
+            return new()
             {
                 Topic = topic,
                 GroupId = groupId,

@@ -9,6 +9,21 @@ namespace Motor.Extensions.Hosting.CloudEvents
     public static class MotorCloudEventInfo
     {
         public static CloudEventsSpecVersion SpecVersion => CloudEventsSpecVersion.V1_0;
+
+        private static readonly IDictionary<CloudEventAttribute, Version> RequiredSinceVersion =
+            new Dictionary<CloudEventAttribute, Version>
+            {
+                { SpecVersion.TimeAttribute, Version.Parse("0.0.0") },
+                { SpecVersion.DataContentTypeAttribute, Version.Parse("0.0.0") },
+                { MotorVersionExtension.MotorVersionAttribute, Version.Parse("0.7.0") }
+            };
+
+        public static IEnumerable<CloudEventAttribute> RequiredAttributes(Version version)
+        {
+            return RequiredSinceVersion.Where(kvp => kvp.Value <= version)
+                .Select(kvp => kvp.Key).ToList()
+                .Concat(SpecVersion.RequiredAttributes);
+        }
     }
 
     public class MotorCloudEvent<TData> where TData : class
@@ -74,7 +89,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
 
         public CloudEvent ConvertToCloudEvent()
         {
-            CloudEvent clone = new CloudEvent(BaseEvent.SpecVersion, BaseEvent.ExtensionAttributes)
+            CloudEvent clone = new(BaseEvent.SpecVersion, BaseEvent.ExtensionAttributes)
             {
                 Data = Data
             };
@@ -96,7 +111,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
             IEnumerable<KeyValuePair<CloudEventAttribute, object>>? extensions = null)
             where T : class
         {
-            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource(),
+            return new(applicationNameService, data, applicationNameService.GetSource(),
                 extensions?.ToArray() ?? Array.Empty<KeyValuePair<CloudEventAttribute, object>>());
         }
 
