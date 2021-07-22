@@ -13,9 +13,9 @@ namespace Motor.Extensions.Hosting.CloudEvents
         private static readonly IDictionary<CloudEventAttribute, Version> RequiredSinceVersion =
             new Dictionary<CloudEventAttribute, Version>
             {
-                { SpecVersion.TimeAttribute, Version.Parse("0.0.0") },
-                { SpecVersion.DataContentTypeAttribute, Version.Parse("0.0.0") },
-                { MotorVersionExtension.MotorVersionAttribute, Version.Parse("0.7.0") }
+                { SpecVersion.TimeAttribute, Version.Parse("0.0.0.0") },
+                { SpecVersion.DataContentTypeAttribute, Version.Parse("0.0.0.0") },
+                { MotorVersionExtension.MotorVersionAttribute, Version.Parse("0.7.0.0") }
             };
 
         public static IEnumerable<CloudEventAttribute> RequiredAttributes(Version version)

@@ -15,7 +15,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public static string CloudEventPrefix => "cloudEvents:";
 
         // ReSharper disable once InconsistentNaming
-        private static readonly Version Version_0_7_0 = new Version("0.7.0");
+        private static readonly Version Version_0_7_0 = new("0.7.0.0");
         private static readonly List<CloudEventAttribute> IgnoredAttributes = new();
 
         static BasicPropertiesExtensions()
