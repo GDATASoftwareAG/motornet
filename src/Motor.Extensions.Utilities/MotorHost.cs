@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Telemetry;
@@ -21,7 +22,7 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder CreateDefaultBuilder(Assembly? assembly = null,
-            bool enableConfigureWebDefaults = true)
+            bool enableConfigureWebDefaults = true, string applicationName = "ApplicationName")
         {
             assembly ??= Assembly.GetCallingAssembly();
 
@@ -29,10 +30,14 @@ namespace Motor.Extensions.Utilities
                 .ToMotorHostBuilder(enableConfigureWebDefaults);
 
             return (IMotorHostBuilder)hostBuilder
-                .ConfigureServices(collection =>
+                .ConfigureServices((ctx, collection) =>
                 {
-                    collection.AddTransient<IApplicationNameService>(_ =>
-                        new DefaultApplicationNameService(assembly));
+                    collection.Configure<DefaultApplicationNameOptions>(ctx.Configuration.GetSection(applicationName));
+                    collection.AddTransient<IApplicationNameService>(provider =>
+                    {
+                        var options = provider.GetRequiredService<IOptions<DefaultApplicationNameOptions>>();
+                        return new DefaultApplicationNameService(assembly, options);
+                    });
                 })
                 .ConfigureSerilog()
                 .ConfigureOpenTelemetry()
