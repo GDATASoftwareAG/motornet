@@ -49,6 +49,20 @@ namespace Motor.Extensions.Hosting.Publisher_UnitTest
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Fact]
+        public async Task PublishMessageAsync_CloudEventOfTypeString_PublishedCloudEventHasTypeString()
+        {
+            var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+            var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object);
+            var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
+
+            await typedMessagePublisher.PublishMessageAsync(motorEvent);
+
+            bytesPublisher.Verify(t => t.PublishMessageAsync(
+                It.Is<MotorCloudEvent<byte[]>>(it => it.Type == motorEvent.Type),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         private static TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>> CreateTypedMessagePublisher(
             ITypedMessagePublisher<byte[]>? publisher = null, IMessageSerializer<string>? serializer = null,
             IMessageEncoder? encoder = null)

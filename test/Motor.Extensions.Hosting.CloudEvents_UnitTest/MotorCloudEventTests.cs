@@ -38,13 +38,26 @@ namespace Motor.Extensions.Hosting.CloudEvents_UnitTest
         }
 
         [Fact]
-        public void CreateNew_UseOldIdentifierFromOld_TypeMatchesActualDataType()
+        public void CreateNew_UseOldIdentifierFromOld_TypeMatchesOldDataType()
         {
             var oldEvent =
                 new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
             var expectedData = new List<string>();
 
             var newEvent = oldEvent.CreateNew(expectedData, true);
+
+            Assert.Equal(nameof(String), oldEvent.Type);
+            Assert.Equal(nameof(String), newEvent.Type);
+        }
+
+        [Fact]
+        public void CreateNew_DoNotUseOldIdentifierFromOld_TypeMatchesNewDataType()
+        {
+            var oldEvent =
+                new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+            var expectedData = new List<string>();
+
+            var newEvent = oldEvent.CreateNew(expectedData, false);
 
             Assert.Equal(nameof(String), oldEvent.Type);
             Assert.Equal(typeof(List<string>).Name, newEvent.Type);
