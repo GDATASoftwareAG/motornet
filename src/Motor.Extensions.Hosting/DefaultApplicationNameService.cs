@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Motor.Extensions.Hosting.Abstractions;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.Hosting
@@ -10,21 +10,23 @@ namespace Motor.Extensions.Hosting
     public class DefaultApplicationNameService : IApplicationNameService
     {
         private readonly Assembly _assembly;
+        private readonly DefaultApplicationNameOptions _options;
 
-        public DefaultApplicationNameService(Assembly assembly)
+        public DefaultApplicationNameService(Assembly assembly, IOptions<DefaultApplicationNameOptions> options)
         {
             _assembly = assembly;
+            _options = options.Value ?? new DefaultApplicationNameOptions();
         }
 
-        public IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> { "Service", "Console" };
+        private IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> { "Service", "Console" };
 
-        public IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
+        private IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
         {
             {".", ""},
             {"_", ""}
         };
 
-        public string GetProduct()
+        private string GetProduct()
         {
             var assemblyProductAttribute =
                 (AssemblyProductAttribute?)Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
@@ -48,12 +50,22 @@ namespace Motor.Extensions.Hosting
 
         public string GetFullName()
         {
-            return ExtractServiceName(GetProduct(), GetAssemblyName());
+            if (string.IsNullOrWhiteSpace(_options.FullName))
+            {
+                return ExtractServiceName(GetProduct(), GetAssemblyName());
+            }
+
+            return _options.FullName.Trim();
         }
 
         public Uri GetSource()
         {
-            return new($"motor://{GetFullName()}");
+            if (string.IsNullOrWhiteSpace(_options.Source))
+            {
+                return new($"motor://{GetFullName()}");
+            }
+
+            return new(_options.Source.Trim());
         }
 
         private string GetAssemblyName()
