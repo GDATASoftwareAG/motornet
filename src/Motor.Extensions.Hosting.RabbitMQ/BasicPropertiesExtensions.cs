@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using CloudNative.CloudEvents;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
@@ -74,10 +75,29 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(), extensions);
 
             foreach (var attribute in attributes)
-                cloudEvent.GetAttributes().Add(attribute.Key, cloudEventFormatter.DecodeAttribute(
-                    cloudEvent.SpecVersion, attribute.Key, (byte[])attribute.Value, extensions));
+                cloudEvent.GetAttributes().Add(attribute.Key,
+                    cloudEventFormatter.DecodeAttribute(cloudEvent.SpecVersion, attribute.Key,
+                        EnsureBytesAreSurroundedByQuotes((byte[])attribute.Value), extensions));
 
             return cloudEvent;
+        }
+
+        /// <summary>
+        /// Ensure that the attribute values are surrounded by quotes which is needed for the JSON deserialization later.
+        /// </summary>
+        /// <remarks>
+        /// Motor.NET used to always serialize header values in RabbitMQ by adding quotes around them.
+        /// We want to drop this behavior in version 0.7.0. This change ensures that older services can then still
+        /// consume messages from messages on version >= 0.7.0.
+        /// </remarks>
+        private static byte[] EnsureBytesAreSurroundedByQuotes(byte[] bytes)
+        {
+            var input = Encoding.UTF8.GetString(bytes);
+            if (!input.StartsWith('"') || !input.EndsWith('"'))
+            {
+                input = $"\"{input}\"";
+            }
+            return Encoding.UTF8.GetBytes(input);
         }
     }
 }
