@@ -14,16 +14,14 @@ namespace Motor.Extensions.Hosting.CloudEvents
         public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
             new[] { MotorVersionAttribute }.ToList().AsReadOnly();
 
+        private static readonly string? CurrentVersion = typeof(MotorVersionExtension).Assembly.GetName().Version?.ToString();
+
         public static MotorCloudEvent<TData> SetMotorVersion<TData>(this MotorCloudEvent<TData> cloudEvent)
             where TData : class
         {
             CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent));
-            var version = typeof(MotorVersionExtension).Assembly.GetName().Version;
-            if (version is null)
-            {
-                throw new InvalidOperationException("Motor.NET version is undefined.");
-            }
-            cloudEvent[MotorVersionAttribute] = version.ToString();
+            cloudEvent[MotorVersionAttribute] =
+                CurrentVersion ?? throw new InvalidOperationException("Motor.NET version is undefined.");
             return cloudEvent;
         }
 
@@ -32,7 +30,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
             return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[MotorVersionAttribute]
                 is not string versionString
                 ? null
-                : Version.Parse(versionString);
+                : System.Version.Parse(versionString);
         }
     }
 }
