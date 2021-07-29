@@ -70,7 +70,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             }
 
             var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(),
-                new Uri("rabbitmq://notset"), null, null, self.ContentType);
+                null, new Uri("rabbitmq://notset"), null, null, self.ContentType);
 
             if (self.IsPriorityPresent())
             {

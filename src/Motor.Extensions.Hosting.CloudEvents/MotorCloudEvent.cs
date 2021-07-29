@@ -34,14 +34,15 @@ namespace Motor.Extensions.Hosting.CloudEvents
             IApplicationNameService applicationNameService,
             TData data,
             Uri source,
-            params KeyValuePair<CloudEventAttribute, object>[] extensions) : this(applicationNameService, data, source,
-            null, null, null, extensions)
+            params KeyValuePair<CloudEventAttribute, object>[] extensions) : this(applicationNameService, data, null,
+            source, null, null, null, extensions)
         {
         }
 
         public MotorCloudEvent(
             IApplicationNameService applicationNameService,
             TData data,
+            string? type,
             Uri source,
             string? id,
             DateTimeOffset? time,
@@ -51,7 +52,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
             BaseEvent = new CloudEvent(CloudEventsSpecVersion.Default);
             foreach (var (key, value) in extensions) BaseEvent[key] = value;
             BaseEvent.Id = id ?? Guid.NewGuid().ToString();
-            BaseEvent.Type = typeof(TData).Name;
+            BaseEvent.Type = type ?? typeof(TData).Name;
             BaseEvent.Source = source;
             BaseEvent.Time = time ?? DateTimeOffset.UtcNow;
             BaseEvent.DataContentType = contentType ?? new ContentType().ToString();
@@ -111,7 +112,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
             IEnumerable<KeyValuePair<CloudEventAttribute, object>>? extensions = null)
             where T : class
         {
-            return new(applicationNameService, data, applicationNameService.GetSource(),
+            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource(),
                 extensions?.ToArray() ?? Array.Empty<KeyValuePair<CloudEventAttribute, object>>());
         }
 
@@ -119,7 +120,7 @@ namespace Motor.Extensions.Hosting.CloudEvents
             where T : class
         {
             return useOldIdentifier
-                ? new MotorCloudEvent<T>(_applicationNameService, data, BaseEvent.Source!, BaseEvent.Id, BaseEvent.Time,
+                ? new MotorCloudEvent<T>(_applicationNameService, data, BaseEvent.Type, BaseEvent.Source!, BaseEvent.Id, BaseEvent.Time,
                     BaseEvent.DataContentType, BaseEvent.GetPopulatedAttributes().ToArray())
                 : CreateCloudEvent(_applicationNameService, data, BaseEvent.GetPopulatedAttributes());
         }
