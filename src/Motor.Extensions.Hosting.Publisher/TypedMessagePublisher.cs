@@ -47,7 +47,7 @@ namespace Motor.Extensions.Hosting.Publisher
             }
 
             var bytesEvent = motorCloudEvent.CreateNew(encodedBytes, true);
-            bytesEvent.SetEncoding(_messageEncoder.Encoding);
+            bytesEvent.SetMotorVersion().SetEncoding(_messageEncoder.Encoding);
             await _bytesMessagePublisher.PublishMessageAsync(bytesEvent, token);
         }
     }

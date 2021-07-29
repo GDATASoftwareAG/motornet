@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using CloudNative.CloudEvents;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
@@ -87,7 +87,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
                 new ReadOnlyMemory<byte>(content));
 
-            foreach (var requiredAttribute in GetRequiredAttributes())
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
@@ -132,7 +132,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
                 new ReadOnlyMemory<byte>(content));
 
             Assert.Equal(priority, outputCloudEvent.GetRabbitMQPriority());
-            foreach (var requiredAttribute in GetRequiredAttributes())
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
             {
                 Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
             }
@@ -154,10 +154,52 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             Assert.Equal(encoding, outputCloudEvent.GetEncoding());
         }
 
-        private static IEnumerable<CloudEventAttribute> GetRequiredAttributes()
+        /*
+         * Version compatibility tests
+         */
+
+        [Fact]
+        public void UpdateAndExtractCloudEvent_V0_6_0Header_ExtensionsAddedToCloudEvent()
         {
-            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent("");
-            return cloudEvent.GetPopulatedAttributes().Select(a => a.Key);
+            var channel = _fixture.Connection.CreateModel();
+            var basicProperties = channel.CreateBasicProperties();
+            var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
+            var content = new byte[] { 1, 2, 3 };
+            var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
+            var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
+
+            basicProperties.Update(inputCloudEvent, publisherOptions);
+            // manipulate basic properties to simulate outdated version
+            basicProperties.Headers.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
+            basicProperties.ContentEncoding = null;
+            basicProperties.Headers.Add(
+                $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
+                Encoding.UTF8.GetBytes($"{basicProperties.ContentType}"));
+            foreach (var (key, value) in basicProperties.Headers)
+            {
+                if (value is byte[] byteValue)
+                {
+                    basicProperties.Headers[key] = EscapeWithQuotes(byteValue);
+                }
+            }
+
+            var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
+                new ReadOnlyMemory<byte>(content));
+
+            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count(),
+                outputCloudEvent.GetPopulatedAttributes().Count());
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")))
+            {
+                Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
+            }
+        }
+
+        private static Version CurrentMotorVersion => typeof(BasicPropertiesExtensionsTest).Assembly.GetName().Version;
+
+        private static byte[] EscapeWithQuotes(byte[] value)
+        {
+            var stringValue = Encoding.UTF8.GetString(value);
+            return Encoding.UTF8.GetBytes($"\"{stringValue}\"");
         }
 
         private static void VerifyPresenceOfRequiredAttributes<TData>(IBasicProperties basicProperties,
@@ -166,7 +208,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             Assert.Equal(cloudEvent.ContentType, basicProperties.ContentType);
             // ContentType is required but not saved in the header. Instead, the native
             // AMQP ContentType is used and therefore, we expect #RequiredAttributes - 1
-            Assert.Equal(GetRequiredAttributes().Count() - 1, basicProperties.Headers.Count);
+            var requiredAttributes = MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion);
+            Assert.Equal(requiredAttributes.Count() - 1, basicProperties.Headers.Count);
         }
     }
 }

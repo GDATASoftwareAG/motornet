@@ -14,6 +14,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
     {
         public static string CloudEventPrefix => "cloudEvents:";
 
+        // ReSharper disable once InconsistentNaming
+        private static readonly Version Version_0_7_0 = new("0.7.0.0");
         private static readonly List<CloudEventAttribute> IgnoredAttributes = new();
 
         static BasicPropertiesExtensions()
@@ -82,13 +84,24 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 return cloudEvent;
             }
 
+            var hasVersion = attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
+            var version = hasVersion && versionObject is byte[] versionBytes
+                ? new Version(Encoding.UTF8.GetString(versionBytes))
+                : null;
+
             foreach (var (key, value) in attributes)
             {
-                if (value is byte[] byteValue)
+                if (value is not byte[] byteValue)
                 {
-                    cloudEvent.SetAttributeFromString(key.ToLowerInvariant(),
-                        Encoding.UTF8.GetString(byteValue));
+                    continue;
                 }
+                var decoded = Encoding.UTF8.GetString(byteValue);
+                if ((version is null || version < Version_0_7_0)
+                    && decoded.StartsWith("\"") && decoded.EndsWith("\""))
+                {
+                    decoded = decoded.Substring(1, decoded.Length - 2);
+                }
+                cloudEvent.SetAttributeFromString(key.ToLowerInvariant(), decoded);
             }
 
             return cloudEvent;
