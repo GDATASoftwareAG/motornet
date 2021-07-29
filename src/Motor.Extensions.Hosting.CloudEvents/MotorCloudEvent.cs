@@ -112,8 +112,8 @@ namespace Motor.Extensions.Hosting.CloudEvents
             IEnumerable<KeyValuePair<CloudEventAttribute, object>>? extensions = null)
             where T : class
         {
-            return new MotorCloudEvent<T>(applicationNameService, data, null, applicationNameService.GetSource(),
-                null, null, null, extensions?.ToArray() ?? Array.Empty<KeyValuePair<CloudEventAttribute, object>>());
+            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource(),
+                extensions?.ToArray() ?? Array.Empty<KeyValuePair<CloudEventAttribute, object>>());
         }
 
         public MotorCloudEvent<T> CreateNew<T>(T data, bool useOldIdentifier = false)
