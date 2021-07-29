@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using CloudNative.CloudEvents;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -170,6 +171,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             basicProperties.Update(inputCloudEvent, publisherOptions);
             // manipulate basic properties to simulate outdated version
             basicProperties.Headers.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
+            basicProperties.ContentEncoding = null;
+            basicProperties.Headers.Add(
+                $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
+                Encoding.UTF8.GetBytes($"{basicProperties.ContentType}"));
             foreach (var (key, value) in basicProperties.Headers)
             {
                 if (value is byte[] byteValue)
