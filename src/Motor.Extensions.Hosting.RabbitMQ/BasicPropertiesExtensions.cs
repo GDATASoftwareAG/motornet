@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CloudNative.CloudEvents;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
@@ -19,6 +20,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             IgnoredAttributes.AddRange(RabbitMQBindingExtension.AllAttributes);
             IgnoredAttributes.AddRange(RabbitMQPriorityExtension.AllAttributes);
+            IgnoredAttributes.AddRange(EncodingExtension.AllAttributes);
+            IgnoredAttributes.Add(MotorCloudEventInfo.SpecVersion.DataContentTypeAttribute);
         }
 
         public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
@@ -27,6 +30,9 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             var messagePriority = cloudEvent.GetRabbitMQPriority() ?? options.DefaultPriority;
             if (messagePriority.HasValue)
                 self.Priority = messagePriority.Value;
+
+            self.ContentEncoding = cloudEvent.GetEncoding();
+            self.ContentType = cloudEvent.ContentType;
 
             var headers = new Dictionary<string, object>();
 
@@ -61,7 +67,15 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 attributes.Add(key, value);
             }
 
-            var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(), new Uri("rabbitmq://notset"));
+            var cloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, body.ToArray(),
+                new Uri("rabbitmq://notset"), null, null, self.ContentType);
+
+            if (self.IsPriorityPresent())
+            {
+                cloudEvent.SetRabbitMQPriority(self.Priority);
+            }
+
+            cloudEvent.SetEncoding(self.ContentEncoding);
 
             if (attributes.Count == 0)
             {

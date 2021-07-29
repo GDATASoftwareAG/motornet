@@ -26,7 +26,7 @@ namespace Motor.Extensions.Hosting.Kafka
                 throw new ArgumentException("Source property of CloudEvent is null");
             }
             var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
-                cloudEvent.Source, cloudEvent.Id, cloudEvent.Time);
+                cloudEvent.Source, cloudEvent.Id, cloudEvent.Time, null);
             foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
             {
                 if (motorCloudEvent.GetAttribute(key.Name) is null)

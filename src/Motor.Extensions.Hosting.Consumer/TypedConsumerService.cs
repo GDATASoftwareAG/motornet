@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
@@ -19,18 +19,18 @@ namespace Motor.Extensions.Hosting.Consumer
     {
         private readonly IMessageConsumer<TInput> _consumer;
         private readonly IMessageDeserializer<TInput> _deserializer;
-        private readonly Dictionary<string, IMessageDecompressor> _decompressorByCompressionType;
+        private readonly Dictionary<string, IMessageDecoder> _decoderByEncoding;
         private readonly ILogger<TypedConsumerService<TInput>> _logger;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
         private readonly ISummary? _messageDeserialization;
-        private readonly ISummary? _messageDecompression;
+        private readonly ISummary? _messageDecoding;
 
         public TypedConsumerService(
             ILogger<TypedConsumerService<TInput>> logger,
             IMetricsFactory<TypedConsumerService<TInput>>? metrics,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
             IMessageDeserializer<TInput> deserializer,
-            IEnumerable<IMessageDecompressor> decompressors,
+            IEnumerable<IMessageDecoder> decoders,
             IMessageConsumer<TInput> consumer)
         {
             _logger = logger;
@@ -41,13 +41,13 @@ namespace Motor.Extensions.Hosting.Consumer
 
             _messageDeserialization =
                 metrics?.CreateSummary("message_deserialization", "Message deserialization duration in ms");
-            _messageDecompression =
-                metrics?.CreateSummary("message_decompression", "Message decompression duration in ms");
+            _messageDecoding =
+                metrics?.CreateSummary("message_decoding", "Message decoding duration in ms");
 
-            _decompressorByCompressionType = new Dictionary<string, IMessageDecompressor>();
-            foreach (var decompressor in decompressors)
+            _decoderByEncoding = new Dictionary<string, IMessageDecoder>();
+            foreach (var decoder in decoders)
             {
-                _decompressorByCompressionType[decompressor.CompressionType] = decompressor;
+                _decoderByEncoding[decoder.Encoding] = decoder;
             }
         }
 
@@ -68,17 +68,17 @@ namespace Motor.Extensions.Hosting.Consumer
         {
             try
             {
-                byte[] decompressed;
-                using (new AutoObserveStopwatch(() => _messageDecompression))
+                byte[] decoded;
+                using (new AutoObserveStopwatch(() => _messageDecoding))
                 {
-                    decompressed = await DecompressMessageAsync(
-                        dataCloudEvent.GetCompressionType(), dataCloudEvent.TypedData, token);
+                    decoded = await DecodeMessageAsync(
+                        dataCloudEvent.GetEncoding(), dataCloudEvent.TypedData, token);
                 }
 
                 TInput deserialized;
                 using (new AutoObserveStopwatch(() => _messageDeserialization))
                 {
-                    deserialized = _deserializer.Deserialize(decompressed);
+                    deserialized = _deserializer.Deserialize(decoded);
                 }
 
                 return await _queue
@@ -97,15 +97,15 @@ namespace Motor.Extensions.Hosting.Consumer
             }
         }
 
-        private async Task<byte[]> DecompressMessageAsync(string compressionType, byte[] compressed,
+        private async Task<byte[]> DecodeMessageAsync(string encoding, byte[] encodedMsg,
             CancellationToken cancellationToken)
         {
-            if (!_decompressorByCompressionType.TryGetValue(compressionType, out var decompressor))
+            if (!_decoderByEncoding.TryGetValue(encoding, out var decoder))
             {
-                throw new ArgumentException($"Unsupported compressionType {compressionType}");
+                throw new ArgumentException($"Unsupported encoding {encoding}");
             }
 
-            return await decompressor.DecompressAsync(compressed, cancellationToken);
+            return await decoder.DecodeAsync(encodedMsg, cancellationToken);
         }
 
         protected override Task ExecuteAsync(CancellationToken token)

@@ -2,17 +2,17 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
-using Motor.Extensions.Compression.Abstractions;
+using Motor.Extensions.ContentEncoding.Abstractions;
 
-namespace Motor.Extensions.Compression.Gzip
+namespace Motor.Extensions.ContentEncoding.Gzip
 {
-    public class GzipMessageDecompressor : IMessageDecompressor
+    public class GzipMessageDecoder : IMessageDecoder
     {
-        public string CompressionType => GzipMessageCompressor.GzipCompressionType;
+        public string Encoding => GzipMessageEncoder.GzipEncoding;
 
-        public async Task<byte[]> DecompressAsync(byte[] compressedMessage, CancellationToken cancellationToken)
+        public async Task<byte[]> DecodeAsync(byte[] encodedMessage, CancellationToken cancellationToken)
         {
-            var compressedStream = new MemoryStream(compressedMessage);
+            var compressedStream = new MemoryStream(encodedMessage);
 
             var output = new MemoryStream();
             //use using with explicit scope to close/flush the GZipStream before using the outputstream
