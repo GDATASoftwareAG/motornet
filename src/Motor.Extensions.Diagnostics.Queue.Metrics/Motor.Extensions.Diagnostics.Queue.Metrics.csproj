@@ -15,4 +15,6 @@
       <ProjectReference Include="..\Motor.Extensions.Diagnostics.Queue.Abstractions\Motor.Extensions.Diagnostics.Queue.Abstractions.csproj" />
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
+
 </Project>
