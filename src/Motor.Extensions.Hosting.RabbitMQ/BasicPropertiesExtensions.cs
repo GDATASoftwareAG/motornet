@@ -83,7 +83,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             {
                 return cloudEvent;
             }
-            
+
             var hasVersion =
                 attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
             Version? version = null;
