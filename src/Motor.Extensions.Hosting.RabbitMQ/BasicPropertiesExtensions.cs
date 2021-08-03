@@ -83,11 +83,16 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             {
                 return cloudEvent;
             }
-
-            var hasVersion = attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
-            var version = hasVersion && versionObject is byte[] versionBytes
-                ? new Version(Encoding.UTF8.GetString(versionBytes))
-                : null;
+            
+            var hasVersion =
+                attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
+            Version? version = null;
+            if (hasVersion && versionObject is byte[] versionBytes)
+            {
+                var versionString = Encoding.UTF8.GetString(versionBytes);
+                version = versionString.StartsWith("\"") || versionString.EndsWith("\"") ? null : new Version(
+                    Encoding.UTF8.GetString(versionBytes));
+            }
 
             foreach (var (key, value) in attributes)
             {

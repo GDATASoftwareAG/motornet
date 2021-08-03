@@ -194,6 +194,44 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             }
         }
 
+        [Fact]
+        public void UpdateAndExtractCloudEvent_V0_6_0HeaderWithIncorrectVersionField_ExtensionsAddedToCloudEvent()
+        {
+            var channel = _fixture.Connection.CreateModel();
+            var basicProperties = channel.CreateBasicProperties();
+            var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
+            var content = new byte[] { 1, 2, 3 };
+            var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
+            var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
+
+            basicProperties.Update(inputCloudEvent, publisherOptions);
+            // manipulate basic properties to simulate outdated version
+            basicProperties.Headers[
+                    $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"] =
+                Encoding.UTF8.GetBytes("\"0.7.1.0\"");
+            basicProperties.ContentEncoding = null;
+            basicProperties.Headers.Add(
+                $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
+                Encoding.UTF8.GetBytes($"{basicProperties.ContentType}"));
+            foreach (var (key, value) in basicProperties.Headers)
+            {
+                if (value is byte[] byteValue)
+                {
+                    basicProperties.Headers[key] = EscapeWithQuotes(byteValue);
+                }
+            }
+
+            var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
+                new ReadOnlyMemory<byte>(content));
+
+            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count(),
+                outputCloudEvent.GetPopulatedAttributes().Count());
+            foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")))
+            {
+                Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
+            }
+        }
+
         private static Version CurrentMotorVersion => typeof(BasicPropertiesExtensionsTest).Assembly.GetName().Version;
 
         private static byte[] EscapeWithQuotes(byte[] value)
