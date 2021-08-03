@@ -84,10 +84,18 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 return cloudEvent;
             }
 
-            var hasVersion = attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
-            var version = hasVersion && versionObject is byte[] versionBytes
-                ? new Version(Encoding.UTF8.GetString(versionBytes))
-                : null;
+            var hasVersion =
+                attributes.TryGetValue(MotorVersionExtension.MotorVersionAttribute.Name, out var versionObject);
+            Version? version = null;
+            if (hasVersion && versionObject is byte[] versionBytes)
+            {
+                var versionString = Encoding.UTF8.GetString(versionBytes);
+                // If the version is enclosed in double quotes, that means it has passed an old Motor.NET version as an
+                // unknown header. Therefore, the version number should not be trusted and instead, the version is set
+                // to null.
+                version = versionString.StartsWith("\"") || versionString.EndsWith("\"") ? null : new Version(
+                    Encoding.UTF8.GetString(versionBytes));
+            }
 
             foreach (var (key, value) in attributes)
             {
