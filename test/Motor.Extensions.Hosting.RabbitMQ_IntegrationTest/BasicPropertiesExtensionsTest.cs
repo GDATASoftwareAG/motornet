@@ -224,7 +224,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
             var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
                 new ReadOnlyMemory<byte>(content));
 
-            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count(),
+            // expecting all required attributes plus the (incorrect) version attribute
+            Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count() + 1,
                 outputCloudEvent.GetPopulatedAttributes().Count());
             foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")))
             {
