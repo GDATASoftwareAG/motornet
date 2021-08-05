@@ -15,9 +15,10 @@ namespace Motor.Extensions.Hosting.RabbitMQ
     {
         private readonly CloudEventFormatter _cloudEventFormatter;
         private readonly RabbitMQPublisherOptions<T> _options;
-        private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private IModel? _channel;
         private bool _connected;
+
+        public IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
 
         public RabbitMQMessagePublisher(
             IRabbitMQConnectionFactory<T> connectionFactory,
@@ -25,7 +26,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             CloudEventFormatter cloudEventFormatter
         )
         {
-            _connectionFactory = connectionFactory;
+            ConnectionFactory = connectionFactory;
             _cloudEventFormatter = cloudEventFormatter;
             _options = config.Value;
         }
@@ -60,7 +61,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
 
         private Task StartAsync()
         {
-            _channel = _connectionFactory.CurrentChannel;
+            _channel = ConnectionFactory.CurrentChannel;
             _connected = true;
             return Task.CompletedTask;
         }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MSOptions = Microsoft.Extensions.Options.Options;
-using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Queue.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;

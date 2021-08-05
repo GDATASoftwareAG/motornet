@@ -18,11 +18,12 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IApplicationNameService _applicationNameService;
         private readonly RabbitMQConsumerOptions<T> _options;
-        private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
         private readonly ILogger<RabbitMQMessageConsumer<T>> _logger;
         private bool _started;
         private IModel? _channel;
         private CancellationToken _stoppingToken;
+
+        public IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
             IRabbitMQConnectionFactory<T> connectionFactory,
@@ -31,7 +32,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             IApplicationNameService applicationNameService)
         {
             _logger = logger;
-            _connectionFactory = connectionFactory;
+            ConnectionFactory = connectionFactory;
             _options = config.Value;
             _applicationLifetime = applicationLifetime;
             _applicationNameService = applicationNameService;
@@ -53,7 +54,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         {
             ThrowIfNoCallbackConfigured();
             ThrowIfConsumerAlreadyStarted();
-            _channel = _connectionFactory.CurrentChannel;
+            _channel = ConnectionFactory.CurrentChannel;
             ConfigureChannel();
             DeclareQueue();
             StartConsumerOnChannel();
@@ -63,7 +64,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         public Task StopAsync(CancellationToken token = default)
         {
             _started = false;
-            _connectionFactory.Dispose();
+            ConnectionFactory.Dispose();
             return Task.CompletedTask;
         }
 
