@@ -55,8 +55,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
                 exchange = _options.PublishingTarget.Exchange;
             }
 
-            _channel.BasicPublish(exchange, routingKey, true, properties,
-                _cloudEventFormatter.EncodeBinaryModeEventData(motorCloudEvent.ConvertToCloudEvent()));
+            _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
         }
 
         private Task StartAsync()
