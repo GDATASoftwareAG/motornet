@@ -19,21 +19,6 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 {
     public class RabbitMQMessageHostBuilderExtensionsTests
     {
-        private static IConfiguration GetConfigWithVHost(string vHost)
-        {
-            var configDict = new Dictionary<string, string>
-            {
-                { "Host", "localhost" },
-                { "User", "guest" },
-                { "Password", "guest" },
-                { "Queue:Name", "Test" },
-                { "VirtualHost", vHost },
-                { "PublishingTarget:RoutingKey", "routing.key" },
-                { "PublishingTarget:Exchange", "amq.topic" }
-            };
-            return new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
-        }
-
         private static IMotorHostBuilder GetHostBuilder()
         {
             return MotorHost.CreateDefaultBuilder()
@@ -114,6 +99,21 @@ namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest
 
             Assert.Contains(consumers, c => ((RabbitMQMessageConsumer<string>)c).ConnectionFactory.VirtualHost == "Host1");
             Assert.Contains(publishers, c => c.ConnectionFactory.VirtualHost == "Host2");
+        }
+
+        private static IConfiguration GetConfigWithVHost(string vHost)
+        {
+            var configDict = new Dictionary<string, string>
+            {
+                { "Host", "localhost" },
+                { "User", "guest" },
+                { "Password", "guest" },
+                { "Queue:Name", "Test" },
+                { "VirtualHost", vHost },
+                { "PublishingTarget:RoutingKey", "routing.key" },
+                { "PublishingTarget:Exchange", "amq.topic" }
+            };
+            return new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
         }
 
         private class StringSerializer : IMessageSerializer<string>

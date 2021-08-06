@@ -4,11 +4,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MSOptions = Microsoft.Extensions.Options.Options;
 using Motor.Extensions.Diagnostics.Queue.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
+using MSOptions = Microsoft.Extensions.Options.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ
 {
@@ -21,7 +21,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ
             config.Bind(consumerOptions);
             var connectionFactory = RabbitMQConnectionFactory<T>.From(consumerOptions);
             builder.AddConsumer(sp => new RabbitMQMessageConsumer<T>(
-                sp.GetRequiredService<ILogger<RabbitMQMessageConsumer<T>>>(), connectionFactory,
+                sp.GetRequiredService<ILogger<RabbitMQMessageConsumer<T>>>(),
+                connectionFactory,
                 MSOptions.Create(consumerOptions),
                 sp.GetRequiredService<IHostApplicationLifetime>(),
                 sp.GetRequiredService<IApplicationNameService>()));

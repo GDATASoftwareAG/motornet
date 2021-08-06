@@ -23,7 +23,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private IModel? _channel;
         private CancellationToken _stoppingToken;
 
-        public IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
+        internal IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
 
         public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
             IRabbitMQConnectionFactory<T> connectionFactory,

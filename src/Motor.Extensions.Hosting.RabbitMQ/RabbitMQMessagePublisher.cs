@@ -18,7 +18,7 @@ namespace Motor.Extensions.Hosting.RabbitMQ
         private IModel? _channel;
         private bool _connected;
 
-        public IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
+        internal IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
 
         public RabbitMQMessagePublisher(
             IRabbitMQConnectionFactory<T> connectionFactory,

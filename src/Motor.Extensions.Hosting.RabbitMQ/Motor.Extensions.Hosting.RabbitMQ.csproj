@@ -18,6 +18,12 @@
         <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>$(AssemblyName)_UnitTest</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 
 </Project>
