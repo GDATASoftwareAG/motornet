@@ -33,12 +33,12 @@ namespace Motor.Extensions.Hosting.NATS
                 {
                     await SingleMessageHandling(args.Message, token);
                 });
-            
+
             while (!token.IsCancellationRequested)
             {
                 await Task.Delay(10, token);
             }
-            
+
             subscription.Unsubscribe();
             await _client.DrainAsync();
             _client.Close();
