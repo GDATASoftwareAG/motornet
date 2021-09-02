@@ -28,12 +28,18 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder ConfigureSingleOutputService<TInput, TOutput>(
-            this IMotorHostBuilder hostBuilder)
+            this IMotorHostBuilder hostBuilder,
+            string healthCheckConfigSection = "HealthChecks",
+            string messageProcessingHealthCheckName = nameof(MessageProcessingHealthCheck<TInput>),
+            string tooManyTemporaryFailuresHealthCheckName = nameof(TooManyTemporaryFailuresHealthCheck<TInput>))
             where TOutput : class
             where TInput : class
         {
             return hostBuilder
-                .ConfigureNoOutputService<TInput>()
+                .ConfigureNoOutputService<TInput>(
+                    healthCheckConfigSection,
+                    messageProcessingHealthCheckName,
+                    tooManyTemporaryFailuresHealthCheckName)
                 .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<INoOutputService<TInput>, SingleOutputServiceAdapter<TInput, TOutput>>();
@@ -41,12 +47,18 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder ConfigureMultiOutputService<TInput, TOutput>(
-            this IMotorHostBuilder hostBuilder)
+            this IMotorHostBuilder hostBuilder,
+            string healthCheckConfigSection = "HealthChecks",
+            string messageProcessingHealthCheckName = nameof(MessageProcessingHealthCheck<TInput>),
+            string tooManyTemporaryFailuresHealthCheckName = nameof(TooManyTemporaryFailuresHealthCheck<TInput>))
             where TOutput : class
             where TInput : class
         {
             return hostBuilder
-                .ConfigureNoOutputService<TInput>()
+                .ConfigureNoOutputService<TInput>(
+                    healthCheckConfigSection,
+                    messageProcessingHealthCheckName,
+                    tooManyTemporaryFailuresHealthCheckName)
                 .ConfigureServices((_, services) =>
                 {
                     services.AddTransient<INoOutputService<TInput>, MultiOutputServiceAdapter<TInput, TOutput>>();
