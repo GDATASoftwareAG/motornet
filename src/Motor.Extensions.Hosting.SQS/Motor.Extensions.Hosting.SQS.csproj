@@ -6,7 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.1" />
-        <PackageReference Include="AWSSDK.SQS" Version="3.7.0.45" />
+        <PackageReference Include="AWSSDK.SQS" Version="3.7.1.2" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
     </ItemGroup>   
