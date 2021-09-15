@@ -13,16 +13,16 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
         /// <summary>
         /// Default image name
         /// </summary>
-        private static readonly string DefaultImage = "nats";
+        private static readonly string NatsDefaultImage = "nats";
 
         /// <summary>
         /// Default image tag
         /// </summary>
-        private static readonly string DefaultTag = "2.3";
+        private static readonly string NatsDefaultTag = "2.5";
 
         private static IImage CreateDefaultImage(IDockerClient dockerClient, ILoggerFactory loggerFactory)
         {
-            return new GenericImage(dockerClient, loggerFactory) { ImageName = $"{DefaultImage}:{DefaultTag}" };
+            return new GenericImage(dockerClient, loggerFactory) { ImageName = $"{NatsDefaultImage}:{NatsDefaultTag}" };
         }
 
         public const int Port = 4222;
@@ -31,7 +31,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
         /// <inheritdoc />
         public NATSContainer(IDockerClient dockerClient, ILoggerFactory loggerFactory)
-            : base($"{DefaultImage}:{DefaultTag}", dockerClient, loggerFactory)
+            : base($"{NatsDefaultImage}:{NatsDefaultTag}", dockerClient, loggerFactory)
         {
             _dockerClient = dockerClient;
         }
