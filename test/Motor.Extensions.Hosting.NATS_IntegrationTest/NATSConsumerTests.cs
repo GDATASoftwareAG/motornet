@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,7 +29,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
         }
 
         [Fact(Timeout = 50000)]
-        public void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+        public async void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
         {
             const string expectedMessage = "testMessage";
             var topicName = _randomizerString.Generate();
@@ -38,12 +39,12 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
             var nats = new NATSClientFactory().From(clientOptions);
 
             var consumer = GetConsumer<string>(new OptionsWrapper<NATSClientOptions>(clientOptions), queueName);
-            var rawConsumedNatsMessage = RawConsumedNatsMessage(consumer);
-            PublishMessage(nats, topicName, expectedMessage);
-            Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage.GetAwaiter().GetResult()));
+            var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
+            Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
         }
 
-        private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer)
+        private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer, IConnection nats,
+            string topicName, string expectedMessage)
         {
             var rawConsumedNatsMessage = (byte[])null;
             var taskCompletionSource = new TaskCompletionSource();
@@ -56,8 +57,9 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
             await consumer.StartAsync();
             var consumerStartTask = consumer.ExecuteAsync();
+            PublishMessage(nats, topicName, expectedMessage);
 
-            await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+            await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
             return rawConsumedNatsMessage;
         }
 
