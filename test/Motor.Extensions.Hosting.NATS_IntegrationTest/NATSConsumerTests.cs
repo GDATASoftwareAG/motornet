@@ -40,6 +40,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
             var consumer = GetConsumer<string>(new OptionsWrapper<NATSClientOptions>(clientOptions), queueName);
             var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
+            Assert.NotNull(rawConsumedNatsMessage);
             Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
         }
 
