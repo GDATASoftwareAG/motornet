@@ -17,6 +17,7 @@ namespace Motor.Extensions.Hosting.NATS
         private readonly ILogger<NATSConsumer<TData>> _logger;
         private readonly IApplicationNameService _applicationNameService;
         private readonly IConnection _client;
+        private ISyncSubscription? _subscription;
 
         public NATSConsumer(IOptions<NATSClientOptions> options, ILogger<NATSConsumer<TData>> logger,
             IApplicationNameService applicationNameService, INATSClientFactory natsClientFactory)
@@ -29,19 +30,31 @@ namespace Motor.Extensions.Hosting.NATS
 
         public async Task ExecuteAsync(CancellationToken token = default)
         {
-            using var subscription = _client.SubscribeAsync(_options.Topic, _options.Queue, async (sender, args) =>
-                {
-                    await SingleMessageHandling(args.Message, token);
-                });
-
-            while (!token.IsCancellationRequested)
+            if (_subscription == null)
             {
-                await Task.Delay(10, token);
+                _logger.LogError("Consumer not started yet. Please call StartAsync before ExecuteAsync.");
+                return;
             }
-
-            subscription.Unsubscribe();
-            await _client.DrainAsync();
-            _client.Close();
+            await Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await SingleMessageHandling(_subscription.NextMessage(), token)
+                            .ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogInformation("Terminating Nats Consumer.");
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to receive message.", e);
+                    }
+                }
+            }, token).ConfigureAwait(false);
         }
 
         private async Task SingleMessageHandling(Msg message, CancellationToken token)
@@ -58,12 +71,15 @@ namespace Motor.Extensions.Hosting.NATS
 
         public Task StartAsync(CancellationToken token = default)
         {
+            _subscription = _client.SubscribeSync(_options.Topic, _options.Queue);
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken token = default)
+        public async Task StopAsync(CancellationToken token = default)
         {
-            return Task.CompletedTask;
+            _subscription?.Unsubscribe();
+            await _client.DrainAsync();
+            _client.Close();
         }
 
         public void Dispose()

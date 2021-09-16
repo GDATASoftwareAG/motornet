@@ -40,6 +40,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
             var consumer = GetConsumer<string>(new OptionsWrapper<NATSClientOptions>(clientOptions), queueName);
             var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
+            Assert.NotNull(rawConsumedNatsMessage);
             Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
         }
 
@@ -57,6 +58,8 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
             await consumer.StartAsync();
             var consumerStartTask = consumer.ExecuteAsync();
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
             PublishMessage(nats, topicName, expectedMessage);
 
             await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
