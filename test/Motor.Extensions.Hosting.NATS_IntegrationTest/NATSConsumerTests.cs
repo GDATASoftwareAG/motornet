@@ -58,9 +58,8 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 
             await consumer.StartAsync();
             var consumerStartTask = consumer.ExecuteAsync();
-            
-            PublishMessage(nats, topicName, expectedMessage);
-            PublishMessage(nats, topicName, expectedMessage);
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
             PublishMessage(nats, topicName, expectedMessage);
 
             await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
