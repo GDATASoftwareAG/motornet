@@ -32,6 +32,7 @@ namespace Motor.Extensions.Hosting.NATS
         {
             if (_subscription == null)
             {
+                _logger.LogError("Consumer not started yet. Please call StartAsync before ExecuteAsync.");
                 return;
             }
             await Task.Run(async () =>
