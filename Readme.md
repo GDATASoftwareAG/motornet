@@ -31,6 +31,7 @@ You find working examples for different use-cases under the [examples](./example
 | Http | (:heavy_check_mark:) | (:heavy_check_mark:) | :x: |:heavy_check_mark: | :x: | |
 | Timer | (:heavy_check_mark:) | - | :x: | :x: | :x: | |
 | SQS | (:heavy_check_mark:) | - | :x: | :x: | :x: | |
+| NATS | (:heavy_check_mark:) | - | :x: | :x: | :x: | |
 
 ## Health Checks
 
