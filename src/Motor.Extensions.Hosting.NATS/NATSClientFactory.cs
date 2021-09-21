@@ -5,15 +5,15 @@ namespace Motor.Extensions.Hosting.NATS
 {
     public interface INATSClientFactory
     {
-        IConnection From(NATSClientOptions clientOptions);
+        IConnection From(NATSBaseOptions consumerOptions);
     }
 
     public class NATSClientFactory : INATSClientFactory
     {
-        public IConnection From(NATSClientOptions clientOptions)
+        public IConnection From(NATSBaseOptions consumerOptions)
         {
             var connectionFactory = new ConnectionFactory();
-            return connectionFactory.CreateConnection(clientOptions.Url);
+            return connectionFactory.CreateConnection(consumerOptions.Url);
         }
     }
 }

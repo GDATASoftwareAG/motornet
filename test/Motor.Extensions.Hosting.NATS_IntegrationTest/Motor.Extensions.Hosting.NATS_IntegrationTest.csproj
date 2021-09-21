@@ -24,6 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Motor.Extensions.Hosting.NATS\Motor.Extensions.Hosting.NATS.csproj" />
+      <ProjectReference Include="..\..\src\Motor.Extensions.TestUtilities\Motor.Extensions.TestUtilities.csproj" />
     </ItemGroup>
 
 </Project>
