@@ -18,7 +18,6 @@ using Xunit;
 namespace Motor.Extensions.Hosting.NATS_IntegrationTest
 {
     [Collection("NATSMessage")]
-    
     public class NATSIntegrationTests : IClassFixture<NATSFixture>
     {
         private readonly IRandomizerString _randomizerString;
@@ -88,7 +87,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
             await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
             return rawConsumedNatsMessage;
         }
-        
+
         private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer, IConnection nats,
             string topicName, string expectedMessage)
         {
