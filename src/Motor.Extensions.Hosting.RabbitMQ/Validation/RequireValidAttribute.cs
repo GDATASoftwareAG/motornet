@@ -28,12 +28,17 @@ namespace Motor.Extensions.Hosting.RabbitMQ.Validation
             return ValidationResult.Success;
         }
 
-        private ValidationResult? ValidateObject(object value, ValidationContext validationContext)
+        private static ValidationResult? ValidateObject(object? value, ValidationContext validationContext)
         {
+            if (value == null)
+            {
+                return new ValidationResult("Value may no be null");
+            }
+
             try
             {
-                Validator.ValidateObject(value,
-                    new ValidationContext(value, validationContext, validationContext.Items), true);
+                var innerContext = new ValidationContext(value, validationContext, validationContext.Items);
+                Validator.ValidateObject(value, innerContext, true);
             }
             catch (ValidationException e)
             {
