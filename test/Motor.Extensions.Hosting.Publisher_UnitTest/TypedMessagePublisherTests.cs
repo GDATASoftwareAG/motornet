@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
@@ -63,9 +64,40 @@ namespace Motor.Extensions.Hosting.Publisher_UnitTest
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Fact]
+        public async Task PublishMessageAsync_CloudEventWithContentEncoding_PublishedCloudEventHasDefaultEncoding()
+        {
+            var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+            var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object, encoder: new NoOpMessageEncoder());
+            var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
+            motorEvent.SetEncoding("some-encoding");
+
+            await typedMessagePublisher.PublishMessageAsync(motorEvent);
+
+            bytesPublisher.Verify(t => t.PublishMessageAsync(
+                It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == NoOpMessageEncoder.NoEncoding),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task PublishMessageAsync_CloudEventWithContentEncodingIgnored_PublishedCloudEventHasSameEncoding()
+        {
+            var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+            var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object,
+                encoder: new NoOpMessageEncoder(), ignoreEncoding: true);
+            var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
+            motorEvent.SetEncoding("some-encoding");
+
+            await typedMessagePublisher.PublishMessageAsync(motorEvent);
+
+            bytesPublisher.Verify(t => t.PublishMessageAsync(
+                It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == motorEvent.GetEncoding()),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         private static TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>> CreateTypedMessagePublisher(
             ITypedMessagePublisher<byte[]>? publisher = null, IMessageSerializer<string>? serializer = null,
-            IMessageEncoder? encoder = null)
+            IMessageEncoder? encoder = null, bool ignoreEncoding = false)
         {
             publisher ??= Mock.Of<ITypedMessagePublisher<byte[]>>();
             serializer ??= Mock.Of<IMessageSerializer<string>>();
@@ -75,8 +107,10 @@ namespace Motor.Extensions.Hosting.Publisher_UnitTest
                 fakeEncoder.SetupGet(c => c.Encoding).Returns("someEncoder");
                 encoder = fakeEncoder.Object;
             }
+
+            var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
             return new TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>>(null, publisher, serializer,
-                encoder);
+                new OptionsWrapper<ContentEncodingOptions>(encodingOptions), encoder);
         }
     }
 }

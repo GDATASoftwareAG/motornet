@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
@@ -18,14 +19,16 @@ namespace Motor.Extensions.Hosting.Publisher
         private readonly ISummary? _messageSerialization;
         private readonly ISummary? _messageEncoding;
         private readonly IMessageSerializer<TOutput> _messageSerializer;
+        private readonly ContentEncodingOptions _encodingOptions;
         private readonly IMessageEncoder _messageEncoder;
 
         public TypedMessagePublisher(IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
             TPublisher bytesMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
-            IMessageEncoder messageEncoder)
+            IOptions<ContentEncodingOptions> encodingOptions, IMessageEncoder messageEncoder)
         {
             _bytesMessagePublisher = bytesMessagePublisher;
             _messageSerializer = messageSerializer;
+            _encodingOptions = encodingOptions.Value;
             _messageEncoder = messageEncoder;
             _messageSerialization =
                 metrics?.CreateSummary("message_serialization", "Message serialization duration in ms");
@@ -47,7 +50,13 @@ namespace Motor.Extensions.Hosting.Publisher
             }
 
             var bytesEvent = motorCloudEvent.CreateNew(encodedBytes, true);
-            bytesEvent.SetMotorVersion().SetEncoding(_messageEncoder.Encoding);
+            bytesEvent.SetMotorVersion();
+
+            if (!_encodingOptions.IgnoreEncoding)
+            {
+                bytesEvent.SetEncoding(_messageEncoder.Encoding);
+            }
+
             await _bytesMessagePublisher.PublishMessageAsync(bytesEvent, token);
         }
     }

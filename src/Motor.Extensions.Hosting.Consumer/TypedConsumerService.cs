@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
@@ -23,6 +24,7 @@ namespace Motor.Extensions.Hosting.Consumer
         private readonly ILogger<TypedConsumerService<TInput>> _logger;
         private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
         private readonly ISummary? _messageDeserialization;
+        private readonly ContentEncodingOptions _encodingOptions;
         private readonly ISummary? _messageDecoding;
 
         public TypedConsumerService(
@@ -30,6 +32,7 @@ namespace Motor.Extensions.Hosting.Consumer
             IMetricsFactory<TypedConsumerService<TInput>>? metrics,
             IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
             IMessageDeserializer<TInput> deserializer,
+            IOptions<ContentEncodingOptions> encodingOptions,
             IEnumerable<IMessageDecoder> decoders,
             IMessageConsumer<TInput> consumer)
         {
@@ -38,6 +41,7 @@ namespace Motor.Extensions.Hosting.Consumer
             _deserializer = deserializer;
             _consumer = consumer;
             _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
+            _encodingOptions = encodingOptions.Value;
 
             _messageDeserialization =
                 metrics?.CreateSummary("message_deserialization", "Message deserialization duration in ms");
@@ -100,7 +104,8 @@ namespace Motor.Extensions.Hosting.Consumer
         private async Task<byte[]> DecodeMessageAsync(string encoding, byte[] encodedMsg,
             CancellationToken cancellationToken)
         {
-            if (!_decoderByEncoding.TryGetValue(encoding, out var decoder))
+            if (!_decoderByEncoding.TryGetValue(
+                _encodingOptions.IgnoreEncoding ? NoOpMessageEncoder.NoEncoding : encoding, out var decoder))
             {
                 throw new ArgumentException($"Unsupported encoding {encoding}");
             }

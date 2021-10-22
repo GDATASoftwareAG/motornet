@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Moq;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Xunit;
 
@@ -48,6 +49,19 @@ namespace Motor.Extensions.Hosting.CloudEvents_UnitTest
 
             Assert.Equal(nameof(String), oldEvent.Type);
             Assert.Equal(nameof(String), newEvent.Type);
+        }
+
+        [Fact]
+        public void CreateNew_OldEventHasContentEncoding_NewEventHasSameContentEncoding()
+        {
+            var oldEvent =
+                new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+            oldEvent.SetEncoding("some-encoding");
+            var expectedData = new List<string>();
+
+            var newEvent = oldEvent.CreateNew(expectedData);
+
+            Assert.Equal(oldEvent.GetEncoding(), newEvent.GetEncoding());
         }
 
         [Fact]
