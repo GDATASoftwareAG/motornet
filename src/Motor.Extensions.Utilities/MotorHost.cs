@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Diagnostics.Logging;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Telemetry;
@@ -22,7 +23,9 @@ namespace Motor.Extensions.Utilities
         }
 
         public static IMotorHostBuilder CreateDefaultBuilder(Assembly? assembly = null,
-            bool enableConfigureWebDefaults = true, string applicationName = "ApplicationName")
+            bool enableConfigureWebDefaults = true,
+            string applicationName = "ApplicationName",
+            string contentEncoding = "ContentEncoding")
         {
             assembly ??= Assembly.GetCallingAssembly();
 
@@ -33,6 +36,7 @@ namespace Motor.Extensions.Utilities
                 .ConfigureServices((ctx, collection) =>
                 {
                     collection.Configure<DefaultApplicationNameOptions>(ctx.Configuration.GetSection(applicationName));
+                    collection.Configure<ContentEncodingOptions>(ctx.Configuration.GetSection(contentEncoding));
                     collection.AddTransient<IApplicationNameService>(provider =>
                     {
                         var options = provider.GetRequiredService<IOptions<DefaultApplicationNameOptions>>();

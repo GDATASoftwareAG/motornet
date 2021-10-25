@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
@@ -43,7 +44,7 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
         }
 
         [Fact]
-        public async Task SingleMessageConsumeAsync_UnknownEncodingInInput_InvalidInput()
+        public async Task SingleMessageConsumeAsync_UnknownEncodingInInput__InvalidInput()
         {
             var inputEvent = CreateMotorCloudEventWithEncoding("unknown-encoding");
             var fakeDecoder = new Mock<IMessageDecoder>();
@@ -56,6 +57,20 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
                 await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
 
             Assert.Equal(ProcessedMessageStatus.InvalidInput, actual);
+        }
+
+        [Fact]
+        public async Task SingleMessageConsumeAsync_UnknownEncodingButEncodingIsIgnored_DefaultDecodingSuccessful()
+        {
+            var inputEvent = CreateMotorCloudEventWithEncoding("unknown-encoding");
+            var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
+            fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
+            CreateConsumerService(decoder: new NoOpMessageDecoder(), consumer: fakeMessageConsumer.Object, ignoreEncoding: true);
+
+            var actual =
+                await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
+
+            Assert.Equal(ProcessedMessageStatus.Success, actual);
         }
 
         [Fact]
@@ -102,23 +117,26 @@ namespace Motor.Extensions.Hosting.Consumer_UnitTest
         private static void CreateConsumerService(IBackgroundTaskQueue<MotorCloudEvent<string>>? queue = null,
             IMessageDeserializer<string>? deserializer = null,
             IMessageDecoder? decoder = null,
-            IMessageConsumer<string>? consumer = null)
+            IMessageConsumer<string>? consumer = null,
+            bool ignoreEncoding = false)
         {
             CreateConsumerService(queue, deserializer,
-                decoder is null ? null : new List<IMessageDecoder> { decoder }, consumer);
+                decoder is null ? null : new List<IMessageDecoder> { decoder }, consumer, ignoreEncoding);
         }
 
         private static void CreateConsumerService(IBackgroundTaskQueue<MotorCloudEvent<string>>? queue = null,
             IMessageDeserializer<string>? deserializer = null,
             IEnumerable<IMessageDecoder>? decoders = null,
-            IMessageConsumer<string>? consumer = null)
+            IMessageConsumer<string>? consumer = null,
+            bool ignoreEncoding = false)
         {
             queue ??= Mock.Of<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
             deserializer ??= Mock.Of<IMessageDeserializer<string>>();
             decoders ??= new List<IMessageDecoder> { Mock.Of<IMessageDecoder>() };
             consumer ??= Mock.Of<IMessageConsumer<string>>();
+            var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
             var _ = new TypedConsumerService<string>(Mock.Of<ILogger<TypedConsumerService<string>>>(), null, queue,
-                deserializer, decoders, consumer);
+                deserializer, new OptionsWrapper<ContentEncodingOptions>(encodingOptions), decoders, consumer);
         }
     }
 }
