@@ -27,7 +27,7 @@ namespace Motor.Extensions.Hosting.NATS
             where T : notnull
         {
             builder.Configure<NATSBaseOptions>(clientConfiguration);
-            builder.AddPublisher<NATSPublisher>();
+            builder.AddPublisher<NATSMessagePublisher>();
             builder.AddTransient<INATSClientFactory, NATSClientFactory>();
         }
 

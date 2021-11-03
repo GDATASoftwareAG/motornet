@@ -66,7 +66,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
         }
 
         private static async Task<byte[]> RawConsumedNatsMessageWithNatsPublisherPublishedMessage(
-            NATSConsumer<string> consumer, NATSPublisher publisher, string expectedMessage)
+            NATSConsumer<string> consumer, NATSMessagePublisher messagePublisher, string expectedMessage)
         {
             var rawConsumedNatsMessage = (byte[])null;
             var taskCompletionSource = new TaskCompletionSource();
@@ -81,7 +81,7 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
             var consumerStartTask = consumer.ExecuteAsync();
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await publisher.PublishMessageAsync(
+            await messagePublisher.PublishMessageAsync(
                 MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(expectedMessage)));
 
             await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
@@ -136,9 +136,9 @@ namespace Motor.Extensions.Hosting.NATS_IntegrationTest
             natsClient.Publish(topic, Encoding.UTF8.GetBytes(message));
         }
 
-        private NATSPublisher GetPublisher(IOptions<NATSBaseOptions> clientOptions)
+        private NATSMessagePublisher GetPublisher(IOptions<NATSBaseOptions> clientOptions)
         {
-            return new NATSPublisher(clientOptions, new NATSClientFactory());
+            return new NATSMessagePublisher(clientOptions, new NATSClientFactory());
         }
 
         private NATSConsumer<T> GetConsumer<T>(IOptions<NATSConsumerOptions> clientOptions, string queueName)

@@ -9,23 +9,21 @@ using NATS.Client;
 
 namespace Motor.Extensions.Hosting.NATS
 {
-    public class NATSPublisher : ITypedMessagePublisher<byte[]>, IDisposable
+    public class NATSMessagePublisher : ITypedMessagePublisher<byte[]>, IDisposable
     {
         private readonly NATSBaseOptions _options;
         private readonly IConnection _client;
 
-        public NATSPublisher(IOptions<NATSBaseOptions> options, INATSClientFactory natsClientFactory)
+        public NATSMessagePublisher(IOptions<NATSBaseOptions> options, INATSClientFactory natsClientFactory)
         {
             _options = options.Value;
             _client = natsClientFactory.From(_options);
         }
 
-        public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
+        public Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
         {
-            await Task.Run(() =>
-            {
-                _client.Publish(_options.Topic, motorCloudEvent.TypedData);
-            }, token).ConfigureAwait(false);
+            _client.Publish(_options.Topic, motorCloudEvent.TypedData);
+            return Task.CompletedTask;
         }
 
         public void Dispose()
