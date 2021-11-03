@@ -10,7 +10,7 @@ using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Utilities;
 
 await MotorHost.CreateDefaultBuilder()
-    // Configure the types of the input messages
+    // Configure the types of the input and output messages
     .ConfigureSingleOutputService<IncomingMessage, OutgoingMessage>()
     .ConfigureServices((_, services) =>
     {
@@ -20,14 +20,14 @@ await MotorHost.CreateDefaultBuilder()
     // Add the incoming communication module. 
     .ConfigureConsumer<IncomingMessage>((_, builder) =>
     {
-        // In this case the messages are received from AWS SQS
+        // In this case the messages are received from NATS
         builder.AddNATS();
         // The encoding of the incoming message, such that the handler is able to deserialize the message
         builder.AddSystemJson();
     })
     .ConfigurePublisher<OutgoingMessage>((_, builder) =>
     {
-        // In this case the messages are send to Kafka
+        // In this case the messages are send to NATS
         builder.AddNATS();
         // The encoding of the outgoing message, such that the handler is able to serialize the message
         builder.AddSystemJson();
