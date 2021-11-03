@@ -5,7 +5,7 @@ namespace ConsumeAndPublishNATS.Model
 {
     public class IncomingMessage
     {
-        [JsonPropertyName("SomeProperty")] public string SomeProperty { get; set; }
-        [JsonPropertyName("IncomingTime")] public DateTime IncomingTime { get; set; }
+        public string SomeProperty { get; set; }
+        public DateTime IncomingTime { get; set; }
     }
 }
