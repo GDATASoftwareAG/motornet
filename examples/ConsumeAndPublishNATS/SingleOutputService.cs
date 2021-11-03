@@ -22,7 +22,7 @@ namespace ConsumeAndPublishNATS
             {
                 SomeProperty = incomingMessage.SomeProperty,
                 IncomingTime = incomingMessage.IncomingTime,
-                OutgoingTime = DateTime.Now
+                OutgoingTime = DateTime.UtcNow
             };
         }
     }
