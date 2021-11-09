@@ -9,79 +9,78 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Internal;
 
-namespace Motor.Extensions.Hosting
+namespace Motor.Extensions.Hosting;
+
+public class QueuedGenericService<TInput> : BackgroundService
+    where TInput : class
 {
-    public class QueuedGenericService<TInput> : BackgroundService
-        where TInput : class
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly ILogger<QueuedGenericService<TInput>> _logger;
+    private readonly QueuedGenericServiceOptions _options;
+    private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
+    private readonly INoOutputService<TInput> _rootService;
+
+    // ReSharper disable once SuggestBaseTypeForParameter
+    public QueuedGenericService(
+        ILogger<QueuedGenericService<TInput>> logger,
+        IOptions<QueuedGenericServiceOptions>? options,
+        IHostApplicationLifetime hostApplicationLifetime,
+        IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
+        BaseDelegatingMessageHandler<TInput> rootService)
     {
-        private readonly IHostApplicationLifetime _hostApplicationLifetime;
-        private readonly ILogger<QueuedGenericService<TInput>> _logger;
-        private readonly QueuedGenericServiceOptions _options;
-        private readonly IBackgroundTaskQueue<MotorCloudEvent<TInput>> _queue;
-        private readonly INoOutputService<TInput> _rootService;
+        _logger = logger;
+        _options = options?.Value ?? new QueuedGenericServiceOptions();
+        _hostApplicationLifetime = hostApplicationLifetime;
+        _queue = queue;
+        _rootService = rootService;
+    }
 
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public QueuedGenericService(
-            ILogger<QueuedGenericService<TInput>> logger,
-            IOptions<QueuedGenericServiceOptions>? options,
-            IHostApplicationLifetime hostApplicationLifetime,
-            IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
-            BaseDelegatingMessageHandler<TInput> rootService)
-        {
-            _logger = logger;
-            _options = options?.Value ?? new QueuedGenericServiceOptions();
-            _hostApplicationLifetime = hostApplicationLifetime;
-            _queue = queue;
-            _rootService = rootService;
-        }
+    protected override async Task ExecuteAsync(CancellationToken token)
+    {
+        var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
+        await Task.WhenAll(Enumerable.Repeat(0, optionsParallelProcesses)
+            .Select(_ => CreateRunnerTaskAsync(token))).ConfigureAwait(false);
+    }
 
-        protected override async Task ExecuteAsync(CancellationToken token)
+    private Task CreateRunnerTaskAsync(CancellationToken token)
+    {
+        return Task.Run(async () =>
         {
-            var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
-            await Task.WhenAll(Enumerable.Repeat(0, optionsParallelProcesses)
-                .Select(_ => CreateRunnerTaskAsync(token))).ConfigureAwait(false);
-        }
-
-        private Task CreateRunnerTaskAsync(CancellationToken token)
-        {
-            return Task.Run(async () =>
+            while (!token.IsCancellationRequested)
             {
-                while (!token.IsCancellationRequested)
+                var queueItem = await _queue.DequeueAsync(token)
+                    .ConfigureAwait(false);
+                if (queueItem is null)
                 {
-                    var queueItem = await _queue.DequeueAsync(token)
-                        .ConfigureAwait(false);
-                    if (queueItem is null)
-                    {
-                        continue;
-                    }
-
-                    await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
-                        .ConfigureAwait(false);
+                    continue;
                 }
-            }, token);
-        }
 
-        private async Task HandleSingleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-            TaskCompletionSource<ProcessedMessageStatus> taskCompletionSource, CancellationToken token)
-        {
-            var status = ProcessedMessageStatus.CriticalFailure;
-            try
-            {
-                status = await _rootService.HandleMessageAsync(dataCloudEvent, token)
+                await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
                     .ConfigureAwait(false);
             }
-            catch (Exception ex)
+        }, token);
+    }
+
+    private async Task HandleSingleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
+        TaskCompletionSource<ProcessedMessageStatus> taskCompletionSource, CancellationToken token)
+    {
+        var status = ProcessedMessageStatus.CriticalFailure;
+        try
+        {
+            status = await _rootService.HandleMessageAsync(dataCloudEvent, token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
+                "HandleMessage processed failed to with an unexpected exception.");
+        }
+        finally
+        {
+            taskCompletionSource.TrySetResult(status);
+            if (status == ProcessedMessageStatus.CriticalFailure)
             {
-                _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
-                    "HandleMessage processed failed to with an unexpected exception.");
-            }
-            finally
-            {
-                taskCompletionSource.TrySetResult(status);
-                if (status == ProcessedMessageStatus.CriticalFailure)
-                {
-                    _hostApplicationLifetime.StopApplication();
-                }
+                _hostApplicationLifetime.StopApplication();
             }
         }
     }

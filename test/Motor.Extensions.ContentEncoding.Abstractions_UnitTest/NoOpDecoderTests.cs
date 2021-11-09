@@ -3,24 +3,23 @@ using System.Threading.Tasks;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Xunit;
 
-namespace Motor.Extensions.ContentEncoding.Abstractions_UnitTest
+namespace Motor.Extensions.ContentEncoding.Abstractions_UnitTest;
+
+public class NoOpDecoderTests
 {
-    public class NoOpDecoderTests
+    [Fact]
+    public async Task Decode_SomeEncodedMessage_DecodingDoesNotChangeInput()
     {
-        [Fact]
-        public async Task Decode_SomeEncodedMessage_DecodingDoesNotChangeInput()
-        {
-            var decoder = CreateDecoder();
-            var encoded = new byte[] { 1, 2, 3 };
+        var decoder = CreateDecoder();
+        var encoded = new byte[] { 1, 2, 3 };
 
-            var decoded = await decoder.DecodeAsync(encoded, CancellationToken.None);
+        var decoded = await decoder.DecodeAsync(encoded, CancellationToken.None);
 
-            Assert.Equal(encoded, decoded);
-        }
+        Assert.Equal(encoded, decoded);
+    }
 
-        private static NoOpMessageDecoder CreateDecoder()
-        {
-            return new();
-        }
+    private static NoOpMessageDecoder CreateDecoder()
+    {
+        return new();
     }
 }

@@ -3,46 +3,45 @@ using Motor.Extensions.Hosting.RabbitMQ.Validation;
 using Xunit;
 using static System.ComponentModel.DataAnnotations.Validator;
 
-namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest.Validation
+namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest.Validation;
+
+public class NotWhitespaceOrEmptyAttributeTests
 {
-    public class NotWhitespaceOrEmptyAttributeTests
+    record Demo
     {
-        record Demo
-        {
-            [NotWhitespaceOrEmpty]
-            public string Name { get; init; }
-        }
+        [NotWhitespaceOrEmpty]
+        public string Name { get; init; }
+    }
 
-        [Fact]
-        public void Validate_ValidObject_NoException()
-        {
-            var toValidate = new Demo { Name = "Ted" };
+    [Fact]
+    public void Validate_ValidObject_NoException()
+    {
+        var toValidate = new Demo { Name = "Ted" };
 
-            ValidateObject(toValidate, new ValidationContext(toValidate));
-        }
+        ValidateObject(toValidate, new ValidationContext(toValidate));
+    }
 
-        [Fact]
-        public void Validate_StringEmpty_ValidationException()
-        {
-            var toValidate = new Demo { Name = string.Empty };
+    [Fact]
+    public void Validate_StringEmpty_ValidationException()
+    {
+        var toValidate = new Demo { Name = string.Empty };
 
-            Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
-        }
+        Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
+    }
 
-        [Fact]
-        public void Validate_SolelyWhitespace_ValidationException()
-        {
-            var toValidate = new Demo { Name = "   " };
+    [Fact]
+    public void Validate_SolelyWhitespace_ValidationException()
+    {
+        var toValidate = new Demo { Name = "   " };
 
-            Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
-        }
+        Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
+    }
 
-        [Fact]
-        public void Validate_Null_ValidationException()
-        {
-            var toValidate = new Demo();
+    [Fact]
+    public void Validate_Null_ValidationException()
+    {
+        var toValidate = new Demo();
 
-            Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
-        }
+        Assert.Throws<ValidationException>(() => ValidateObject(toValidate, new ValidationContext(toValidate)));
     }
 }

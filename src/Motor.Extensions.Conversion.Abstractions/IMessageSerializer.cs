@@ -1,7 +1,6 @@
-namespace Motor.Extensions.Conversion.Abstractions
+namespace Motor.Extensions.Conversion.Abstractions;
+
+public interface IMessageSerializer<in T> where T : notnull
 {
-    public interface IMessageSerializer<in T> where T : notnull
-    {
-        byte[] Serialize(T message);
-    }
+    byte[] Serialize(T message);
 }

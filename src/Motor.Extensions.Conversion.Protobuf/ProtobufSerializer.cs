@@ -1,13 +1,12 @@
 using Google.Protobuf;
 using Motor.Extensions.Conversion.Abstractions;
 
-namespace Motor.Extensions.Conversion.Protobuf
+namespace Motor.Extensions.Conversion.Protobuf;
+
+public class ProtobufSerializer<T> : IMessageSerializer<T> where T : IMessage
 {
-    public class ProtobufSerializer<T> : IMessageSerializer<T> where T : IMessage
+    public byte[] Serialize(T message)
     {
-        public byte[] Serialize(T message)
-        {
-            return message.ToByteArray();
-        }
+        return message.ToByteArray();
     }
 }

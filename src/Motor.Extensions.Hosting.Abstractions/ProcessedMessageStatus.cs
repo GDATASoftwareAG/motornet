@@ -1,10 +1,9 @@
-namespace Motor.Extensions.Hosting.Abstractions
+namespace Motor.Extensions.Hosting.Abstractions;
+
+public enum ProcessedMessageStatus
 {
-    public enum ProcessedMessageStatus
-    {
-        Success,
-        TemporaryFailure,
-        InvalidInput,
-        CriticalFailure
-    }
+    Success,
+    TemporaryFailure,
+    InvalidInput,
+    CriticalFailure
 }

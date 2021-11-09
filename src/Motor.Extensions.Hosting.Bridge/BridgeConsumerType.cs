@@ -1,9 +1,8 @@
-namespace Motor.Extensions.Hosting.Bridge
+namespace Motor.Extensions.Hosting.Bridge;
+
+public enum BridgeConsumerType
 {
-    public enum BridgeConsumerType
-    {
-        RabbitMQ,
-        Kafka,
-        SQS
-    }
+    RabbitMQ,
+    Kafka,
+    SQS
 }

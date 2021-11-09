@@ -1,9 +1,8 @@
 using Confluent.Kafka;
 
-namespace Motor.Extensions.Hosting.Kafka.Options
+namespace Motor.Extensions.Hosting.Kafka.Options;
+
+public class KafkaPublisherOptions<T> : ProducerConfig
 {
-    public class KafkaPublisherOptions<T> : ProducerConfig
-    {
-        public string? Topic { get; set; }
-    }
+    public string? Topic { get; set; }
 }

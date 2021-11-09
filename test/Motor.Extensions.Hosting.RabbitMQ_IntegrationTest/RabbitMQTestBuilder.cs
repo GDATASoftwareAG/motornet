@@ -20,282 +20,281 @@ using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest
-{
-    public struct Message
-    {
-        public Message(byte[] body, byte priority)
-        {
-            Body = body;
-            Priority = priority;
-        }
+namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 
-        public byte[] Body { get; }
-        public byte Priority { get; }
+public struct Message
+{
+    public Message(byte[] body, byte priority)
+    {
+        Body = body;
+        Priority = priority;
     }
 
-    public class RabbitMQTestBuilder
+    public byte[] Body { get; }
+    public byte Priority { get; }
+}
+
+public class RabbitMQTestBuilder
+{
+    public const ushort PrefetchCount = 100;
+
+    private static readonly Random _random = new();
+    private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
+    private bool createQueue;
+    private RabbitMQFixture Fixture;
+    private bool isBuilt;
+    private readonly IList<Message> messages = new List<Message>();
+    internal string QueueName { get; init; }
+    internal string RoutingKey { get; init; }
+
+    public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
     {
-        public const ushort PrefetchCount = 100;
+        var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
 
-        private static readonly Random _random = new();
-        private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
-        private bool createQueue;
-        private RabbitMQFixture Fixture;
-        private bool isBuilt;
-        private readonly IList<Message> messages = new List<Message>();
-        internal string QueueName { get; init; }
-        internal string RoutingKey { get; init; }
-
-        public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
+        return new RabbitMQTestBuilder
         {
-            var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+            QueueName = randomizerString.Generate(),
+            RoutingKey = randomizerString.Generate(),
+            Fixture = fixture
+        };
+    }
 
-            return new RabbitMQTestBuilder
+    public static RabbitMQTestBuilder CreateWithQueueDeclare(RabbitMQFixture fixture)
+    {
+        var q = CreateWithoutQueueDeclare(fixture);
+        q.createQueue = true;
+        return q;
+    }
+
+    public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
+    {
+        Callback = callback;
+        createQueue = true;
+        return this;
+    }
+
+    public RabbitMQTestBuilder WithSinglePublishedMessage(byte priority, byte[] message)
+    {
+        messages.Add(new Message(message, priority));
+        return this;
+    }
+
+    public RabbitMQTestBuilder WithSingleRandomPublishedMessage()
+    {
+        var bytes = new byte[10];
+        _random.NextBytes(bytes);
+        return WithSinglePublishedMessage(100, bytes);
+    }
+
+    public RabbitMQTestBuilder WithMultipleRandomPublishedMessage(ushort number = PrefetchCount)
+    {
+        for (var i = 0; i < number; i++) WithSingleRandomPublishedMessage();
+
+        return this;
+    }
+
+    public RabbitMQTestBuilder Build(int retries = 3)
+    {
+        if (createQueue)
+        {
+            var config = GetConsumerConfig<string>();
+            using (var channel = Fixture.Connection.CreateModel())
             {
-                QueueName = randomizerString.Generate(),
-                RoutingKey = randomizerString.Generate(),
-                Fixture = fixture
-            };
-        }
-
-        public static RabbitMQTestBuilder CreateWithQueueDeclare(RabbitMQFixture fixture)
-        {
-            var q = CreateWithoutQueueDeclare(fixture);
-            q.createQueue = true;
-            return q;
-        }
-
-        public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
-        {
-            Callback = callback;
-            createQueue = true;
-            return this;
-        }
-
-        public RabbitMQTestBuilder WithSinglePublishedMessage(byte priority, byte[] message)
-        {
-            messages.Add(new Message(message, priority));
-            return this;
-        }
-
-        public RabbitMQTestBuilder WithSingleRandomPublishedMessage()
-        {
-            var bytes = new byte[10];
-            _random.NextBytes(bytes);
-            return WithSinglePublishedMessage(100, bytes);
-        }
-
-        public RabbitMQTestBuilder WithMultipleRandomPublishedMessage(ushort number = PrefetchCount)
-        {
-            for (var i = 0; i < number; i++) WithSingleRandomPublishedMessage();
-
-            return this;
-        }
-
-        public RabbitMQTestBuilder Build(int retries = 3)
-        {
-            if (createQueue)
-            {
-                var config = GetConsumerConfig<string>();
-                using (var channel = Fixture.Connection.CreateModel())
-                {
-                    DeclareQueue(config, channel);
-                    foreach (var message in messages) PublishSingleMessage(channel, message, config);
-                }
-
-                Policy
-                    .Handle<Exception>()
-                    .WaitAndRetry(retries, retryAttempt =>
-                        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
-                    )
-                    .Execute(() =>
-                    {
-                        var messageInConsumerQueue = MessageInConsumerQueue();
-                        Assert.Equal((uint)messages.Count, messageInConsumerQueue);
-                    });
+                DeclareQueue(config, channel);
+                foreach (var message in messages) PublishSingleMessage(channel, message, config);
             }
 
-            isBuilt = true;
-            return this;
-        }
-
-        private void PublishSingleMessage<T>(IModel channel, Message message,
-            RabbitMQConsumerOptions<T> options)
-        {
-            var properties = channel.CreateBasicProperties();
-            properties.DeliveryMode = 2;
-            properties.Priority = message.Priority;
-            properties.Headers = new Dictionary<string, object>();
-
-            var bindings = options.Queue.Bindings[0];
-            channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
-        }
-
-        private void DeclareQueue<T>(RabbitMQConsumerOptions<T> options, IModel channel)
-        {
-            var arguments = options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-            arguments.Add("x-max-priority", options.Queue.MaxPriority);
-            arguments.Add("x-max-length", options.Queue.MaxLength);
-            arguments.Add("x-max-length-bytes", options.Queue.MaxLengthBytes);
-            arguments.Add("x-message-ttl", options.Queue.MessageTtl);
-            channel.QueueDeclare(
-                options.Queue.Name,
-                options.Queue.Durable,
-                false,
-                options.Queue.AutoDelete,
-                arguments
-            );
-            foreach (var routingKeyConfig in options.Queue.Bindings)
-                channel.QueueBind(
-                    options.Queue.Name,
-                    routingKeyConfig.Exchange,
-                    routingKeyConfig.RoutingKey,
-                    routingKeyConfig.Arguments);
-        }
-
-        private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
-        {
-            return new()
-            {
-                Host = "host",
-                User = "guest",
-                Password = "guest",
-                VirtualHost = "/",
-                Queue = new RabbitMQQueueOptions
+            Policy
+                .Handle<Exception>()
+                .WaitAndRetry(retries, retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
+                )
+                .Execute(() =>
                 {
-                    Name = QueueName,
-                    Bindings = new[]
-                    {
+                    var messageInConsumerQueue = MessageInConsumerQueue();
+                    Assert.Equal((uint)messages.Count, messageInConsumerQueue);
+                });
+        }
+
+        isBuilt = true;
+        return this;
+    }
+
+    private void PublishSingleMessage<T>(IModel channel, Message message,
+        RabbitMQConsumerOptions<T> options)
+    {
+        var properties = channel.CreateBasicProperties();
+        properties.DeliveryMode = 2;
+        properties.Priority = message.Priority;
+        properties.Headers = new Dictionary<string, object>();
+
+        var bindings = options.Queue.Bindings[0];
+        channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
+    }
+
+    private void DeclareQueue<T>(RabbitMQConsumerOptions<T> options, IModel channel)
+    {
+        var arguments = options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
+        arguments.Add("x-max-priority", options.Queue.MaxPriority);
+        arguments.Add("x-max-length", options.Queue.MaxLength);
+        arguments.Add("x-max-length-bytes", options.Queue.MaxLengthBytes);
+        arguments.Add("x-message-ttl", options.Queue.MessageTtl);
+        channel.QueueDeclare(
+            options.Queue.Name,
+            options.Queue.Durable,
+            false,
+            options.Queue.AutoDelete,
+            arguments
+        );
+        foreach (var routingKeyConfig in options.Queue.Bindings)
+            channel.QueueBind(
+                options.Queue.Name,
+                routingKeyConfig.Exchange,
+                routingKeyConfig.RoutingKey,
+                routingKeyConfig.Arguments);
+    }
+
+    private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
+    {
+        return new()
+        {
+            Host = "host",
+            User = "guest",
+            Password = "guest",
+            VirtualHost = "/",
+            Queue = new RabbitMQQueueOptions
+            {
+                Name = QueueName,
+                Bindings = new[]
+                {
                         new RabbitMQBindingOptions
                         {
                             Exchange = "amq.topic",
                             RoutingKey = RoutingKey
                         }
                     }
-                },
-                PrefetchCount = PrefetchCount
-            };
-        }
+            },
+            PrefetchCount = PrefetchCount
+        };
+    }
 
-        public IMessageConsumer<T> GetConsumer<T>(IHostApplicationLifetime applicationLifetime = null)
-        {
-            if (!isBuilt)
-                throw new InvalidOperationException();
+    public IMessageConsumer<T> GetConsumer<T>(IHostApplicationLifetime applicationLifetime = null)
+    {
+        if (!isBuilt)
+            throw new InvalidOperationException();
 
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
-            var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
-            var channel = Fixture.Connection.CreateModel();
+        var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
+        var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
+        var channel = Fixture.Connection.CreateModel();
 
-            applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
+        applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
 
-            rabbitConnectionFactoryMock
-                .Setup(f => f.CurrentConnection)
-                .Returns(Fixture.Connection);
+        rabbitConnectionFactoryMock
+            .Setup(f => f.CurrentConnection)
+            .Returns(Fixture.Connection);
 
-            rabbitConnectionFactoryMock
-                .Setup(f => f.CurrentChannel)
-                .Returns(channel);
+        rabbitConnectionFactoryMock
+            .Setup(f => f.CurrentChannel)
+            .Returns(channel);
 
-            rabbitConnectionFactoryMock
-                .Setup(f => f.Dispose())
-                .Callback(() =>
-                {
-                    channel.Dispose();
-                });
-
-            optionsMock
-                .Setup(x => x.Value)
-                .Returns(GetConsumerConfig<T>());
-
-            var consumer = new RabbitMQMessageConsumer<T>(
-                Mock.Of<ILogger<RabbitMQMessageConsumer<T>>>(),
-                rabbitConnectionFactoryMock.Object,
-                optionsMock.Object,
-                applicationLifetime,
-                null
-            )
+        rabbitConnectionFactoryMock
+            .Setup(f => f.Dispose())
+            .Callback(() =>
             {
-                ConsumeCallbackAsync = Callback
-            };
-            return consumer;
-        }
+                channel.Dispose();
+            });
 
-        public bool IsConsumerQueueDeclared()
+        optionsMock
+            .Setup(x => x.Value)
+            .Returns(GetConsumerConfig<T>());
+
+        var consumer = new RabbitMQMessageConsumer<T>(
+            Mock.Of<ILogger<RabbitMQMessageConsumer<T>>>(),
+            rabbitConnectionFactoryMock.Object,
+            optionsMock.Object,
+            applicationLifetime,
+            null
+        )
         {
-            if (!isBuilt)
-                throw new InvalidOperationException();
-            using var channel = Fixture.Connection.CreateModel();
-            channel.QueueDeclarePassive(QueueName);
-            return true;
-        }
+            ConsumeCallbackAsync = Callback
+        };
+        return consumer;
+    }
 
-        public uint MessageInConsumerQueue()
+    public bool IsConsumerQueueDeclared()
+    {
+        if (!isBuilt)
+            throw new InvalidOperationException();
+        using var channel = Fixture.Connection.CreateModel();
+        channel.QueueDeclarePassive(QueueName);
+        return true;
+    }
+
+    public uint MessageInConsumerQueue()
+    {
+        using var channel = Fixture.Connection.CreateModel();
+        var queueDeclarePassive = channel.QueueDeclarePassive(QueueName);
+        return queueDeclarePassive.MessageCount;
+    }
+
+    public ITypedMessagePublisher<byte[]> GetPublisher<T>()
+    {
+        if (!isBuilt)
+            throw new InvalidOperationException();
+        var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
+
+        var channel = Fixture.Connection.CreateModel();
+
+        rabbitConnectionFactoryMock
+            .Setup(f => f.CurrentConnection)
+            .Returns(Fixture.Connection);
+
+        rabbitConnectionFactoryMock
+            .Setup(f => f.CurrentChannel)
+            .Returns(channel);
+
+        var optionsMock = new Mock<IOptions<RabbitMQPublisherOptions<T>>>();
+        optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
+        return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
+            new JsonEventFormatter());
+    }
+
+    private RabbitMQPublisherOptions<T> GetPublisherConfig<T>()
+    {
+        return new()
         {
-            using var channel = Fixture.Connection.CreateModel();
-            var queueDeclarePassive = channel.QueueDeclarePassive(QueueName);
-            return queueDeclarePassive.MessageCount;
-        }
-
-        public ITypedMessagePublisher<byte[]> GetPublisher<T>()
-        {
-            if (!isBuilt)
-                throw new InvalidOperationException();
-            var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
-
-            var channel = Fixture.Connection.CreateModel();
-
-            rabbitConnectionFactoryMock
-                .Setup(f => f.CurrentConnection)
-                .Returns(Fixture.Connection);
-
-            rabbitConnectionFactoryMock
-                .Setup(f => f.CurrentChannel)
-                .Returns(channel);
-
-            var optionsMock = new Mock<IOptions<RabbitMQPublisherOptions<T>>>();
-            optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
-            return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
-                new JsonEventFormatter());
-        }
-
-        private RabbitMQPublisherOptions<T> GetPublisherConfig<T>()
-        {
-            return new()
+            Host = "host",
+            User = "guest",
+            Password = "guest",
+            VirtualHost = "/",
+            PublishingTarget = new RabbitMQBindingOptions
             {
-                Host = "host",
-                User = "guest",
-                Password = "guest",
-                VirtualHost = "/",
-                PublishingTarget = new RabbitMQBindingOptions
-                {
-                    Exchange = "amq.topic",
-                    RoutingKey = RoutingKey
-                }
-            };
-        }
-
-        public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue()
-        {
-            var message = (byte[])null;
-            var priority = (byte)0;
-            using (var channel = Fixture.Connection.CreateModel())
-            {
-                var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (_, args) =>
-                {
-                    priority = args.BasicProperties.Priority;
-                    message = args.Body.ToArray();
-                };
-
-                channel.BasicConsume(QueueName, false, consumer);
-                await Task.Delay(TimeSpan.FromSeconds(2));
+                Exchange = "amq.topic",
+                RoutingKey = RoutingKey
             }
+        };
+    }
 
-            var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(message);
-            cloudEvent.SetRabbitMQPriority(priority);
+    public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue()
+    {
+        var message = (byte[])null;
+        var priority = (byte)0;
+        using (var channel = Fixture.Connection.CreateModel())
+        {
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (_, args) =>
+            {
+                priority = args.BasicProperties.Priority;
+                message = args.Body.ToArray();
+            };
 
-            return cloudEvent;
+            channel.BasicConsume(QueueName, false, consumer);
+            await Task.Delay(TimeSpan.FromSeconds(2));
         }
+
+        var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(message);
+        cloudEvent.SetRabbitMQPriority(priority);
+
+        return cloudEvent;
     }
 }

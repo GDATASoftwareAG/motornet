@@ -1,8 +1,7 @@
-namespace Motor.Extensions.Hosting
+namespace Motor.Extensions.Hosting;
+
+public record DefaultApplicationNameOptions
 {
-    public record DefaultApplicationNameOptions
-    {
-        public string FullName { get; init; } = "";
-        public string Source { get; init; } = "";
-    }
+    public string FullName { get; init; } = "";
+    public string Source { get; init; } = "";
 }

@@ -1,19 +1,18 @@
 using Motor.Extensions.Hosting.NATS.Options;
 using NATS.Client;
 
-namespace Motor.Extensions.Hosting.NATS
-{
-    public interface INATSClientFactory
-    {
-        IConnection From(NATSClientOptions clientOptions);
-    }
+namespace Motor.Extensions.Hosting.NATS;
 
-    public class NATSClientFactory : INATSClientFactory
+public interface INATSClientFactory
+{
+    IConnection From(NATSClientOptions clientOptions);
+}
+
+public class NATSClientFactory : INATSClientFactory
+{
+    public IConnection From(NATSClientOptions clientOptions)
     {
-        public IConnection From(NATSClientOptions clientOptions)
-        {
-            var connectionFactory = new ConnectionFactory();
-            return connectionFactory.CreateConnection(clientOptions.Url);
-        }
+        var connectionFactory = new ConnectionFactory();
+        return connectionFactory.CreateConnection(clientOptions.Url);
     }
 }

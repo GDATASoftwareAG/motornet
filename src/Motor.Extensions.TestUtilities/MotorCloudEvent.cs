@@ -5,51 +5,50 @@ using CloudNative.CloudEvents;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 
-namespace Motor.Extensions.TestUtilities
+namespace Motor.Extensions.TestUtilities;
+
+public class MotorCloudEvent
 {
-    public class MotorCloudEvent
+    public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null)
+        where T : class
     {
-        public static MotorCloudEvent<T> CreateTestCloudEvent<T>(T data, Uri? source = null)
-            where T : class
+        var applicationNameService = new TestApplicationNameService(source);
+        return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource())
+            .SetMotorVersion();
+    }
+
+    private class TestApplicationNameService : IApplicationNameService
+    {
+        private readonly Uri _source;
+
+        public TestApplicationNameService(Uri? source)
         {
-            var applicationNameService = new TestApplicationNameService(source);
-            return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource())
-                .SetMotorVersion();
+            _source = source ?? new Uri("motor://test");
         }
 
-        private class TestApplicationNameService : IApplicationNameService
+        public string GetProduct()
         {
-            private readonly Uri _source;
+            throw new NotImplementedException();
+        }
 
-            public TestApplicationNameService(Uri? source)
-            {
-                _source = source ?? new Uri("motor://test");
-            }
+        public string GetVersion()
+        {
+            throw new NotImplementedException();
+        }
 
-            public string GetProduct()
-            {
-                throw new NotImplementedException();
-            }
+        public string GetLibVersion()
+        {
+            throw new NotImplementedException();
+        }
 
-            public string GetVersion()
-            {
-                throw new NotImplementedException();
-            }
+        public string GetFullName()
+        {
+            return "test";
+        }
 
-            public string GetLibVersion()
-            {
-                throw new NotImplementedException();
-            }
-
-            public string GetFullName()
-            {
-                return "test";
-            }
-
-            public Uri GetSource()
-            {
-                return _source;
-            }
+        public Uri GetSource()
+        {
+            return _source;
         }
     }
 }

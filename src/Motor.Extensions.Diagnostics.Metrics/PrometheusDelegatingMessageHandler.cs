@@ -5,30 +5,29 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
 
-namespace Motor.Extensions.Diagnostics.Metrics
+namespace Motor.Extensions.Diagnostics.Metrics;
+
+public class PrometheusDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
+    where TInput : class
 {
-    public class PrometheusDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
-        where TInput : class
+    private readonly IMetricFamily<ICounter> _messageProcessingTotal;
+
+    public PrometheusDelegatingMessageHandler(
+        IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
     {
-        private readonly IMetricFamily<ICounter> _messageProcessingTotal;
+        _messageProcessingTotal =
+            metricsFactory.CreateCounter("message_processing_total", "Message processing status total", false, "status");
+    }
 
-        public PrometheusDelegatingMessageHandler(
-            IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
+    public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default)
+    {
+        var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
+        using (new AutoIncCounter(() => _messageProcessingTotal.WithLabels(processedMessageStatus.ToString())))
         {
-            _messageProcessingTotal =
-                metricsFactory.CreateCounter("message_processing_total", "Message processing status total", false, "status");
+            processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
         }
 
-        public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-            CancellationToken token = default)
-        {
-            var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
-            using (new AutoIncCounter(() => _messageProcessingTotal.WithLabels(processedMessageStatus.ToString())))
-            {
-                processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
-            }
-
-            return processedMessageStatus;
-        }
+        return processedMessageStatus;
     }
 }

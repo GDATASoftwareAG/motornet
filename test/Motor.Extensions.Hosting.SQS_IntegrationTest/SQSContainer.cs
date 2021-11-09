@@ -7,62 +7,61 @@ using Microsoft.Extensions.Logging;
 using TestContainers.Container.Abstractions;
 using TestContainers.Container.Abstractions.Images;
 
-namespace Motor.Extensions.Hosting.SQS_IntegrationTest
+namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
+
+public class SQSContainer : GenericContainer
 {
-    public class SQSContainer : GenericContainer
+    /// <summary>
+    /// Default image name
+    /// </summary>
+    private static readonly string SQSDefaultImage = "roribio16/alpine-sqs";
+
+    /// <summary>
+    /// Default image tag
+    /// </summary>
+    private static readonly string SQSDefaultTag = "1.2.0";
+
+    private static IImage CreateDefaultImage(IDockerClient dockerClient, ILoggerFactory loggerFactory)
     {
-        /// <summary>
-        /// Default image name
-        /// </summary>
-        private static readonly string SQSDefaultImage = "roribio16/alpine-sqs";
+        return new GenericImage(dockerClient, loggerFactory) { ImageName = $"{SQSDefaultImage}:{SQSDefaultTag}" };
+    }
 
-        /// <summary>
-        /// Default image tag
-        /// </summary>
-        private static readonly string SQSDefaultTag = "1.2.0";
+    public const int SQS_PORT = 9324;
+    private readonly IDockerClient _dockerClient;
+    private ContainerInspectResponse _containerInfo;
 
-        private static IImage CreateDefaultImage(IDockerClient dockerClient, ILoggerFactory loggerFactory)
-        {
-            return new GenericImage(dockerClient, loggerFactory) { ImageName = $"{SQSDefaultImage}:{SQSDefaultTag}" };
-        }
+    /// <inheritdoc />
+    public SQSContainer(IDockerClient dockerClient, ILoggerFactory loggerFactory)
+        : base($"{DefaultImage}:{DefaultTag}", dockerClient, loggerFactory)
+    {
+        _dockerClient = dockerClient;
+    }
 
-        public const int SQS_PORT = 9324;
-        private readonly IDockerClient _dockerClient;
-        private ContainerInspectResponse _containerInfo;
+    /// <inheritdoc />
+    public SQSContainer(string dockerImageName, IDockerClient dockerClient, ILoggerFactory loggerFactory)
+        : base(dockerImageName, dockerClient, loggerFactory)
+    {
+        _dockerClient = dockerClient;
+    }
 
-        /// <inheritdoc />
-        public SQSContainer(IDockerClient dockerClient, ILoggerFactory loggerFactory)
-            : base($"{DefaultImage}:{DefaultTag}", dockerClient, loggerFactory)
-        {
-            _dockerClient = dockerClient;
-        }
+    /// <inheritdoc />
+    [ActivatorUtilitiesConstructor]
+    public SQSContainer(IImage dockerImage, IDockerClient dockerClient, ILoggerFactory loggerFactory)
+        : base(NullImage.IsNullImage(dockerImage) ? CreateDefaultImage(dockerClient, loggerFactory) : dockerImage,
+            dockerClient, loggerFactory)
+    {
+        _dockerClient = dockerClient;
+    }
 
-        /// <inheritdoc />
-        public SQSContainer(string dockerImageName, IDockerClient dockerClient, ILoggerFactory loggerFactory)
-            : base(dockerImageName, dockerClient, loggerFactory)
-        {
-            _dockerClient = dockerClient;
-        }
+    protected override async Task ConfigureAsync()
+    {
+        await base.ConfigureAsync();
+        ExposedPorts.Add(SQS_PORT);
+    }
 
-        /// <inheritdoc />
-        [ActivatorUtilitiesConstructor]
-        public SQSContainer(IImage dockerImage, IDockerClient dockerClient, ILoggerFactory loggerFactory)
-            : base(NullImage.IsNullImage(dockerImage) ? CreateDefaultImage(dockerClient, loggerFactory) : dockerImage,
-                dockerClient, loggerFactory)
-        {
-            _dockerClient = dockerClient;
-        }
-
-        protected override async Task ConfigureAsync()
-        {
-            await base.ConfigureAsync();
-            ExposedPorts.Add(SQS_PORT);
-        }
-
-        protected override async Task ContainerStarted()
-        {
-            await base.ContainerStarting();
-            _containerInfo = await _dockerClient.Containers.InspectContainerAsync(ContainerId);
-        }
+    protected override async Task ContainerStarted()
+    {
+        await base.ContainerStarting();
+        _containerInfo = await _dockerClient.Containers.InspectContainerAsync(ContainerId);
     }
 }

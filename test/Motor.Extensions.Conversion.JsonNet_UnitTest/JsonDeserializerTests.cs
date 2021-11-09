@@ -5,59 +5,58 @@ using Motor.Extensions.Conversion.JsonNet;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace Motor.Extensions.Conversion.JsonNet_UnitTest
+namespace Motor.Extensions.Conversion.JsonNet_UnitTest;
+
+public class JsonDeserializerTests
 {
-    public class JsonDeserializerTests
+    private InputMessage ValidMessage => new() { Firstname = "Foo", Lastname = "Bar", Age = 42 };
+
+    [Fact]
+    public void Deserialize_ValidMessage_DeserializedMessage()
     {
-        private InputMessage ValidMessage => new() { Firstname = "Foo", Lastname = "Bar", Age = 42 };
+        var serializer = CreateDeserializer();
+        var bytes = Serialize(ValidMessage);
 
-        [Fact]
-        public void Deserialize_ValidMessage_DeserializedMessage()
-        {
-            var serializer = CreateDeserializer();
-            var bytes = Serialize(ValidMessage);
+        var message = serializer.Deserialize(bytes);
 
-            var message = serializer.Deserialize(bytes);
+        var expectedMessage = new InputMessage { Firstname = "Foo", Lastname = "Bar", Age = 42 };
 
-            var expectedMessage = new InputMessage { Firstname = "Foo", Lastname = "Bar", Age = 42 };
+        Assert.Equal(expectedMessage, message);
+    }
 
-            Assert.Equal(expectedMessage, message);
-        }
+    private byte[] Serialize(InputMessage message)
+    {
+        var serializedHostname = JsonConvert.SerializeObject(message);
+        return Encoding.UTF8.GetBytes(serializedHostname);
+    }
 
-        private byte[] Serialize(InputMessage message)
-        {
-            var serializedHostname = JsonConvert.SerializeObject(message);
-            return Encoding.UTF8.GetBytes(serializedHostname);
-        }
+    [Fact]
+    public void Deserialize_InvalidMessage_Throw()
+    {
+        var serializer = CreateDeserializer();
+        var bytes = Serialize(ValidMessage).Take(10).ToArray();
 
-        [Fact]
-        public void Deserialize_InvalidMessage_Throw()
-        {
-            var serializer = CreateDeserializer();
-            var bytes = Serialize(ValidMessage).Take(10).ToArray();
+        Assert.Throws<ArgumentException>(() => serializer.Deserialize(bytes));
+    }
 
-            Assert.Throws<ArgumentException>(() => serializer.Deserialize(bytes));
-        }
+    [Fact]
+    public void Deserialize_NullMessage_Throw()
+    {
+        var serializer = CreateDeserializer();
 
-        [Fact]
-        public void Deserialize_NullMessage_Throw()
-        {
-            var serializer = CreateDeserializer();
+        Assert.Throws<ArgumentNullException>(() => serializer.Deserialize(null));
+    }
 
-            Assert.Throws<ArgumentNullException>(() => serializer.Deserialize(null));
-        }
+    [Fact]
+    public void Deserialize_EmptyMessage_Throw()
+    {
+        var serializer = CreateDeserializer();
 
-        [Fact]
-        public void Deserialize_EmptyMessage_Throw()
-        {
-            var serializer = CreateDeserializer();
+        Assert.Throws<ArgumentNullException>(() => serializer.Deserialize(new byte[0]));
+    }
 
-            Assert.Throws<ArgumentNullException>(() => serializer.Deserialize(new byte[0]));
-        }
-
-        private JsonNetDeserializer<InputMessage> CreateDeserializer()
-        {
-            return new();
-        }
+    private JsonNetDeserializer<InputMessage> CreateDeserializer()
+    {
+        return new();
     }
 }
