@@ -24,14 +24,14 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     public Type? PublisherImplType { get; private set; }
     public HostBuilderContext Context { get; }
 
-    public void AddPublisher<TPublisher>() where TPublisher : ITypedMessagePublisher<byte[]>
+    public void AddPublisher<TPublisher>() where TPublisher : IRawMessagePublisher<TOutput>
     {
         _serviceCollection.AddTransient(typeof(TPublisher));
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
         PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
     }
 
-    public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory) where TPublisher : class, ITypedMessagePublisher<byte[]>
+    public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory) where TPublisher : class, IRawMessagePublisher<TOutput>
     {
         _serviceCollection.AddTransient(implementationFactory);
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();

@@ -26,7 +26,7 @@ public static class MotorCloudEventInfo
     }
 }
 
-public class MotorCloudEvent<TData> where TData : class
+public class MotorCloudEvent<TData> where TData : notnull
 {
     private readonly IApplicationNameService _applicationNameService;
 

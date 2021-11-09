@@ -11,13 +11,13 @@ using Motor.Extensions.Hosting.Kafka.Options;
 
 namespace Motor.Extensions.Hosting.Kafka;
 
-public class KafkaMessagePublisher<T> : ITypedMessagePublisher<byte[]>, IDisposable
+public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDisposable where TOutput : notnull
 {
     private readonly CloudEventFormatter _cloudEventFormatter;
     private readonly IProducer<string?, byte[]> _producer;
-    private readonly KafkaPublisherOptions<T> _options;
+    private readonly KafkaPublisherOptions<TOutput> _options;
 
-    public KafkaMessagePublisher(IOptions<KafkaPublisherOptions<T>> options,
+    public KafkaMessagePublisher(IOptions<KafkaPublisherOptions<TOutput>> options,
         CloudEventFormatter cloudEventFormatter)
     {
         _cloudEventFormatter = cloudEventFormatter;

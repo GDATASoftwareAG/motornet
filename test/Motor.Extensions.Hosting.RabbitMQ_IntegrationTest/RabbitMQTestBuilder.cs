@@ -237,7 +237,7 @@ public class RabbitMQTestBuilder
         return queueDeclarePassive.MessageCount;
     }
 
-    public ITypedMessagePublisher<byte[]> GetPublisher<T>()
+    public IRawMessagePublisher<T> GetPublisher<T>()
     {
         if (!isBuilt)
             throw new InvalidOperationException();
