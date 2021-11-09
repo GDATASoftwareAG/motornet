@@ -7,17 +7,32 @@ namespace Motor.Extensions.Hosting.NATS;
 
 public static class NATSHostBuilderExtensions
 {
-    public static void AddNATSWithConfig<T>(this IConsumerBuilder<T> builder,
+    public static void AddNATSWithConfig<TInput>(this IConsumerBuilder<TInput> builder,
         IConfiguration clientConfiguration)
-        where T : notnull
+        where TInput : notnull
     {
-        builder.Configure<NATSClientOptions>(clientConfiguration);
-        builder.AddConsumer<NATSConsumer<T>>();
+        builder.Configure<NATSConsumerOptions>(clientConfiguration);
+        builder.AddConsumer<NATSConsumer<TInput>>();
         builder.AddTransient<INATSClientFactory, NATSClientFactory>();
     }
 
-    public static void AddNATS<T>(this IConsumerBuilder<T> builder, string clientConfigSection = "NATSConsumer")
-        where T : notnull
+    public static void AddNATS<TInput>(this IConsumerBuilder<TInput> builder, string clientConfigSection = "NATSConsumer")
+        where TInput : notnull
+    {
+        builder.AddNATSWithConfig(builder.Context.Configuration.GetSection(clientConfigSection));
+    }
+
+    public static void AddNATSWithConfig<TOutput>(this IPublisherBuilder<TOutput> builder,
+        IConfiguration clientConfiguration)
+        where TOutput : notnull
+    {
+        builder.Configure<NATSBaseOptions>(clientConfiguration);
+        builder.AddPublisher<NATSMessagePublisher<TOutput>>();
+        builder.AddTransient<INATSClientFactory, NATSClientFactory>();
+    }
+
+    public static void AddNATS<TOutput>(this IPublisherBuilder<TOutput> builder, string clientConfigSection = "NATSPublisher")
+        where TOutput : notnull
     {
         builder.AddNATSWithConfig(builder.Context.Configuration.GetSection(clientConfigSection));
     }
