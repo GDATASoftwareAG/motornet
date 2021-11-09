@@ -23,7 +23,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: check format
-      run: dotnet format --verify-no-changes ./Motor.NET.sln
+      run: dotnet format --severity error --verify-no-changes ./Motor.NET.sln
 
   build:
     runs-on: ubuntu-latest
