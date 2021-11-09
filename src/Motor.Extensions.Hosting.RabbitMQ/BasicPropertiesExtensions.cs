@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using CloudNative.CloudEvents;
 using Motor.Extensions.ContentEncoding.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
@@ -27,11 +28,16 @@ public static class BasicPropertiesExtensions
     }
 
     public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
-        RabbitMQPublisherOptions<T> options)
+        RabbitMQPublisherOptions<T> options, CloudEventFormat format)
     {
         var messagePriority = cloudEvent.GetRabbitMQPriority() ?? options.DefaultPriority;
         if (messagePriority.HasValue)
             self.Priority = messagePriority.Value;
+
+        if (format == CloudEventFormat.Json)
+        {
+            return;
+        }
 
         self.ContentEncoding = cloudEvent.GetEncoding();
         self.ContentType = cloudEvent.ContentType;

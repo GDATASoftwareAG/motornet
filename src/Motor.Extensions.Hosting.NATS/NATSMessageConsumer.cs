@@ -10,15 +10,15 @@ using NATS.Client;
 
 namespace Motor.Extensions.Hosting.NATS;
 
-public class NATSConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
+public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
 {
     private readonly NATSConsumerOptions _options;
-    private readonly ILogger<NATSConsumer<TData>> _logger;
+    private readonly ILogger<NATSMessageConsumer<TData>> _logger;
     private readonly IApplicationNameService _applicationNameService;
     private readonly IConnection _client;
     private ISyncSubscription? _subscription;
 
-    public NATSConsumer(IOptions<NATSConsumerOptions> options, ILogger<NATSConsumer<TData>> logger,
+    public NATSMessageConsumer(IOptions<NATSConsumerOptions> options, ILogger<NATSMessageConsumer<TData>> logger,
         IApplicationNameService applicationNameService, INATSClientFactory natsClientFactory)
     {
         _options = options.Value;

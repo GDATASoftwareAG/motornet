@@ -179,7 +179,7 @@ namespace Motor.Extensions.Hosting_UnitTest
             hostApplicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
             backgroundTaskQueue ??= CreateQueue();
             service ??= new Mock<INoOutputService<string>>().Object;
-            var options = new OptionsWrapper<QueuedGenericServiceOptions>(config ?? new QueuedGenericServiceOptions());
+            var options = Options.Create(config ?? new QueuedGenericServiceOptions());
             var baseDelegatingMessageHandler = CreateBaseDelegatingMessageHandler(service);
 
             return new QueuedGenericService<string>(

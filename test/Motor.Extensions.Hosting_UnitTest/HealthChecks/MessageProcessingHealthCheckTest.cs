@@ -65,7 +65,7 @@ namespace Motor.Extensions.Hosting_UnitTest.HealthChecks
                 : DateTimeOffset.UtcNow.Subtract(maxTimeSinceLastProcessedMessage - TimeSpan.FromMilliseconds(50)));
             queue.Setup(q => q.ItemCount).Returns(itemCount);
             return new MessageProcessingHealthCheck<string>(
-                new OptionsWrapper<MessageProcessingOptions>(config),
+                Options.Create(config),
                 queue.Object);
         }
     }

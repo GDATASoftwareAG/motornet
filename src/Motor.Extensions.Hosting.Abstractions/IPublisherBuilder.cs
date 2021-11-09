@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.ContentEncoding.Abstractions;
@@ -9,6 +10,9 @@ namespace Motor.Extensions.Hosting.Abstractions;
 public interface IPublisherBuilder<TOutput> : IServiceCollection where TOutput : notnull
 {
     HostBuilderContext Context { get; }
+
+    void ConfigurePublisher(string section);
+    void ConfigurePublisher(IConfiguration section);
 
     void AddPublisher<TPublisher>()
         where TPublisher : IRawMessagePublisher<TOutput>;

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
@@ -116,6 +117,26 @@ public class RabbitMQMessagePublisherTests
     }
 
     [Fact]
+    public async Task PublishMessageAsync_WithCloudEventFormatJson_MessagePublished()
+    {
+        var basicProperties = Mock.Of<IBasicProperties>();
+        var modelMock = new Mock<IModel>();
+        modelMock.Setup(x => x.CreateBasicProperties()).Returns(basicProperties);
+        var rabbitConnectionFactoryMock =
+            GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
+        var config = GetConfig();
+        var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, config, cloudEventFormat: CloudEventFormat.Json);
+        var message = MotorCloudEvent.CreateTestCloudEvent(new byte[] { });
+
+        await publisher.PublishMessageAsync(message);
+
+        var jsonEventFormatter = new JsonEventFormatter();
+        var bytes = jsonEventFormatter.EncodeStructuredModeMessage(message.ConvertToCloudEvent(), out _);
+        modelMock.Verify(x => x.BasicPublish(config.PublishingTarget.Exchange,
+            config.PublishingTarget.RoutingKey, true, basicProperties, It.Is<ReadOnlyMemory<byte>>(t => t.ToArray().SequenceEqual(bytes.ToArray()))));
+    }
+
+    [Fact]
     public async Task PublishMessageAsync_CloudEventWithRoutingKeyExtension_MessagePublished()
     {
         const string customExchange = "cloud-event-exchange";
@@ -154,18 +175,19 @@ public class RabbitMQMessagePublisherTests
     }
 
     private IRawMessagePublisher<string> GetPublisher(
-        IRabbitMQConnectionFactory<string> factory = null,
-        RabbitMQPublisherOptions<string> options = null,
-        bool overwriteExchange = false)
+        IRabbitMQConnectionFactory<string>? factory = null,
+        RabbitMQPublisherOptions<string>? options = null,
+        bool overwriteExchange = false,
+        CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol)
     {
         options ??= GetConfig(overwriteExchange);
         factory ??= GetDefaultConnectionFactoryMock<string>().Object;
 
-        var configMock = new Mock<IOptions<RabbitMQPublisherOptions<string>>>();
-        configMock.Setup(x => x.Value).Returns(options);
+        var optionsMock = Options.Create(options);
         return new RabbitMQMessagePublisher<string>(
             factory,
-            configMock.Object,
+            optionsMock,
+            Options.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat }),
             new JsonEventFormatter()
         );
     }
@@ -188,9 +210,9 @@ public class RabbitMQMessagePublisherTests
     }
 
     private Mock<IRabbitMQConnectionFactory<T>> GetDefaultConnectionFactoryMock<T>(
-        Mock<IConnection> connectionMock = null,
-        Mock<IModel> modelMock = null,
-        IBasicProperties basicProperties = null
+        Mock<IConnection>? connectionMock = null,
+        Mock<IModel>? modelMock = null,
+        IBasicProperties? basicProperties = null
     )
     {
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();

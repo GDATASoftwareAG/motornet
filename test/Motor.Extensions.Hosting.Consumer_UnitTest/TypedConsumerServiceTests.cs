@@ -136,6 +136,6 @@ public class TypedConsumerServiceTests
         consumer ??= Mock.Of<IMessageConsumer<string>>();
         var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
         var _ = new TypedConsumerService<string>(Mock.Of<ILogger<TypedConsumerService<string>>>(), null, queue,
-            deserializer, new OptionsWrapper<ContentEncodingOptions>(encodingOptions), decoders, consumer);
+            deserializer, Options.Create(encodingOptions), decoders, consumer);
     }
 }

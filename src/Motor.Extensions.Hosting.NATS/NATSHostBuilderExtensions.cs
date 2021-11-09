@@ -12,7 +12,7 @@ public static class NATSHostBuilderExtensions
         where TInput : notnull
     {
         builder.Configure<NATSConsumerOptions>(clientConfiguration);
-        builder.AddConsumer<NATSConsumer<TInput>>();
+        builder.AddConsumer<NATSMessageConsumer<TInput>>();
         builder.AddTransient<INATSClientFactory, NATSClientFactory>();
     }
 

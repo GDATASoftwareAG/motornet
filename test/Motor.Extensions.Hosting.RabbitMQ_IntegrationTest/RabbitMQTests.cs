@@ -237,7 +237,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
             {
                 Queue =
                 {
-                        Name = builder.QueueName
+                    Name = builder.QueueName
                 }
             }),
             _fixture.ConnectionFactory<string>()

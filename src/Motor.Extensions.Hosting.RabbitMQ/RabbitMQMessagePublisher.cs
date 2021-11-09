@@ -1,5 +1,4 @@
 using System;
-
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -14,6 +13,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ;
 public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> where TOutput : notnull
 {
     private readonly RabbitMQPublisherOptions<TOutput> _options;
+    private readonly PublisherOptions _publisherOptions;
+    private readonly CloudEventFormatter _cloudEventFormatter;
     private IModel? _channel;
     private bool _connected;
 
@@ -22,11 +23,14 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
     public RabbitMQMessagePublisher(
         IRabbitMQConnectionFactory<TOutput> connectionFactory,
         IOptions<RabbitMQPublisherOptions<TOutput>> config,
+        IOptions<PublisherOptions> publisherOptions,
         CloudEventFormatter cloudEventFormatter
     )
     {
         ConnectionFactory = connectionFactory;
         _options = config.Value;
+        _publisherOptions = publisherOptions.Value;
+        _cloudEventFormatter = cloudEventFormatter;
     }
 
     public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
@@ -43,7 +47,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
 
         var properties = _channel.CreateBasicProperties();
         properties.DeliveryMode = 2;
-        properties.Update(motorCloudEvent, _options);
+        properties.Update(motorCloudEvent, _options, _publisherOptions.CloudEventFormat);
 
         var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
         var routingKey = motorCloudEvent.GetRabbitMQRoutingKey() ?? _options.PublishingTarget.RoutingKey;
@@ -53,7 +57,18 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
             exchange = _options.PublishingTarget.Exchange;
         }
 
-        _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
+        switch (_publisherOptions.CloudEventFormat)
+        {
+            case CloudEventFormat.Protocol:
+                _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
+                break;
+            case CloudEventFormat.Json:
+                var data = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(), out _);
+                _channel.BasicPublish(exchange, routingKey, true, properties, data);
+                break;
+            default:
+                throw new UnhandledCloudEventFormatException(_publisherOptions.CloudEventFormat);
+        }
     }
 
     private Task StartAsync()

@@ -10,7 +10,7 @@ public class NotWhitespaceOrEmptyAttributeTests
     record Demo
     {
         [NotWhitespaceOrEmpty]
-        public string Name { get; init; }
+        public string? Name { get; init; }
     }
 
     [Fact]

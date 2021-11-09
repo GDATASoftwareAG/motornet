@@ -1,11 +1,14 @@
 using System;
 using System.Linq;
+using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Kafka;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
+using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka;
 using Motor.Extensions.Hosting.Kafka.Options;
@@ -14,22 +17,16 @@ using Xunit;
 
 namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
 
-public class KafkaMessageTests : IClassFixture<KafkaFixture>
+public class KafkaMessageTests
 {
-    private readonly KafkaFixture _fixture;
     private const string KafkaTopic = "someTopic";
-
-    public KafkaMessageTests(KafkaFixture fixture)
-    {
-        _fixture = fixture;
-    }
 
     /*
      * Round Trip Tests
      */
 
     [Fact]
-    public void Update_NoExtensions_OnlyRequiredAttributesInHeader()
+    public void UseProtocolFormat_NoExtensions_OnlyRequiredAttributesInHeader()
     {
         var publisher = GetKafkaPublisher<byte[]>();
         var consumer = GetKafkaConsumer<byte[]>();
@@ -47,7 +44,7 @@ public class KafkaMessageTests : IClassFixture<KafkaFixture>
     }
 
     [Fact]
-    public void Update_EncodingExtension_RequiredAttributesAndEncodingAttributeInHeader()
+    public void UseProtocolFormat_EncodingExtension_RequiredAttributesAndEncodingAttributeInHeader()
     {
         var publisher = GetKafkaPublisher<byte[]>();
         var consumer = GetKafkaConsumer<byte[]>();
@@ -67,25 +64,40 @@ public class KafkaMessageTests : IClassFixture<KafkaFixture>
         }
     }
 
+    [Fact]
+    public void UseJsonFormat_BasicCheck_Equals()
+    {
+        var publisher = GetKafkaPublisher<byte[]>(CloudEventFormat.Json);
+        var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
+        var cloudFormatter = new JsonEventFormatter();
+
+        var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
+
+        var cloudEvent = cloudFormatter.DecodeStructuredModeMessage(kafkaMessage.Value, null, null);
+
+        Assert.Equal(inputCloudEvent.Id, cloudEvent.Id);
+    }
+
     /*
      * Helper Methods
      */
 
     private static Version CurrentMotorVersion => typeof(KafkaMessageTests).Assembly.GetName().Version;
 
-    private static KafkaMessagePublisher<TData> GetKafkaPublisher<TData>()
+    private static KafkaMessagePublisher<TData> GetKafkaPublisher<TData>(
+        CloudEventFormat format = CloudEventFormat.Protocol)
     {
         var options = new KafkaPublisherOptions<TData>
         {
             Topic = KafkaTopic
         };
-        return new KafkaMessagePublisher<TData>(Options.Create(options), new JsonEventFormatter());
+        return new KafkaMessagePublisher<TData>(Options.Create(options), new JsonEventFormatter(),
+            Options.Create(new PublisherOptions { CloudEventFormat = format }));
     }
-
 
     private KafkaMessageConsumer<T> GetKafkaConsumer<T>()
     {
-        var options = new OptionsWrapper<KafkaConsumerOptions<T>>(GetConsumerConfig<T>(KafkaTopic));
+        var options = Options.Create(GetConsumerConfig<T>(KafkaTopic));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
         return new KafkaMessageConsumer<T>(fakeLoggerMock, options, null, GetApplicationNameService(),
             new JsonEventFormatter());
@@ -105,7 +117,7 @@ public class KafkaMessageTests : IClassFixture<KafkaFixture>
             Topic = topic,
             GroupId = groupId,
             CommitPeriod = 1,
-            BootstrapServers = $"{_fixture.Hostname}:{_fixture.Port}",
+            BootstrapServers = $"localhost:3000",
             EnableAutoCommit = false,
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,

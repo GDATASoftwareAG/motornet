@@ -12,7 +12,7 @@ public record RabbitMQQueueOptions
     public RabbitMQBindingOptions[] Bindings { get; set; } = new RabbitMQBindingOptions[0];
 
     public bool Durable { get; set; } = true;
-    public bool AutoDelete { get; set; } = false;
+    public bool AutoDelete { get; set; }
     public int? MaxLength { get; set; } = 1_000_000;
     public long? MaxLengthBytes { get; set; } = 200 * 1024 * 1024;
     public int? MaxPriority { get; set; } = 255;
