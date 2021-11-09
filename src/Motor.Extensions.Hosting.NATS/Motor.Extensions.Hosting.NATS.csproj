@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
         <PackageReference Include="NATS.Client" Version="0.14.1" />
-        <PackageReference Include="System.Text.Json" Version="5.0.2" />
+        <PackageReference Include="System.Text.Json" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
