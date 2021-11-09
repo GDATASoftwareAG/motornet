@@ -16,7 +16,8 @@ public static class KafkaHostBuilderExtensions
         builder.AddConsumer<KafkaMessageConsumer<T>>();
     }
 
-    public static void AddKafka<T>(this IConsumerBuilder<T> builder, string configSection = "KafkaConsumer") where T : notnull
+    public static void AddKafka<T>(this IConsumerBuilder<T> builder, string configSection = "KafkaConsumer")
+        where T : notnull
     {
         builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
     }
@@ -28,7 +29,8 @@ public static class KafkaHostBuilderExtensions
         builder.Configure<KafkaPublisherOptions<T>>(config);
     }
 
-    public static void AddKafka<T>(this IPublisherBuilder<T> builder, string configSection = "KafkaPublisher") where T : notnull
+    public static void AddKafka<T>(this IPublisherBuilder<T> builder, string configSection = "KafkaPublisher")
+        where T : notnull
     {
         builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
     }

@@ -48,7 +48,7 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
         );
     }
 
-    public static IRabbitMQConnectionFactory<TC> From<TO>(TO options) where TO : RabbitMQBaseOptions
+    public static IRabbitMQConnectionFactory<TC> From<TOptions>(TOptions options) where TOptions : RabbitMQBaseOptions
     {
         Validator.ValidateObject(options, new ValidationContext(options), true);
         return new RabbitMQConnectionFactory<TC>(FromConfig(options));

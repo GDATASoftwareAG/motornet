@@ -110,6 +110,6 @@ public class TypedMessagePublisherTests
 
         var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
         return new TypedMessagePublisher<string, IRawMessagePublisher<string>>(null, publisher, serializer,
-            new OptionsWrapper<ContentEncodingOptions>(encodingOptions), encoder);
+            Options.Create(encodingOptions), encoder);
     }
 }

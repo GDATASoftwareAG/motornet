@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -14,6 +15,8 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     where TOutput : class
 {
     private readonly IServiceCollection _serviceCollection;
+    private IConfiguration? _configSection;
+    private const string PublisherSection = "Publisher";
 
     public PublisherBuilder(IServiceCollection serviceCollection, HostBuilderContext context)
     {
@@ -24,6 +27,17 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     public Type? PublisherImplType { get; private set; }
     public HostBuilderContext Context { get; }
 
+    public void ConfigurePublisher(string section)
+    {
+        _configSection = Context.Configuration.GetSection(section);
+    }
+
+    public void ConfigurePublisher(IConfiguration section)
+    {
+        _configSection = section;
+    }
+
+
     public void AddPublisher<TPublisher>() where TPublisher : IRawMessagePublisher<TOutput>
     {
         _serviceCollection.AddTransient(typeof(TPublisher));
@@ -31,7 +45,8 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
         PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
     }
 
-    public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory) where TPublisher : class, IRawMessagePublisher<TOutput>
+    public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory)
+        where TPublisher : class, IRawMessagePublisher<TOutput>
     {
         _serviceCollection.AddTransient(implementationFactory);
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
@@ -105,5 +120,18 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     {
         get => _serviceCollection[index];
         set => _serviceCollection[index] = value;
+    }
+
+    public void Build(Action<HostBuilderContext, IPublisherBuilder<TOutput>> action)
+    {
+        action.Invoke(Context, this);
+        if (PublisherImplType is null)
+        {
+            throw new ArgumentNullException(nameof(PublisherImplType));
+        }
+        _serviceCollection.AddTransient(typeof(ITypedMessagePublisher<TOutput>), PublisherImplType);
+
+        _configSection ??= Context.Configuration.GetSection(PublisherSection);
+        _serviceCollection.Configure<PublisherOptions>(_configSection);
     }
 }

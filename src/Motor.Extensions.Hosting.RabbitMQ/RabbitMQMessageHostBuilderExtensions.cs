@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Queue.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -14,7 +15,8 @@ namespace Motor.Extensions.Hosting.RabbitMQ;
 
 public static class RabbitMQMessageHostBuilderExtensions
 {
-    public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config) where T : notnull
+    public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+        where T : notnull
     {
         builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
         var consumerOptions = new RabbitMQConsumerOptions<T>();
@@ -31,7 +33,8 @@ public static class RabbitMQMessageHostBuilderExtensions
                 MSOptions.Create(consumerOptions), connectionFactory));
     }
 
-    public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer") where T : notnull
+    public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer")
+        where T : notnull
     {
         builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
     }
@@ -40,16 +43,20 @@ public static class RabbitMQMessageHostBuilderExtensions
     {
         builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
         builder.Configure<RabbitMQPublisherOptions<T>>(config);
-        var publisherOptions = new RabbitMQPublisherOptions<T>();
-        config.Bind(publisherOptions);
-        var connectionFactory = RabbitMQConnectionFactory<T>.From(publisherOptions);
+
+        var rabbitMqPublisherOptions = new RabbitMQPublisherOptions<T>();
+        config.Bind(rabbitMqPublisherOptions);
+
+        var connectionFactory = RabbitMQConnectionFactory<T>.From(rabbitMqPublisherOptions);
         builder.AddPublisher(sp
-         => new RabbitMQMessagePublisher<T>(connectionFactory,
-             MSOptions.Create(publisherOptions),
-             sp.GetRequiredService<CloudEventFormatter>()));
+            => new RabbitMQMessagePublisher<T>(connectionFactory,
+                MSOptions.Create(rabbitMqPublisherOptions),
+                sp.GetRequiredService<IOptions<PublisherOptions>>(),
+                sp.GetRequiredService<CloudEventFormatter>()));
     }
 
-    public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher") where T : notnull
+    public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher")
+        where T : notnull
     {
         builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
     }

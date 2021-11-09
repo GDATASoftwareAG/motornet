@@ -22,18 +22,18 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
 public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 {
     private readonly KafkaFixture _fixture;
-    private readonly IRandomizerString randomizerString;
+    private readonly IRandomizerString _randomizerString;
 
     public KafkaExtensionTests(KafkaFixture fixture)
     {
         _fixture = fixture;
-        randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+        _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
     }
 
     [Fact(Timeout = 50000)]
     public async Task Consume_RawPublishIntoKafkaAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
     {
-        var topic = randomizerString.Generate();
+        var topic = _randomizerString.Generate();
         const string message = "testMessage";
         await PublishMessage(topic, "someKey", message);
         var consumer = GetConsumer<string>(topic);
@@ -56,7 +56,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_PublishIntoKafkaAndConsumeWithCloudEvent_ConsumedEqualsPublished()
     {
-        var topic = randomizerString.Generate();
+        var topic = _randomizerString.Generate();
         var message = "testMessage";
         var publisher = GetPublisher<byte[]>(topic);
         var motorCloudEvent =
@@ -82,7 +82,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_PublishIntoExtensionDefinedTopic_ConsumedEqualsPublished()
     {
-        var topic = randomizerString.Generate();
+        var topic = _randomizerString.Generate();
         var message = "testMessage";
         var publisher = GetPublisher<byte[]>("wrong_topic");
         var motorCloudEvent =
@@ -116,7 +116,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
     private KafkaMessageConsumer<T> GetConsumer<T>(string topic)
     {
-        var options = new OptionsWrapper<KafkaConsumerOptions<T>>(GetConsumerConfig<T>(topic));
+        var options = Options.Create(GetConsumerConfig<T>(topic));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
         return new KafkaMessageConsumer<T>(fakeLoggerMock, options, null, GetApplicationNameService(),
             new JsonEventFormatter());
@@ -124,8 +124,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
     private KafkaMessagePublisher<T> GetPublisher<T>(string topic)
     {
-        var options = new OptionsWrapper<KafkaPublisherOptions<T>>(GetPublisherConfig<T>(topic));
-        return new KafkaMessagePublisher<T>(options, new JsonEventFormatter());
+        var options = Options.Create(GetPublisherConfig<T>(topic));
+        var publisherOptions = Options.Create(new PublisherOptions());
+        return new KafkaMessagePublisher<T>(options, new JsonEventFormatter(), publisherOptions);
     }
 
     private KafkaPublisherOptions<T> GetPublisherConfig<T>(string topic)

@@ -80,7 +80,7 @@ namespace Motor.Extensions.Hosting_UnitTest
 
         private static DefaultApplicationNameService CreateDefaultApplicationNameService(DefaultApplicationNameOptions? fullName = null)
         {
-            return new(Assembly.GetAssembly(typeof(DefaultApplicationNameServiceTests))!, new OptionsWrapper<DefaultApplicationNameOptions>(fullName ?? new DefaultApplicationNameOptions()));
+            return new(Assembly.GetAssembly(typeof(DefaultApplicationNameServiceTests))!, Options.Create(fullName ?? new DefaultApplicationNameOptions()));
         }
     }
 }

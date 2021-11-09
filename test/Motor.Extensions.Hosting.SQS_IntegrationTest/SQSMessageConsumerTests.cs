@@ -40,7 +40,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
         await sqs.CreateQueueAsync(queueName);
         await PublishMessage(sqs, queueName, expectedMessage);
 
-        var consumer = GetConsumer<string>(new OptionsWrapper<SQSClientOptions>(clientOptions), $"{_baseSQSUrl}/queue/{queueName}");
+        var consumer = GetConsumer<string>(Options.Create(clientOptions), $"{_baseSQSUrl}/queue/{queueName}");
         var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
     }

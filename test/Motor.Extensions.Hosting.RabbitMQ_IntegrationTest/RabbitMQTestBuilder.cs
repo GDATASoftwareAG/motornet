@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -19,6 +18,7 @@ using RabbitMQ.Client.Events;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
+using MSOptions = Microsoft.Extensions.Options.Options;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 
@@ -184,7 +184,7 @@ public class RabbitMQTestBuilder
             throw new InvalidOperationException();
 
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
-        var optionsMock = new Mock<IOptions<RabbitMQConsumerOptions<T>>>();
+
         var channel = Fixture.Connection.CreateModel();
 
         applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
@@ -204,14 +204,12 @@ public class RabbitMQTestBuilder
                 channel.Dispose();
             });
 
-        optionsMock
-            .Setup(x => x.Value)
-            .Returns(GetConsumerConfig<T>());
+        var optionsMock = MSOptions.Create(GetConsumerConfig<T>());
 
         var consumer = new RabbitMQMessageConsumer<T>(
             Mock.Of<ILogger<RabbitMQMessageConsumer<T>>>(),
             rabbitConnectionFactoryMock.Object,
-            optionsMock.Object,
+            optionsMock,
             applicationLifetime,
             null
         )
@@ -253,9 +251,9 @@ public class RabbitMQTestBuilder
             .Setup(f => f.CurrentChannel)
             .Returns(channel);
 
-        var optionsMock = new Mock<IOptions<RabbitMQPublisherOptions<T>>>();
-        optionsMock.Setup(x => x.Value).Returns(GetPublisherConfig<T>());
-        return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, optionsMock.Object,
+        var options = MSOptions.Create(GetPublisherConfig<T>());
+        var publisherOptions = MSOptions.Create(new PublisherOptions());
+        return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, options, publisherOptions,
             new JsonEventFormatter());
     }
 

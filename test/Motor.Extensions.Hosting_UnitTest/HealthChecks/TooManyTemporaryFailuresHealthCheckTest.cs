@@ -83,7 +83,7 @@ namespace Motor.Extensions.Hosting_UnitTest.HealthChecks
         {
             var options = new TooManyTemporaryFailuresOptions();
             return new TooManyTemporaryFailuresHealthCheck<string>(
-                new OptionsWrapper<TooManyTemporaryFailuresOptions>(options), temporaryFailuresStatistics);
+                Options.Create(options), temporaryFailuresStatistics);
         }
     }
 }

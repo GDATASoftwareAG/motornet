@@ -242,12 +242,13 @@ public class RabbitMQMessageConsumerTests
     }
 
     private IMessageConsumer<string> GetRabbitMQMessageConsumer(
-        IRabbitMQConnectionFactory<string> rabbitMqConnectionFactory = null,
-        RabbitMQConsumerOptions<string> options = null, IHostApplicationLifetime applicationLifetime = null)
+        IRabbitMQConnectionFactory<string>? rabbitMqConnectionFactory = null,
+        RabbitMQConsumerOptions<string>? options = null,
+        IHostApplicationLifetime? applicationLifetime = null)
     {
         rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock<string>().Object;
         applicationLifetime ??= FakeApplicationLifetime;
-        var optionsWrapper = new OptionsWrapper<RabbitMQConsumerOptions<string>>(options ?? GetConfig());
+        var optionsWrapper = Options.Create(options ?? GetConfig());
 
         return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
             applicationLifetime, GetApplicationNameService());
@@ -261,8 +262,8 @@ public class RabbitMQMessageConsumerTests
     }
 
     private Mock<IRabbitMQConnectionFactory<T>> GetDefaultConnectionFactoryMock<T>(
-        Mock<IConnection> connectionMock = null,
-        Mock<IModel> channelMock = null)
+        Mock<IConnection>? connectionMock = null,
+        Mock<IModel>? channelMock = null)
     {
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
         connectionMock ??= new Mock<IConnection>();
@@ -310,19 +311,19 @@ public class RabbitMQMessageConsumerTests
                 AutoDelete = false,
                 Bindings = new[]
                 {
-                        new RabbitMQBindingOptions
-                        {
-                            Exchange = "someExchange",
-                            RoutingKey = "routingKey",
-                            Arguments = new Dictionary<string, object>()
-                        },
-                        new RabbitMQBindingOptions
-                        {
-                            Exchange = "someOtherExchange",
-                            RoutingKey = "someOtherRoutingKey",
-                            Arguments = new Dictionary<string, object>()
-                        }
+                    new RabbitMQBindingOptions
+                    {
+                        Exchange = "someExchange",
+                        RoutingKey = "routingKey",
+                        Arguments = new Dictionary<string, object>()
+                    },
+                    new RabbitMQBindingOptions
+                    {
+                        Exchange = "someOtherExchange",
+                        RoutingKey = "someOtherRoutingKey",
+                        Arguments = new Dictionary<string, object>()
                     }
+                }
             }
         };
     }

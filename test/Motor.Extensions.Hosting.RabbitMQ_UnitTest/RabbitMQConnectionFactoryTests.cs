@@ -65,21 +65,6 @@ public class RabbitMQConnectionFactoryTests
         Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
     }
 
-    [Fact]
-    public void FromConsumerConfig_NoQueueConfig_Throws()
-    {
-        var cfg = new RabbitMQConsumerOptions<string>
-        {
-            Host = "host",
-            VirtualHost = "vHost",
-            User = "user",
-            Password = "password",
-            Queue = null
-        };
-
-        Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -185,21 +170,6 @@ public class RabbitMQConnectionFactoryTests
     public void FromPublisherConfig_NullOrEmptyVirtualHost_Throws(string vHost)
     {
         var cfg = GetPublisherConfig("host", "user", "password", vHost, "exchange", "routingKey");
-
-        Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
-    }
-
-    [Fact]
-    public void FromPublisherConfig_NullPublishingTarget_Throws()
-    {
-        var cfg = new RabbitMQPublisherOptions<string>
-        {
-            Host = "host",
-            User = "user",
-            Password = "password",
-            VirtualHost = "vHost",
-            PublishingTarget = null
-        };
 
         Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
     }

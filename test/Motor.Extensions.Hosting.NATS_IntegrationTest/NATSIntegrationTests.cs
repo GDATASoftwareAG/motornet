@@ -1,9 +1,10 @@
 using System;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MSOptions = Microsoft.Extensions.Options.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -37,16 +38,39 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         var queueName = _randomizerString.Generate();
 
         var publisherOptions = GetNATSBaseOptions(topicName);
-        var publisher = GetPublisher(new OptionsWrapper<NATSBaseOptions>(publisherOptions));
+        var publisher = GetPublisher(MSOptions.Create(publisherOptions));
 
         var consumerOptions = GetNATSConsumerOptions(topicName, queueName);
 
-        var consumer = GetConsumer<string>(new OptionsWrapper<NATSConsumerOptions>(consumerOptions), queueName);
+        var consumer = GetConsumer<string>(MSOptions.Create(consumerOptions));
         var rawConsumedNatsMessage =
             await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(consumer, publisher, expectedMessage);
 
         Assert.NotNull(rawConsumedNatsMessage);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
+    }
+
+    [Fact(Timeout = 50000)]
+    public async void PublishMessageAsJsonFormat()
+    {
+        const string expectedMessage = "testMessage";
+        var topicName = _randomizerString.Generate();
+        var queueName = _randomizerString.Generate();
+
+        var publisherOptions = GetNATSBaseOptions(topicName);
+        var publisher = GetPublisher(MSOptions.Create(publisherOptions), CloudEventFormat.Json);
+
+        var consumerOptions = GetNATSConsumerOptions(topicName, queueName);
+
+        var consumer = GetConsumer<string>(MSOptions.Create(consumerOptions));
+        var rawConsumedNatsMessage =
+            await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(consumer, publisher, expectedMessage);
+
+        Assert.NotNull(rawConsumedNatsMessage);
+        var jsonEventFormatter = new JsonEventFormatter();
+        var cloudEvent = jsonEventFormatter.DecodeStructuredModeMessage(rawConsumedNatsMessage, null, null);
+        Assert.Equal(expectedMessage, Encoding.UTF8.GetString(cloudEvent.Data as byte[] ?? Array.Empty<byte>()));
+
     }
 
     [Fact(Timeout = 50000, Skip = "does not run on ci")]
@@ -59,26 +83,26 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
 
         var nats = new NATSClientFactory().From(clientOptions);
 
-        var consumer = GetConsumer<string>(new OptionsWrapper<NATSConsumerOptions>(clientOptions), queueName);
+        var consumer = GetConsumer<string>(MSOptions.Create(clientOptions));
         var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
         Assert.NotNull(rawConsumedNatsMessage);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
     }
 
     private static async Task<byte[]> RawConsumedNatsMessageWithNatsPublisherPublishedMessage(
-        NATSConsumer<string> consumer, NATSMessagePublisher<string> messagePublisher, string expectedMessage)
+        NATSMessageConsumer<string> messageConsumer, NATSMessagePublisher<string> messagePublisher, string expectedMessage)
     {
         var rawConsumedNatsMessage = (byte[])null;
         var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
+        messageConsumer.ConsumeCallbackAsync = async (dataEvent, _) =>
         {
             rawConsumedNatsMessage = dataEvent.TypedData;
             taskCompletionSource.TrySetResult();
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
 
-        await consumer.StartAsync();
-        var consumerStartTask = consumer.ExecuteAsync();
+        await messageConsumer.StartAsync();
+        var consumerStartTask = messageConsumer.ExecuteAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(5));
         await messagePublisher.PublishMessageAsync(
@@ -88,20 +112,20 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         return rawConsumedNatsMessage;
     }
 
-    private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer, IConnection nats,
+    private static async Task<byte[]> RawConsumedNatsMessage(NATSMessageConsumer<string> messageConsumer, IConnection nats,
         string topicName, string expectedMessage)
     {
         var rawConsumedNatsMessage = (byte[])null;
         var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
+        messageConsumer.ConsumeCallbackAsync = async (dataEvent, _) =>
         {
             rawConsumedNatsMessage = dataEvent.TypedData;
             taskCompletionSource.TrySetResult();
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
 
-        await consumer.StartAsync();
-        var consumerStartTask = consumer.ExecuteAsync();
+        await messageConsumer.StartAsync();
+        var consumerStartTask = messageConsumer.ExecuteAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(5));
         PublishMessage(nats, topicName, expectedMessage);
@@ -136,15 +160,16 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         natsClient.Publish(topic, Encoding.UTF8.GetBytes(message));
     }
 
-    private NATSMessagePublisher<string> GetPublisher(IOptions<NATSBaseOptions> clientOptions)
+    private NATSMessagePublisher<string> GetPublisher(IOptions<NATSBaseOptions> clientOptions, CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol)
     {
-        return new NATSMessagePublisher<string>(clientOptions, new NATSClientFactory());
+        return new NATSMessagePublisher<string>(clientOptions, new NATSClientFactory(), new JsonEventFormatter(),
+            MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat }));
     }
 
-    private NATSConsumer<T> GetConsumer<T>(IOptions<NATSConsumerOptions> clientOptions, string queueName)
+    private NATSMessageConsumer<T> GetConsumer<T>(IOptions<NATSConsumerOptions> clientOptions)
     {
-        var fakeLoggerMock = Mock.Of<ILogger<NATSConsumer<T>>>();
-        return new NATSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
+        var fakeLoggerMock = Mock.Of<ILogger<NATSMessageConsumer<T>>>();
+        return new NATSMessageConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
             new NATSClientFactory());
     }
 
