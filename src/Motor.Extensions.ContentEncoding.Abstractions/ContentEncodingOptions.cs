@@ -1,7 +1,6 @@
-namespace Motor.Extensions.ContentEncoding.Abstractions
+namespace Motor.Extensions.ContentEncoding.Abstractions;
+
+public record ContentEncodingOptions
 {
-    public record ContentEncodingOptions
-    {
-        public bool IgnoreEncoding { get; init; }
-    }
+    public bool IgnoreEncoding { get; init; }
 }

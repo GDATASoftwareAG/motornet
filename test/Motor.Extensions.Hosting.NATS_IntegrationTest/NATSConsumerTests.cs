@@ -14,86 +14,85 @@ using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.NATS_IntegrationTest
+namespace Motor.Extensions.Hosting.NATS_IntegrationTest;
+
+[Collection("NATSMessage")]
+public class NATSConsumerTests : IClassFixture<NATSFixture>
 {
-    [Collection("NATSMessage")]
-    public class NATSConsumerTests : IClassFixture<NATSFixture>
+    private readonly IRandomizerString _randomizerString;
+    private readonly string _natsUrl;
+
+    public NATSConsumerTests(NATSFixture fixture)
     {
-        private readonly IRandomizerString _randomizerString;
-        private readonly string _natsUrl;
+        _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+        _natsUrl = $"{fixture.Hostname}:{fixture.Port}";
+    }
 
-        public NATSConsumerTests(NATSFixture fixture)
+    [Fact(Timeout = 50000)]
+    public async void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+    {
+        const string expectedMessage = "testMessage";
+        var topicName = _randomizerString.Generate();
+        var queueName = _randomizerString.Generate();
+        var clientOptions = GetNATSClientOptions(topicName, queueName);
+
+        var nats = new NATSClientFactory().From(clientOptions);
+
+        var consumer = GetConsumer<string>(new OptionsWrapper<NATSClientOptions>(clientOptions), queueName);
+        var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
+        Assert.NotNull(rawConsumedNatsMessage);
+        Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
+    }
+
+    private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer, IConnection nats,
+        string topicName, string expectedMessage)
+    {
+        var rawConsumedNatsMessage = (byte[])null;
+        var taskCompletionSource = new TaskCompletionSource();
+        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
         {
-            _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-            _natsUrl = $"{fixture.Hostname}:{fixture.Port}";
-        }
+            rawConsumedNatsMessage = dataEvent.TypedData;
+            taskCompletionSource.TrySetResult();
+            return await Task.FromResult(ProcessedMessageStatus.Success);
+        };
 
-        [Fact(Timeout = 50000)]
-        public async void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+        await consumer.StartAsync();
+        var consumerStartTask = consumer.ExecuteAsync();
+
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        PublishMessage(nats, topicName, expectedMessage);
+
+        await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        return rawConsumedNatsMessage;
+    }
+
+    private NATSClientOptions GetNATSClientOptions(string topicName, string queueName)
+    {
+        var clientOptions = new NATSClientOptions
         {
-            const string expectedMessage = "testMessage";
-            var topicName = _randomizerString.Generate();
-            var queueName = _randomizerString.Generate();
-            var clientOptions = GetNATSClientOptions(topicName, queueName);
+            Url = _natsUrl,
+            Topic = topicName,
+            Queue = queueName
+        };
+        return clientOptions;
+    }
 
-            var nats = new NATSClientFactory().From(clientOptions);
+    private static void PublishMessage(IConnection natsClient, string topic, string message)
+    {
+        natsClient.Publish(topic, Encoding.UTF8.GetBytes(message));
+    }
 
-            var consumer = GetConsumer<string>(new OptionsWrapper<NATSClientOptions>(clientOptions), queueName);
-            var rawConsumedNatsMessage = await RawConsumedNatsMessage(consumer, nats, topicName, expectedMessage);
-            Assert.NotNull(rawConsumedNatsMessage);
-            Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
-        }
+    private NATSConsumer<T> GetConsumer<T>(IOptions<NATSClientOptions> clientOptions, string queueName)
+    {
+        var fakeLoggerMock = Mock.Of<ILogger<NATSConsumer<T>>>();
+        return new NATSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
+            new NATSClientFactory());
+    }
 
-        private static async Task<byte[]> RawConsumedNatsMessage(NATSConsumer<string> consumer, IConnection nats,
-            string topicName, string expectedMessage)
-        {
-            var rawConsumedNatsMessage = (byte[])null;
-            var taskCompletionSource = new TaskCompletionSource();
-            consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
-            {
-                rawConsumedNatsMessage = dataEvent.TypedData;
-                taskCompletionSource.TrySetResult();
-                return await Task.FromResult(ProcessedMessageStatus.Success);
-            };
-
-            await consumer.StartAsync();
-            var consumerStartTask = consumer.ExecuteAsync();
-
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            PublishMessage(nats, topicName, expectedMessage);
-
-            await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
-            return rawConsumedNatsMessage;
-        }
-
-        private NATSClientOptions GetNATSClientOptions(string topicName, string queueName)
-        {
-            var clientOptions = new NATSClientOptions
-            {
-                Url = _natsUrl,
-                Topic = topicName,
-                Queue = queueName
-            };
-            return clientOptions;
-        }
-
-        private static void PublishMessage(IConnection natsClient, string topic, string message)
-        {
-            natsClient.Publish(topic, Encoding.UTF8.GetBytes(message));
-        }
-
-        private NATSConsumer<T> GetConsumer<T>(IOptions<NATSClientOptions> clientOptions, string queueName)
-        {
-            var fakeLoggerMock = Mock.Of<ILogger<NATSConsumer<T>>>();
-            return new NATSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
-                new NATSClientFactory());
-        }
-
-        private IApplicationNameService GetApplicationNameService(string source = "test://non")
-        {
-            var mock = new Mock<IApplicationNameService>();
-            mock.Setup(t => t.GetSource()).Returns(new Uri(source));
-            return mock.Object;
-        }
+    private IApplicationNameService GetApplicationNameService(string source = "test://non")
+    {
+        var mock = new Mock<IApplicationNameService>();
+        mock.Setup(t => t.GetSource()).Returns(new Uri(source));
+        return mock.Object;
     }
 }

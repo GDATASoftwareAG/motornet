@@ -14,86 +14,85 @@ using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.SQS_IntegrationTest
+namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
+
+[Collection("SQSMessage")]
+public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
 {
-    [Collection("SQSMessage")]
-    public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
+    private readonly IRandomizerString _randomizerString;
+    private readonly string _baseSQSUrl;
+
+    public SQSMessageConsumerTests(SQSFixture fixture)
     {
-        private readonly IRandomizerString _randomizerString;
-        private readonly string _baseSQSUrl;
+        _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+        _baseSQSUrl = $"http://{fixture.Hostname}:{fixture.Port}";
+    }
 
-        public SQSMessageConsumerTests(SQSFixture fixture)
+    [Fact(Timeout = 50000)]
+    public async Task Consume_RawPublishIntoSQSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+    {
+        const string expectedMessage = "testMessage";
+        var queueName = _randomizerString.Generate();
+        var clientOptions = GetSqsClientOptions(queueName);
+
+        var sqs = new SQSClientFactory().From(clientOptions);
+
+        await sqs.CreateQueueAsync(queueName);
+        await PublishMessage(sqs, queueName, expectedMessage);
+
+        var consumer = GetConsumer<string>(new OptionsWrapper<SQSClientOptions>(clientOptions), $"{_baseSQSUrl}/queue/{queueName}");
+        var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
+        Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
+    }
+
+    private static async Task<byte[]> RawConsumedSqsMessage(SQSConsumer<string> consumer)
+    {
+        var rawConsumedSQSMessage = (byte[])null;
+        var taskCompletionSource = new TaskCompletionSource();
+        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
         {
-            _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-            _baseSQSUrl = $"http://{fixture.Hostname}:{fixture.Port}";
-        }
+            rawConsumedSQSMessage = dataEvent.TypedData;
+            taskCompletionSource.TrySetResult();
+            return await Task.FromResult(ProcessedMessageStatus.Success);
+        };
 
-        [Fact(Timeout = 50000)]
-        public async Task Consume_RawPublishIntoSQSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+        await consumer.StartAsync();
+        var consumerStartTask = consumer.ExecuteAsync();
+
+        await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        return rawConsumedSQSMessage;
+    }
+
+    private SQSClientOptions GetSqsClientOptions(string queueName)
+    {
+        var clientOptions = new SQSClientOptions
         {
-            const string expectedMessage = "testMessage";
-            var queueName = _randomizerString.Generate();
-            var clientOptions = GetSqsClientOptions(queueName);
+            ServiceUrl = $"{_baseSQSUrl}",
+            QueueUrl = $"{_baseSQSUrl}/queue/{queueName}"
+        };
+        return clientOptions;
+    }
 
-            var sqs = new SQSClientFactory().From(clientOptions);
-
-            await sqs.CreateQueueAsync(queueName);
-            await PublishMessage(sqs, queueName, expectedMessage);
-
-            var consumer = GetConsumer<string>(new OptionsWrapper<SQSClientOptions>(clientOptions), $"{_baseSQSUrl}/queue/{queueName}");
-            var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
-            Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
-        }
-
-        private static async Task<byte[]> RawConsumedSqsMessage(SQSConsumer<string> consumer)
+    private async Task PublishMessage(IAmazonSQS sqsClient, string queue, string message)
+    {
+        await sqsClient.SendMessageAsync(new SendMessageRequest
         {
-            var rawConsumedSQSMessage = (byte[])null;
-            var taskCompletionSource = new TaskCompletionSource();
-            consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
-            {
-                rawConsumedSQSMessage = dataEvent.TypedData;
-                taskCompletionSource.TrySetResult();
-                return await Task.FromResult(ProcessedMessageStatus.Success);
-            };
+            QueueUrl = $"{_baseSQSUrl}/queue/{queue}",
+            MessageBody = message
+        });
+    }
 
-            await consumer.StartAsync();
-            var consumerStartTask = consumer.ExecuteAsync();
+    private SQSConsumer<T> GetConsumer<T>(IOptions<SQSClientOptions> clientOptions, string queueName)
+    {
+        var fakeLoggerMock = Mock.Of<ILogger<SQSConsumer<T>>>();
+        return new SQSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
+            new SQSClientFactory());
+    }
 
-            await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
-            return rawConsumedSQSMessage;
-        }
-
-        private SQSClientOptions GetSqsClientOptions(string queueName)
-        {
-            var clientOptions = new SQSClientOptions
-            {
-                ServiceUrl = $"{_baseSQSUrl}",
-                QueueUrl = $"{_baseSQSUrl}/queue/{queueName}"
-            };
-            return clientOptions;
-        }
-
-        private async Task PublishMessage(IAmazonSQS sqsClient, string queue, string message)
-        {
-            await sqsClient.SendMessageAsync(new SendMessageRequest
-            {
-                QueueUrl = $"{_baseSQSUrl}/queue/{queue}",
-                MessageBody = message
-            });
-        }
-
-        private SQSConsumer<T> GetConsumer<T>(IOptions<SQSClientOptions> clientOptions, string queueName)
-        {
-            var fakeLoggerMock = Mock.Of<ILogger<SQSConsumer<T>>>();
-            return new SQSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
-                new SQSClientFactory());
-        }
-
-        private IApplicationNameService GetApplicationNameService(string source = "test://non")
-        {
-            var mock = new Mock<IApplicationNameService>();
-            mock.Setup(t => t.GetSource()).Returns(new Uri(source));
-            return mock.Object;
-        }
+    private IApplicationNameService GetApplicationNameService(string source = "test://non")
+    {
+        var mock = new Mock<IApplicationNameService>();
+        mock.Setup(t => t.GetSource()).Returns(new Uri(source));
+        return mock.Object;
     }
 }

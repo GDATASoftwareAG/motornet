@@ -1,12 +1,11 @@
 using System;
 
-namespace Motor.Extensions.Hosting.CloudEvents
+namespace Motor.Extensions.Hosting.CloudEvents;
+
+public interface IApplicationNameService
 {
-    public interface IApplicationNameService
-    {
-        string GetVersion();
-        string GetLibVersion();
-        string GetFullName();
-        Uri GetSource();
-    }
+    string GetVersion();
+    string GetLibVersion();
+    string GetFullName();
+    Uri GetSource();
 }

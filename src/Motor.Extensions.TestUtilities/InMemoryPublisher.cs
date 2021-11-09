@@ -5,18 +5,17 @@ using System.Threading.Tasks;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 
-namespace Motor.Extensions.TestUtilities
+namespace Motor.Extensions.TestUtilities;
+
+public class InMemoryPublisher<T> : ITypedMessagePublisher<byte[]>
 {
-    public class InMemoryPublisher<T> : ITypedMessagePublisher<byte[]>
+    private readonly ConcurrentQueue<MotorCloudEvent<byte[]>> _events = new();
+
+    public IReadOnlyCollection<MotorCloudEvent<byte[]>> Events => _events;
+
+    public Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
     {
-        private readonly ConcurrentQueue<MotorCloudEvent<byte[]>> _events = new();
-
-        public IReadOnlyCollection<MotorCloudEvent<byte[]>> Events => _events;
-
-        public Task PublishMessageAsync(MotorCloudEvent<byte[]> cloudEvent, CancellationToken token = default)
-        {
-            _events.Enqueue(cloudEvent);
-            return Task.CompletedTask;
-        }
+        _events.Enqueue(cloudEvent);
+        return Task.CompletedTask;
     }
 }

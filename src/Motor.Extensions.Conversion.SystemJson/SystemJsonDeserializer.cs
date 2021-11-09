@@ -2,26 +2,25 @@ using System;
 using System.Text.Json;
 using Motor.Extensions.Conversion.Abstractions;
 
-namespace Motor.Extensions.Conversion.SystemJson
+namespace Motor.Extensions.Conversion.SystemJson;
+
+public class SystemJsonDeserializer<T> : IMessageDeserializer<T> where T : notnull
 {
-    public class SystemJsonDeserializer<T> : IMessageDeserializer<T> where T : notnull
+    public T Deserialize(byte[] message)
     {
-        public T Deserialize(byte[] message)
+        if (message == null || message.Length == 0)
+            throw new ArgumentNullException(nameof(message));
+        try
         {
-            if (message == null || message.Length == 0)
-                throw new ArgumentNullException(nameof(message));
-            try
-            {
-                return JsonSerializer.Deserialize<T>(message) ?? throw new ArgumentNullException(nameof(message));
-            }
-            catch (JsonException e)
-            {
-                throw new ArgumentException("JSON invalid.", nameof(message), e);
-            }
-            catch (InvalidCastException e)
-            {
-                throw new ArgumentException("JSON contains unexpected type.", nameof(message), e);
-            }
+            return JsonSerializer.Deserialize<T>(message) ?? throw new ArgumentNullException(nameof(message));
+        }
+        catch (JsonException e)
+        {
+            throw new ArgumentException("JSON invalid.", nameof(message), e);
+        }
+        catch (InvalidCastException e)
+        {
+            throw new ArgumentException("JSON contains unexpected type.", nameof(message), e);
         }
     }
 }

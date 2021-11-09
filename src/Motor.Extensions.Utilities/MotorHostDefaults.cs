@@ -1,8 +1,7 @@
-namespace Motor.Extensions.Utilities
+namespace Motor.Extensions.Utilities;
+
+public static class MotorHostDefaults
 {
-    public static class MotorHostDefaults
-    {
-        public const string OptionsPrefix = "MotorHosting_";
-        public const string EnablePrometheusEndpointKey = "EnablePrometheusEndpoint";
-    }
+    public const string OptionsPrefix = "MotorHosting_";
+    public const string EnablePrometheusEndpointKey = "EnablePrometheusEndpoint";
 }

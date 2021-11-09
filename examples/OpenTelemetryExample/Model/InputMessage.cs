@@ -1,8 +1,7 @@
-namespace OpenTelemetryExample.Model
+namespace OpenTelemetryExample.Model;
+
+public record InputMessage
 {
-    public record InputMessage
-    {
-        public string FancyText { get; set; } = "FooBar";
-        public int FancyNumber { get; set; } = 42;
-    }
+    public string FancyText { get; set; } = "FooBar";
+    public int FancyNumber { get; set; } = 42;
 }

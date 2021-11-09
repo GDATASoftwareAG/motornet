@@ -1,4 +1,3 @@
-namespace Motor.Extensions.Hosting.Bridge.Internals
-{
-    public record ByteData(byte[] data);
-}
+namespace Motor.Extensions.Hosting.Bridge.Internals;
+
+public record ByteData(byte[] data);

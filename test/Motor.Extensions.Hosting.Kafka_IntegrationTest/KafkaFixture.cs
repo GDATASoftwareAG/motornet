@@ -3,29 +3,28 @@ using TestContainers.Container.Abstractions;
 using TestContainers.Container.Abstractions.Hosting;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.Kafka_IntegrationTest
+namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
+
+public class KafkaFixture : IAsyncLifetime
 {
-    public class KafkaFixture : IAsyncLifetime
+    private readonly GenericContainer _kafka;
+
+    public KafkaFixture()
     {
-        private readonly GenericContainer _kafka;
+        _kafka = new ContainerBuilder<KafkaContainer>()
+            .Build();
+    }
 
-        public KafkaFixture()
-        {
-            _kafka = new ContainerBuilder<KafkaContainer>()
-                .Build();
-        }
+    public string Hostname => _kafka.GetDockerHostIpAddress();
+    public int Port => _kafka.GetMappedPort(KafkaContainer.KAFKA_PORT);
 
-        public string Hostname => _kafka.GetDockerHostIpAddress();
-        public int Port => _kafka.GetMappedPort(KafkaContainer.KAFKA_PORT);
+    public async Task InitializeAsync()
+    {
+        await _kafka.StartAsync();
+    }
 
-        public async Task InitializeAsync()
-        {
-            await _kafka.StartAsync();
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _kafka.StopAsync();
-        }
+    public async Task DisposeAsync()
+    {
+        await _kafka.StopAsync();
     }
 }
