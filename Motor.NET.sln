@@ -126,7 +126,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.NA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motor.Extensions.Hosting.NATS_IntegrationTest", "test\Motor.Extensions.Hosting.NATS_IntegrationTest\Motor.Extensions.Hosting.NATS_IntegrationTest.csproj", "{7A901315-9B01-4757-8F28-EC26BA0DBF1A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsumeNATS", "examples\ConsumeNATS\ConsumeNATS.csproj", "{1DDFCB68-B1B3-4A77-A00C-EC51F260F08A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsumeAndPublishNATS", "examples\ConsumeAndPublishNATS\ConsumeAndPublishNATS.csproj", "{1DDFCB68-B1B3-4A77-A00C-EC51F260F08A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
