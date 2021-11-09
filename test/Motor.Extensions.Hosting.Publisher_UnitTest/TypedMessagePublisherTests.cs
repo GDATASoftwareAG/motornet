@@ -17,7 +17,7 @@ public class TypedMessagePublisherTests
     [Fact]
     public async Task PublishMessageAsync_MessageToSerialize_SerializedMessageIsPublished()
     {
-        var publisher = new Mock<ITypedMessagePublisher<byte[]>>();
+        var publisher = new Mock<IRawMessagePublisher<string>>();
         var serializer = new Mock<IMessageSerializer<string>>();
         var encoder = new Mock<IMessageEncoder>();
         var serializedBytes = new byte[] { 1, 2, 3, 4 };
@@ -39,7 +39,7 @@ public class TypedMessagePublisherTests
     [Fact]
     public async Task PublishMessageAsync_ContextToPassed_ContextPassed()
     {
-        var publisher = new Mock<ITypedMessagePublisher<byte[]>>();
+        var publisher = new Mock<IRawMessagePublisher<string>>();
         var typedMessagePublisher = CreateTypedMessagePublisher(publisher.Object);
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
 
@@ -53,7 +53,7 @@ public class TypedMessagePublisherTests
     [Fact]
     public async Task PublishMessageAsync_CloudEventOfTypeString_PublishedCloudEventHasTypeString()
     {
-        var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+        var bytesPublisher = new Mock<IRawMessagePublisher<string>>();
         var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object);
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
 
@@ -67,7 +67,7 @@ public class TypedMessagePublisherTests
     [Fact]
     public async Task PublishMessageAsync_CloudEventWithContentEncoding_PublishedCloudEventHasDefaultEncoding()
     {
-        var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+        var bytesPublisher = new Mock<IRawMessagePublisher<string>>();
         var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object, encoder: new NoOpMessageEncoder());
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
         motorEvent.SetEncoding("some-encoding");
@@ -82,7 +82,7 @@ public class TypedMessagePublisherTests
     [Fact]
     public async Task PublishMessageAsync_CloudEventWithContentEncodingIgnored_PublishedCloudEventHasSameEncoding()
     {
-        var bytesPublisher = new Mock<ITypedMessagePublisher<byte[]>>();
+        var bytesPublisher = new Mock<IRawMessagePublisher<string>>();
         var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object,
             encoder: new NoOpMessageEncoder(), ignoreEncoding: true);
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
@@ -95,11 +95,11 @@ public class TypedMessagePublisherTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private static TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>> CreateTypedMessagePublisher(
-        ITypedMessagePublisher<byte[]>? publisher = null, IMessageSerializer<string>? serializer = null,
+    private static TypedMessagePublisher<string, IRawMessagePublisher<string>> CreateTypedMessagePublisher(
+        IRawMessagePublisher<string>? publisher = null, IMessageSerializer<string>? serializer = null,
         IMessageEncoder? encoder = null, bool ignoreEncoding = false)
     {
-        publisher ??= Mock.Of<ITypedMessagePublisher<byte[]>>();
+        publisher ??= Mock.Of<IRawMessagePublisher<string>>();
         serializer ??= Mock.Of<IMessageSerializer<string>>();
         if (encoder is null)
         {
@@ -109,7 +109,7 @@ public class TypedMessagePublisherTests
         }
 
         var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
-        return new TypedMessagePublisher<string, ITypedMessagePublisher<byte[]>>(null, publisher, serializer,
+        return new TypedMessagePublisher<string, IRawMessagePublisher<string>>(null, publisher, serializer,
             new OptionsWrapper<ContentEncodingOptions>(encodingOptions), encoder);
     }
 }

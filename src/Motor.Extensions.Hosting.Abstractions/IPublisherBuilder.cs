@@ -6,18 +6,18 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Hosting.Abstractions;
 
-public interface IPublisherBuilder<T> : IServiceCollection where T : notnull
+public interface IPublisherBuilder<TOutput> : IServiceCollection where TOutput : notnull
 {
     HostBuilderContext Context { get; }
 
     void AddPublisher<TPublisher>()
-        where TPublisher : ITypedMessagePublisher<byte[]>;
+        where TPublisher : IRawMessagePublisher<TOutput>;
 
     void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory)
-        where TPublisher : class, ITypedMessagePublisher<byte[]>;
+        where TPublisher : class, IRawMessagePublisher<TOutput>;
 
     void AddSerializer<TSerializer>()
-        where TSerializer : IMessageSerializer<T>;
+        where TSerializer : IMessageSerializer<TOutput>;
 
     void AddEncoder<TEncoder>()
         where TEncoder : IMessageEncoder;

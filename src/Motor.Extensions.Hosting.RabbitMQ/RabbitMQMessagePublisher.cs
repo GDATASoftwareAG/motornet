@@ -11,23 +11,21 @@ using RabbitMQ.Client;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;
 
-public class RabbitMQMessagePublisher<T> : ITypedMessagePublisher<byte[]>
+public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> where TOutput : notnull
 {
-    private readonly CloudEventFormatter _cloudEventFormatter;
-    private readonly RabbitMQPublisherOptions<T> _options;
+    private readonly RabbitMQPublisherOptions<TOutput> _options;
     private IModel? _channel;
     private bool _connected;
 
-    internal IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
+    internal IRabbitMQConnectionFactory<TOutput> ConnectionFactory { get; }
 
     public RabbitMQMessagePublisher(
-        IRabbitMQConnectionFactory<T> connectionFactory,
-        IOptions<RabbitMQPublisherOptions<T>> config,
+        IRabbitMQConnectionFactory<TOutput> connectionFactory,
+        IOptions<RabbitMQPublisherOptions<TOutput>> config,
         CloudEventFormatter cloudEventFormatter
     )
     {
         ConnectionFactory = connectionFactory;
-        _cloudEventFormatter = cloudEventFormatter;
         _options = config.Value;
     }
 

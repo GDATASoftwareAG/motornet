@@ -153,7 +153,7 @@ public class RabbitMQMessagePublisherTests
             customRoutingKey, true, It.IsAny<IBasicProperties>(), It.IsAny<ReadOnlyMemory<byte>>()));
     }
 
-    private ITypedMessagePublisher<byte[]> GetPublisher(
+    private IRawMessagePublisher<string> GetPublisher(
         IRabbitMQConnectionFactory<string> factory = null,
         RabbitMQPublisherOptions<string> options = null,
         bool overwriteExchange = false)

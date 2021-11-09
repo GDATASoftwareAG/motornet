@@ -12,7 +12,7 @@ using Prometheus.Client;
 namespace Motor.Extensions.Hosting.Publisher;
 
 public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher<TOutput>
-    where TPublisher : ITypedMessagePublisher<byte[]>
+    where TPublisher : IRawMessagePublisher<TOutput>
     where TOutput : class
 {
     private readonly TPublisher _bytesMessagePublisher;
