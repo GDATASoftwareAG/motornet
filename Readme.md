@@ -48,6 +48,10 @@ messages. Consumers can however still consume uncompressed messages. This should
 an existing environment that does not use compression yet. It just needs to be enabled first for the consumers and
 afterwards for the publishers.
 
+## Thread Starvation Handling
+
+Since .NET 6, `Environment.ProcessorCount` can be overwritten using env `DOTNET_PROCESSOR_COUNT`, see [issue](https://github.com/dotnet/runtime/issues/48094) and [blog](https://devblogs.microsoft.com/dotnet/announcing-net-6/#optimizing-scaling). This can be particularly helpful within container runtimes with cpu resources being limited by cgroups.
+
 ## License
 
 Motor.NET is provided under the [MIT](./LICENSE) license.

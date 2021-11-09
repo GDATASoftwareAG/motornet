@@ -25,12 +25,6 @@ public class MotorHostBuilder : IMotorHostBuilder
         _config = new ConfigurationBuilder()
             .AddEnvironmentVariables(MotorHostDefaults.OptionsPrefix)
             .Build();
-
-        _builder.ConfigureServices((context, collection) =>
-        {
-            collection.Configure<ThreadPoolOptions>(context.Configuration.GetSection("ThreadPool"));
-            collection.AddHostedService<ThreadPoolSetupService>();
-        });
     }
 
     public IHostBuilder ConfigureHostConfiguration(Action<IConfigurationBuilder> configureDelegate)
