@@ -65,6 +65,21 @@ public class RabbitMQConnectionFactoryTests
         Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
     }
 
+    [Fact]
+    public void FromConsumerConfig_NoQueueConfig_Throws()
+    {
+        var cfg = new RabbitMQConsumerOptions<string>
+        {
+            Host = "host",
+            VirtualHost = "vHost",
+            User = "user",
+            Password = "password",
+            Queue = null
+        };
+
+        Assert.Throws<ValidationException>(() => RabbitMQConnectionFactory<string>.From(cfg));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -318,12 +333,12 @@ public class RabbitMQConnectionFactoryTests
                 Name = name,
                 Bindings = new[]
                 {
-                        new RabbitMQBindingOptions
-                        {
-                            Exchange = exchange,
-                            RoutingKey = routingKey
-                        }
+                    new RabbitMQBindingOptions
+                    {
+                        Exchange = exchange,
+                        RoutingKey = routingKey
                     }
+                }
             }
         };
     }

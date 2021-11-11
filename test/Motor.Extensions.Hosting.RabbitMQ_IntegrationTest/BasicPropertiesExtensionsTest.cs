@@ -35,7 +35,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
 
-        basicProperties.Update(cloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(cloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(cloudEvent);
 
         VerifyPresenceOfRequiredAttributes(basicProperties, cloudEvent);
     }
@@ -49,7 +50,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
         cloudEvent.SetRabbitMQPriority(123);
 
-        basicProperties.Update(cloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(cloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(cloudEvent);
 
         VerifyPresenceOfRequiredAttributes(basicProperties, cloudEvent);
     }
@@ -64,7 +66,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         const string encoding = "someEncoding";
         cloudEvent.SetEncoding(encoding);
 
-        basicProperties.Update(cloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(cloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(cloudEvent);
 
         Assert.Equal(encoding, basicProperties.ContentEncoding);
         VerifyPresenceOfRequiredAttributes(basicProperties, cloudEvent);
@@ -84,7 +87,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        basicProperties.Update(inputCloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(inputCloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
             new ReadOnlyMemory<byte>(content));
 
@@ -104,7 +108,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        basicProperties.Update(inputCloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(inputCloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
             new ReadOnlyMemory<byte>(content));
 
@@ -128,7 +133,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         inputCloudEvent.SetRabbitMQPriority(priority);
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        basicProperties.Update(inputCloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(inputCloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
             new ReadOnlyMemory<byte>(content));
 
@@ -169,7 +175,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        basicProperties.Update(inputCloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(inputCloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
         basicProperties.Headers.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
         basicProperties.ContentEncoding = null;
@@ -205,7 +212,8 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        basicProperties.Update(inputCloudEvent, publisherOptions, CloudEventFormat.Protocol);
+        basicProperties.SetPriority(inputCloudEvent, publisherOptions);
+        basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
         basicProperties.Headers[
                 $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"] =

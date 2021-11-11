@@ -47,7 +47,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
 
         var properties = _channel.CreateBasicProperties();
         properties.DeliveryMode = 2;
-        properties.Update(motorCloudEvent, _options, _publisherOptions.CloudEventFormat);
+        properties.SetPriority(motorCloudEvent, _options);
 
         var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
         var routingKey = motorCloudEvent.GetRabbitMQRoutingKey() ?? _options.PublishingTarget.RoutingKey;
@@ -60,6 +60,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         switch (_publisherOptions.CloudEventFormat)
         {
             case CloudEventFormat.Protocol:
+                properties.WriteCloudEventIntoHeader(motorCloudEvent);
                 _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
                 break;
             case CloudEventFormat.Json:

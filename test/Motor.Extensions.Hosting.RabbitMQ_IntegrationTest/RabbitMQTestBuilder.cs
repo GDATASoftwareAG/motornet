@@ -204,12 +204,12 @@ public class RabbitMQTestBuilder
                 channel.Dispose();
             });
 
-        var optionsMock = MSOptions.Create(GetConsumerConfig<T>());
+        var options = MSOptions.Create(GetConsumerConfig<T>());
 
         var consumer = new RabbitMQMessageConsumer<T>(
             Mock.Of<ILogger<RabbitMQMessageConsumer<T>>>(),
             rabbitConnectionFactoryMock.Object,
-            optionsMock,
+            options,
             applicationLifetime,
             null
         )

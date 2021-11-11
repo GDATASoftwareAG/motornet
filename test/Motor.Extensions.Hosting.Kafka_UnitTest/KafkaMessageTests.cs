@@ -1,7 +1,5 @@
 using System;
 using System.Linq;
-using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.Kafka;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
@@ -15,7 +13,7 @@ using Motor.Extensions.Hosting.Kafka.Options;
 using Motor.Extensions.TestUtilities;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
+namespace Motor.Extensions.Hosting.Kafka_UnitTest;
 
 public class KafkaMessageTests
 {
@@ -65,7 +63,7 @@ public class KafkaMessageTests
     }
 
     [Fact]
-    public void UseJsonFormat_BasicCheck_Equals()
+    public void CloudEventToKafkaMessage_CloudEventFormatJson_VerifyIdIsCorrectlyStored()
     {
         var publisher = GetKafkaPublisher<byte[]>(CloudEventFormat.Json);
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
@@ -74,7 +72,6 @@ public class KafkaMessageTests
         var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
 
         var cloudEvent = cloudFormatter.DecodeStructuredModeMessage(kafkaMessage.Value, null, null);
-
         Assert.Equal(inputCloudEvent.Id, cloudEvent.Id);
     }
 
@@ -117,7 +114,7 @@ public class KafkaMessageTests
             Topic = topic,
             GroupId = groupId,
             CommitPeriod = 1,
-            BootstrapServers = $"localhost:3000",
+            BootstrapServers = "willNotBeUsed:3000",
             EnableAutoCommit = false,
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,

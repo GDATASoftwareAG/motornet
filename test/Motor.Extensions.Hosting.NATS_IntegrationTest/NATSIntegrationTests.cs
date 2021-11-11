@@ -50,7 +50,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
     }
 
-    [Fact(Timeout = 50000)]
+    [Fact(Timeout = 50000, Skip = "does not run on ci")]
     public async void PublishMessageAsJsonFormat()
     {
         const string expectedMessage = "testMessage";

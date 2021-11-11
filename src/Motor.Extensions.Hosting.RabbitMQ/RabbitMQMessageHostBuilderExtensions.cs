@@ -44,9 +44,7 @@ public static class RabbitMQMessageHostBuilderExtensions
         builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
         builder.Configure<RabbitMQPublisherOptions<T>>(config);
 
-        var rabbitMqPublisherOptions = new RabbitMQPublisherOptions<T>();
-        config.Bind(rabbitMqPublisherOptions);
-
+        var rabbitMqPublisherOptions = config.Get<RabbitMQPublisherOptions<T>>();
         var connectionFactory = RabbitMQConnectionFactory<T>.From(rabbitMqPublisherOptions);
         builder.AddPublisher(sp
             => new RabbitMQMessagePublisher<T>(connectionFactory,

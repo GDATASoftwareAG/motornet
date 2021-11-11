@@ -27,18 +27,16 @@ public static class BasicPropertiesExtensions
         IgnoredAttributes.Add(MotorCloudEventInfo.SpecVersion.DataContentTypeAttribute);
     }
 
-    public static void Update<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
-        RabbitMQPublisherOptions<T> options, CloudEventFormat format)
+    public static void SetPriority<T>(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent,
+        RabbitMQPublisherOptions<T> options)
     {
         var messagePriority = cloudEvent.GetRabbitMQPriority() ?? options.DefaultPriority;
         if (messagePriority.HasValue)
             self.Priority = messagePriority.Value;
 
-        if (format == CloudEventFormat.Json)
-        {
-            return;
-        }
-
+    }
+    public static void WriteCloudEventIntoHeader(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent)
+    {
         self.ContentEncoding = cloudEvent.GetEncoding();
         self.ContentType = cloudEvent.ContentType;
 

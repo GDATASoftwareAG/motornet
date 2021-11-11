@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
 using CloudNative.CloudEvents.Kafka;
-using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
@@ -27,7 +26,7 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
     {
         _cloudEventFormatter = cloudEventFormatter;
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
-        _publisherOptions = publisherOptions.Value;
+        _publisherOptions = publisherOptions.Value ?? throw new ArgumentNullException(nameof(publisherOptions));
         _producer = new ProducerBuilder<string?, byte[]>(_options).Build();
     }
 
@@ -38,7 +37,7 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
         await _producer.ProduceAsync(topic, message, token);
     }
 
-    public Message<string?, byte[]> CloudEventToKafkaMessage<TOutput>(MotorCloudEvent<TOutput> motorCloudEvent)
+    public Message<string?, byte[]> CloudEventToKafkaMessage(MotorCloudEvent<byte[]> motorCloudEvent)
     {
         var cloudEvent = motorCloudEvent.ConvertToCloudEvent();
         switch (_publisherOptions.CloudEventFormat)
@@ -47,7 +46,7 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
                 return cloudEvent.ToKafkaMessage(ContentMode.Binary, _cloudEventFormatter);
             case CloudEventFormat.Json:
                 var value = _cloudEventFormatter.EncodeStructuredModeMessage(cloudEvent, out _);
-                var key = (string?)cloudEvent[Partitioning.PartitionKeyAttribute];
+                var key = cloudEvent[Partitioning.PartitionKeyAttribute] as string;
                 return new Message<string?, byte[]>
                 {
                     Value = value.ToArray(),
