@@ -54,28 +54,24 @@ jobs:
         name: artifacts-bridge
         path: ./artifacts-bridge/*
 
-  code-ql:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
-
-    - name: Install dependencies
-      run: dotnet restore Motor.NET.sln
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: csharp
-
-    - name: Build
-      run: dotnet build --configuration Release --no-restore Motor.NET.sln
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+  #code-ql:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #  - name: Initialize CodeQL
+  #    uses: github/codeql-action/init@v1
+  #    with:
+  #      languages: csharp
+  #  - name: Setup .NET
+  #    uses: actions/setup-dotnet@v1
+  #    with:
+  #      dotnet-version: 6.0.x
+  #  - name: Install dependencies
+  #    run: dotnet restore Motor.NET.sln
+  #  - name: Build
+  #    run: dotnet build --configuration Release --no-restore Motor.NET.sln
+  #  - name: Perform CodeQL Analysis
+  #    uses: github/codeql-action/analyze@v1
 
   deploy:
     needs: build
