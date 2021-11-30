@@ -44,11 +44,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Host.CreateDefaultBuilder()
                 .ConfigureServices((hostContext, _) =>
                 {
-                    unchangedValue = hostContext.Configuration.GetSection("JaegerExporter").GetValue<string>("AgentHost");
+                    unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
                 })
                 .Build();
 
-            Assert.Equal("localhost", unchangedValue);
+            Assert.Equal("http://localhost:4317", unchangedValue);
         }
 
         [Theory]
@@ -87,11 +87,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             Host.CreateDefaultBuilder()
                 .ConfigureServices((hostContext, _) =>
                 {
-                    unchangedValue = hostContext.Configuration.GetSection("JaegerExporter").GetValue<string>("AgentHost");
+                    unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
                 })
                 .Build();
 
-            Assert.Equal("localhost", unchangedValue);
+            Assert.Equal("http://localhost:4317", unchangedValue);
         }
 
         [Theory]

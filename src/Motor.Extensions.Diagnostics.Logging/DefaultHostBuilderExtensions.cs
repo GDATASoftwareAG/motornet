@@ -1,7 +1,10 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Motor.Extensions.Diagnostics.Sentry;
 using Motor.Extensions.Utilities.Abstractions;
+using Sentry;
 using Serilog;
 using Serilog.Formatting.Json;
 
@@ -13,6 +16,7 @@ public static class DefaultHostBuilderExtensions
         Action<HostBuilderContext, LoggerConfiguration>? configuration = null)
     {
         return (IMotorHostBuilder)hostBuilder
+            .ConfigureSentry()
             .UseSerilog((hostingContext, loggerConfiguration) =>
             {
                 loggerConfiguration
@@ -23,7 +27,15 @@ public static class DefaultHostBuilderExtensions
             })
             .ConfigureServices((_, services) =>
             {
-                services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+                services.AddLogging(loggingBuilder =>
+                {
+                    var builder = loggingBuilder
+                        .AddSerilog(dispose: true);
+                    if (SentrySdk.IsEnabled)
+                    {
+                        builder.AddSentry(o => o.InitializeSdk = false);
+                    }
+                });
             });
     }
 }
