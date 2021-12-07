@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Utilities.Abstractions;
 using Sentry;
-using Sentry.Extensions.Logging;
+using Sentry.Serilog;
 using MSOptions = Microsoft.Extensions.Options.Options;
 
 namespace Motor.Extensions.Diagnostics.Sentry;
@@ -15,10 +15,10 @@ public static class DefaultHostBuilderExtensions
         return hostBuilder
             .ConfigureServices((context, services) =>
             {
-                var sentryOptions = new SentryLoggingOptions();
+                var sentryOptions = new SentrySerilogOptions();
                 context.Configuration.GetSection("Sentry").Bind(sentryOptions);
                 SentrySdk.Init(sentryOptions);
-                services.AddTransient<IOptions<SentryLoggingOptions>>(_ => MSOptions.Create(sentryOptions));
+                services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
             });
     }
 }
