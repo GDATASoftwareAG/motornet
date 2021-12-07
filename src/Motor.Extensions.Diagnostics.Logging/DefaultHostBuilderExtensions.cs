@@ -1,10 +1,10 @@
 using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Motor.Extensions.Diagnostics.Sentry;
 using Motor.Extensions.Utilities.Abstractions;
-using Sentry;
+using Sentry.Serilog;
 using Serilog;
 using Serilog.Formatting.Json;
 
@@ -19,22 +19,27 @@ public static class DefaultHostBuilderExtensions
             .ConfigureSentry()
             .UseSerilog((hostingContext, loggerConfiguration) =>
             {
+                var sentryOptions = new SentrySerilogOptions();
+                hostingContext.Configuration.GetSection("Sentry").Bind(sentryOptions);
                 loggerConfiguration
                     .ReadFrom.Configuration(hostingContext.Configuration)
                     .Enrich.FromLogContext()
-                    .WriteTo.Console(new JsonFormatter(renderMessage: true));
+                    .WriteTo.Console(new JsonFormatter(renderMessage: true))
+                    .WriteTo.Sentry(opts =>
+                    {
+                        opts.Dsn = sentryOptions.Dsn;
+                        opts.MinimumEventLevel = sentryOptions.MinimumEventLevel;
+                        opts.MinimumBreadcrumbLevel = sentryOptions.MinimumBreadcrumbLevel;
+                        opts.InitializeSdk = false;
+                    });
                 configuration?.Invoke(hostingContext, loggerConfiguration);
             })
             .ConfigureServices((_, services) =>
             {
                 services.AddLogging(loggingBuilder =>
                 {
-                    var builder = loggingBuilder
+                    loggingBuilder
                         .AddSerilog(dispose: true);
-                    if (SentrySdk.IsEnabled)
-                    {
-                        builder.AddSentry(o => o.InitializeSdk = false);
-                    }
                 });
             });
     }
