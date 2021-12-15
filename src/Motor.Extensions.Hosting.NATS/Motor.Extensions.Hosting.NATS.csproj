@@ -9,7 +9,7 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
         <PackageReference Include="NATS.Client" Version="0.14.3" />
-        <PackageReference Include="System.Text.Json" Version="6.0.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
