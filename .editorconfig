@@ -13,6 +13,7 @@ indent_size = 4
 [*.cs]
 indent_size = 4
 csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
 
 [*.json]
 indent_size = 2

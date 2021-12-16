@@ -45,7 +45,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var channel = Fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
             await host.StartAsync().ConfigureAwait(false);
-            for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
+            for (var i = 0; i < messageCount; i++)
+            {
+                PublishMessageIntoQueueOfService(channel, message);
+            }
+
             var httpClient = new HttpClient();
 
             await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 2).ConfigureAwait(false);
@@ -71,7 +75,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var channel = Fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
             await host.StartAsync().ConfigureAwait(false);
-            for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
+            for (var i = 0; i < messageCount; i++)
+            {
+                PublishMessageIntoQueueOfService(channel, message);
+            }
+
             var httpClient = new HttpClient();
 
             var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
@@ -92,7 +100,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var channel = Fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
             await host.StartAsync().ConfigureAwait(false);
-            for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
+            for (var i = 0; i < messageCount; i++)
+            {
+                PublishMessageIntoQueueOfService(channel, message);
+            }
+
             var httpClient = new HttpClient();
 
             await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
@@ -114,7 +126,11 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             var channel = Fixture.Connection.CreateModel();
             await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
             await host.StartAsync().ConfigureAwait(false);
-            for (var i = 0; i < messageCount; i++) PublishMessageIntoQueueOfService(channel, message);
+            for (var i = 0; i < messageCount; i++)
+            {
+                PublishMessageIntoQueueOfService(channel, message);
+            }
+
             var httpClient = new HttpClient();
 
             await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);

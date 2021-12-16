@@ -88,7 +88,10 @@ public class RabbitMQTestBuilder
 
     public RabbitMQTestBuilder WithMultipleRandomPublishedMessage(ushort number = PrefetchCount)
     {
-        for (var i = 0; i < number; i++) WithSingleRandomPublishedMessage();
+        for (var i = 0; i < number; i++)
+        {
+            WithSingleRandomPublishedMessage();
+        }
 
         return this;
     }
@@ -101,7 +104,10 @@ public class RabbitMQTestBuilder
             using (var channel = Fixture.Connection.CreateModel())
             {
                 DeclareQueue(config, channel);
-                foreach (var message in messages) PublishSingleMessage(channel, message, config);
+                foreach (var message in messages)
+                {
+                    PublishSingleMessage(channel, message, config);
+                }
             }
 
             Policy
@@ -147,11 +153,13 @@ public class RabbitMQTestBuilder
             arguments
         );
         foreach (var routingKeyConfig in options.Queue.Bindings)
+        {
             channel.QueueBind(
                 options.Queue.Name,
                 routingKeyConfig.Exchange,
                 routingKeyConfig.RoutingKey,
                 routingKeyConfig.Arguments);
+        }
     }
 
     private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
@@ -181,7 +189,9 @@ public class RabbitMQTestBuilder
     public IMessageConsumer<T> GetConsumer<T>(IHostApplicationLifetime applicationLifetime = null)
     {
         if (!isBuilt)
+        {
             throw new InvalidOperationException();
+        }
 
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
 
@@ -222,7 +232,10 @@ public class RabbitMQTestBuilder
     public bool IsConsumerQueueDeclared()
     {
         if (!isBuilt)
+        {
             throw new InvalidOperationException();
+        }
+
         using var channel = Fixture.Connection.CreateModel();
         channel.QueueDeclarePassive(QueueName);
         return true;
@@ -238,7 +251,10 @@ public class RabbitMQTestBuilder
     public IRawMessagePublisher<T> GetPublisher<T>()
     {
         if (!isBuilt)
+        {
             throw new InvalidOperationException();
+        }
+
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
 
         var channel = Fixture.Connection.CreateModel();

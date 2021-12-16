@@ -9,7 +9,10 @@ public class SystemJsonDeserializer<T> : IMessageDeserializer<T> where T : notnu
     public T Deserialize(byte[] message)
     {
         if (message == null || message.Length == 0)
+        {
             throw new ArgumentNullException(nameof(message));
+        }
+
         try
         {
             return JsonSerializer.Deserialize<T>(message) ?? throw new ArgumentNullException(nameof(message));

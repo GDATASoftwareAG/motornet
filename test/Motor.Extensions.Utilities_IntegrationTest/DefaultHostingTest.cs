@@ -20,7 +20,9 @@ namespace Motor.Extensions.Utilities_IntegrationTest
         public HomeController(TestService testService)
         {
             if (testService is null)
+            {
                 throw new ArgumentNullException();
+            }
         }
 
         // 

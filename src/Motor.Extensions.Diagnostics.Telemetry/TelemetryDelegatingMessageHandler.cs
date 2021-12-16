@@ -27,7 +27,10 @@ public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandle
     {
         var parentContext = dataCloudEvent.GetActivityContext();
         using var activity = OpenTelemetryOptions.ActivitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
-        if (activity is null) return await base.HandleMessageAsync(dataCloudEvent, token);
+        if (activity is null)
+        {
+            return await base.HandleMessageAsync(dataCloudEvent, token);
+        }
 
         using (activity.Start())
         using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",

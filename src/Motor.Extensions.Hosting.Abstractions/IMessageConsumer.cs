@@ -17,7 +17,10 @@ public interface IMessageConsumer<TInput> where TInput : notnull
 
     async Task ExecuteAsync(CancellationToken token = default)
     {
-        while (!token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token).ConfigureAwait(false);
+        while (!token.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(100), token).ConfigureAwait(false);
+        }
     }
 
     Task StopAsync(CancellationToken token = default);

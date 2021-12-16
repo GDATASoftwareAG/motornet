@@ -32,8 +32,9 @@ public static class BasicPropertiesExtensions
     {
         var messagePriority = cloudEvent.GetRabbitMQPriority() ?? options.DefaultPriority;
         if (messagePriority.HasValue)
+        {
             self.Priority = messagePriority.Value;
-
+        }
     }
     public static void WriteCloudEventIntoHeader(this IBasicProperties self, MotorCloudEvent<byte[]> cloudEvent)
     {

@@ -9,7 +9,9 @@ public class SystemJsonSerializer<T> : IMessageSerializer<T> where T : notnull
     public byte[] Serialize(T message)
     {
         if (Equals(message, default(T)))
+        {
             throw new ArgumentNullException(nameof(message));
+        }
 
         return JsonSerializer.SerializeToUtf8Bytes(message);
     }

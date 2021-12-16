@@ -50,7 +50,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     public Task StartAsync(CancellationToken token = default)
     {
-        if (ConsumeCallbackAsync is null) throw new InvalidOperationException("ConsumeCallback is null");
+        if (ConsumeCallbackAsync is null)
+        {
+            throw new InvalidOperationException("ConsumeCallback is null");
+        }
 
         var consumerBuilder = new ConsumerBuilder<string?, byte[]>(_options)
             .SetLogHandler((_, logMessage) => WriteLog(logMessage))
@@ -66,13 +69,18 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         await Task.Run(() =>
         {
             while (!token.IsCancellationRequested)
+            {
                 try
                 {
                     var msg = _consumer?.Consume(token);
                     if (msg != null && !msg.IsPartitionEOF)
+                    {
                         SingleMessageHandling(token, msg);
+                    }
                     else
+                    {
                         _logger.LogDebug("No messages received");
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -83,6 +91,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 {
                     _logger.LogError(e, "Failed to receive message.", e);
                 }
+            }
         }, token).ConfigureAwait(false);
     }
 
@@ -132,11 +141,18 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             .Select(t => t.Value)
             .SelectMany(t => t.Partitions ?? new Dictionary<string, KafkaStatisticsPartition>())
             .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
-        if (partitionConsumerLags is null) return;
+        if (partitionConsumerLags is null)
+        {
+            return;
+        }
+
         foreach (var (partition, consumerLag) in partitionConsumerLags)
         {
             var lag = consumerLag;
-            if (lag == -1) lag = 0;
+            if (lag == -1)
+            {
+                lag = 0;
+            }
 
             _consumerLagSummary?.WithLabels(_options.Topic, partition)?.Observe(lag);
             _consumerLagGauge?.WithLabels(_options.Topic, partition)?.Set(lag);
@@ -167,7 +183,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                     throw new ArgumentOutOfRangeException();
             }
 
-            if (msg.Offset % _options.CommitPeriod != 0) return;
+            if (msg.Offset % _options.CommitPeriod != 0)
+            {
+                return;
+            }
 
             try
             {
@@ -187,7 +206,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private void Dispose(bool disposing)
     {
-        if (disposing) _consumer?.Dispose();
+        if (disposing)
+        {
+            _consumer?.Dispose();
+        }
     }
 
     public void Dispose()
