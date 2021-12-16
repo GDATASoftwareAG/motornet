@@ -11,7 +11,7 @@ using Quartz.Impl;
 
 namespace Motor.Extensions.Hosting.Timer;
 
-public class Timer : BackgroundService
+public class Timer : IHostedService
 {
     private readonly IApplicationNameService _applicationNameService;
     private readonly TimerOptions _options;
@@ -28,20 +28,9 @@ public class Timer : BackgroundService
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
     }
 
-    protected override async Task ExecuteAsync(CancellationToken token)
+    private async Task StartTimer(CancellationToken token)
     {
-        ThrowIfTimerAlreadyStarted();
-        await ConfigureTimer().ConfigureAwait(false);
-        StartTimer(token);
-        // make function async
-        await Task.Delay(1, token).ConfigureAwait(false);
-        await Task.FromCanceled(token).ConfigureAwait(false);
-        if (_scheduler is not null) await _scheduler.Shutdown(token);
-    }
-
-    private void StartTimer(CancellationToken token)
-    {
-        _scheduler?.Start(token);
+        if (_scheduler is not null) await _scheduler.Start(token);
         _started = true;
     }
 
@@ -74,5 +63,17 @@ public class Timer : BackgroundService
             .Build();
 
         await _scheduler.ScheduleJob(job, trigger).ConfigureAwait(false);
+    }
+
+    public async Task StartAsync(CancellationToken token)
+    {
+        ThrowIfTimerAlreadyStarted();
+        await ConfigureTimer().ConfigureAwait(false);
+        await StartTimer(token);
+    }
+
+    public async Task StopAsync(CancellationToken token)
+    {
+        if (_scheduler is not null) await _scheduler.Shutdown(token);
     }
 }
