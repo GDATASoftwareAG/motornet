@@ -10,7 +10,10 @@ public class ProtobufDeserializer<T> : IMessageDeserializer<T> where T : IMessag
 
     public T Deserialize(byte[] inMessage)
     {
-        if (inMessage == null || inMessage.Length == 0) throw new ArgumentNullException(nameof(inMessage));
+        if (inMessage == null || inMessage.Length == 0)
+        {
+            throw new ArgumentNullException(nameof(inMessage));
+        }
 
         T deserializedMsg;
         try

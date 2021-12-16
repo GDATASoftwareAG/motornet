@@ -83,7 +83,10 @@ namespace Motor.Extensions.Utilities_IntegrationTest
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (messageFromDestinationQueue == string.Empty) await Task.Delay(TimeSpan.FromMilliseconds(50)).ConfigureAwait(false);
+            while (messageFromDestinationQueue == string.Empty)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50)).ConfigureAwait(false);
+            }
 
             return messageFromDestinationQueue;
         }

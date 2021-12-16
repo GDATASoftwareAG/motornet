@@ -93,6 +93,7 @@ public class MotorHostBuilder : IMotorHostBuilder
     public IHost Build()
     {
         if (_enableConfigureWebDefaults)
+        {
             _builder
                 .ConfigureWebHostDefaults(builder =>
                 {
@@ -101,6 +102,7 @@ public class MotorHostBuilder : IMotorHostBuilder
                 .ConfigureHealthChecks(builder =>
                 {
                     foreach (var healthCheck in _healthChecks)
+                    {
                         builder.Add(new HealthCheckRegistration(
                             healthCheck.Name,
                             s => (IHealthCheck)ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
@@ -108,7 +110,9 @@ public class MotorHostBuilder : IMotorHostBuilder
                             healthCheck.Tags,
                             healthCheck.Timeout)
                         );
+                    }
                 });
+        }
 
         return _builder.Build();
     }

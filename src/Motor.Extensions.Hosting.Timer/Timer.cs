@@ -30,14 +30,19 @@ public class Timer : IHostedService
 
     private async Task StartTimer(CancellationToken token)
     {
-        if (_scheduler is not null) await _scheduler.Start(token);
+        if (_scheduler is not null)
+        {
+            await _scheduler.Start(token).ConfigureAwait(false);
+        }
         _started = true;
     }
 
     private void ThrowIfTimerAlreadyStarted()
     {
         if (_started)
+        {
             throw new InvalidOperationException("Cannot start timer as the timer was already started!");
+        }
     }
 
     private async Task ConfigureTimer()
@@ -69,11 +74,14 @@ public class Timer : IHostedService
     {
         ThrowIfTimerAlreadyStarted();
         await ConfigureTimer().ConfigureAwait(false);
-        await StartTimer(token);
+        await StartTimer(token).ConfigureAwait(false);
     }
 
     public async Task StopAsync(CancellationToken token)
     {
-        if (_scheduler is not null) await _scheduler.Shutdown(token);
+        if (_scheduler is not null)
+        {
+            await _scheduler.Shutdown(token);
+        }
     }
 }

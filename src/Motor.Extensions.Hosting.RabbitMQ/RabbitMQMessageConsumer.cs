@@ -47,7 +47,10 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
     public async Task ExecuteAsync(CancellationToken token = default)
     {
         _stoppingToken = token;
-        while (token.IsCancellationRequested) await Task.Delay(TimeSpan.FromSeconds(100), token);
+        while (token.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(100), token);
+        }
     }
 
     public Task StartAsync(CancellationToken token = default)
@@ -71,14 +74,18 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
     private void ThrowIfNoCallbackConfigured()
     {
         if (ConsumeCallbackAsync is null)
+        {
             throw new InvalidOperationException(
                 $"Cannot start consuming as no {nameof(ConsumeCallbackAsync)} was configured!");
+        }
     }
 
     private void ThrowIfConsumerAlreadyStarted()
     {
         if (_started)
+        {
             throw new InvalidOperationException("Cannot start consuming as the consumer was already started!");
+        }
     }
 
     private void ConfigureChannel()
@@ -94,13 +101,25 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         }
 
         var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-        if (_options.Queue.MaxPriority is not null) arguments.Add("x-max-priority", _options.Queue.MaxPriority);
+        if (_options.Queue.MaxPriority is not null)
+        {
+            arguments.Add("x-max-priority", _options.Queue.MaxPriority);
+        }
 
-        if (_options.Queue.MaxLength is not null) arguments.Add("x-max-length", _options.Queue.MaxLength);
+        if (_options.Queue.MaxLength is not null)
+        {
+            arguments.Add("x-max-length", _options.Queue.MaxLength);
+        }
 
-        if (_options.Queue.MaxLengthBytes is not null) arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
+        if (_options.Queue.MaxLengthBytes is not null)
+        {
+            arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
+        }
 
-        if (_options.Queue.MessageTtl is not null) arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
+        if (_options.Queue.MessageTtl is not null)
+        {
+            arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
+        }
 
         switch (_options.Queue.Mode)
         {
@@ -121,11 +140,13 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             arguments
         );
         foreach (var routingKeyConfig in _options.Queue.Bindings)
+        {
             _channel?.QueueBind(
                 _options.Queue.Name,
                 routingKeyConfig.Exchange,
                 routingKeyConfig.RoutingKey,
                 routingKeyConfig.Arguments);
+        }
     }
 
     private void StartConsumerOnChannel()
@@ -147,7 +168,10 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
                 .GetAwaiter();
             task?.OnCompleted(() =>
             {
-                if (_stoppingToken.IsCancellationRequested) return;
+                if (_stoppingToken.IsCancellationRequested)
+                {
+                    return;
+                }
 
                 var processedMessageStatus = task?.GetResult();
                 switch (processedMessageStatus)

@@ -23,7 +23,10 @@ public class MessageProcessingHealthCheck<TInput> : IHealthCheck where TInput : 
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
         CancellationToken token = default)
     {
-        if (_queue.ItemCount == 0) return Task.FromResult(HealthCheckResult.Healthy());
+        if (_queue.ItemCount == 0)
+        {
+            return Task.FromResult(HealthCheckResult.Healthy());
+        }
 
         return Task.FromResult(DateTimeOffset.UtcNow - _queue.LastDequeuedAt > _maxTimeWithoutAcknowledgedMessage
             ? HealthCheckResult.Unhealthy()

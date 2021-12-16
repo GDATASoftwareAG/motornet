@@ -10,7 +10,9 @@ public class JsonNetDeserializer<T> : IMessageDeserializer<T> where T : notnull
     public T Deserialize(byte[] message)
     {
         if (message == null || message.Length == 0)
+        {
             throw new ArgumentNullException(nameof(message));
+        }
 
         var json = Encoding.UTF8.GetString(message);
         try

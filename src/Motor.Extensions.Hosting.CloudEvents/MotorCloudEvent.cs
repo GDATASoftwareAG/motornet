@@ -50,7 +50,11 @@ public class MotorCloudEvent<TData> where TData : notnull
         params KeyValuePair<CloudEventAttribute, object>[] extensions)
     {
         BaseEvent = new CloudEvent(CloudEventsSpecVersion.Default);
-        foreach (var (key, value) in extensions) BaseEvent[key] = value;
+        foreach (var (key, value) in extensions)
+        {
+            BaseEvent[key] = value;
+        }
+
         BaseEvent.Id = id ?? Guid.NewGuid().ToString();
         BaseEvent.Type = type ?? typeof(TData).Name;
         BaseEvent.Source = source;
