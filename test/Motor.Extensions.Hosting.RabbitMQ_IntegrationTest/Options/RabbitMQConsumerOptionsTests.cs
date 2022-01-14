@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.Configuration;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
+using RabbitMQ.Client;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.Options;
@@ -71,7 +72,7 @@ public class RabbitMQConsumerOptionsTests
 
         config.Bind(consumerOptions);
 
-        Assert.Equal(5672, consumerOptions.Port);
+        Assert.Equal(AmqpTcpEndpoint.UseDefaultPort, consumerOptions.Port);
         Assert.Equal(0, TimeSpan.FromSeconds(60).CompareTo(consumerOptions.RequestedHeartbeat));
         Assert.Equal("", consumerOptions.VirtualHost);
         Assert.Equal(10, consumerOptions.PrefetchCount);
