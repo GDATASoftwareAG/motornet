@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Threading;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
@@ -63,7 +65,15 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
             VirtualHost = baseOptions.VirtualHost,
             UserName = baseOptions.User,
             Password = baseOptions.Password,
-            RequestedHeartbeat = baseOptions.RequestedHeartbeat
+            RequestedHeartbeat = baseOptions.RequestedHeartbeat,
+            Ssl = new SslOption
+            {
+                Enabled = baseOptions.Tls.Enabled,
+                ServerName = baseOptions.Host,
+                Version = baseOptions.Tls.Enabled ? baseOptions.Tls.Protocols : SslProtocols.None,
+                AcceptablePolicyErrors = baseOptions.Tls.AcceptablePolicyErrors,
+                CertificateValidationCallback = baseOptions.Tls.CertificateValidationCallback
+            }
         };
     }
 
@@ -85,6 +95,7 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
         {
             _lazyChannel.Value.Dispose();
         }
+
         if (_lazyConnection.IsValueCreated)
         {
             _lazyConnection.Value.Dispose();

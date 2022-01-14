@@ -125,7 +125,7 @@ public class RabbitMQConnectionFactoryTests
         const string vHost = "vHost";
         const int port = 1000;
         var cfg = GetConsumerConfig(host, user, password, vHost, "test", "exchange", "test");
-        cfg.Port = port;
+        cfg = cfg with { Port = port };
 
         var connectionFactory = RabbitMQConnectionFactory<string>.From(cfg);
 
@@ -222,7 +222,7 @@ public class RabbitMQConnectionFactoryTests
         const string vHost = "vHost";
         const int port = 1000;
         var cfg = GetPublisherConfig(host, user, password, vHost, "exchange", "test");
-        cfg.Port = port;
+        cfg = cfg with { Port = port };
 
         var connectionFactory = RabbitMQConnectionFactory<string>.From(cfg);
 
