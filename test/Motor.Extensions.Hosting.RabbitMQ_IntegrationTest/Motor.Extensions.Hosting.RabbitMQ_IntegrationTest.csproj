@@ -29,6 +29,20 @@
 
     <ItemGroup>
         <Content Include="configs\*" CopyToOutputDirectory="Always" />
+        <Content Include="ca\**\*.pem" CopyToOutputDirectory="Always" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ca\certs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="ca\terraform.tfstate" />
+      <None Remove="ca\terraform.tfstate.backup" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ca" />
     </ItemGroup>
 
 </Project>

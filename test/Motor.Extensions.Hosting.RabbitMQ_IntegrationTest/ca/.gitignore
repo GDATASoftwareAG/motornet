@@ -1,0 +1,6 @@
+# Directoriex
+.terraform
+
+# Files
+.terraform.lock.hcl
+terraform.tfstate*
