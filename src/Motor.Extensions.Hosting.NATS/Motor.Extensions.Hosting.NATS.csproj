@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.1.1" />
+        <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
         <PackageReference Include="NATS.Client" Version="0.14.4" />
