@@ -91,6 +91,11 @@ public class TypedConsumerService<TInput> : BackgroundService
         }
         catch (ArgumentException e)
         {
+            if (e.InnerException is OperationCanceledException)
+            {
+                _logger.LogWarning(LogEvents.ServiceWasStopped, e.InnerException, "Service was already stopped");
+                return ProcessedMessageStatus.TemporaryFailure;
+            }
             _logger.LogError(LogEvents.InvalidInput, e, "Invalid Input");
             return ProcessedMessageStatus.InvalidInput;
         }

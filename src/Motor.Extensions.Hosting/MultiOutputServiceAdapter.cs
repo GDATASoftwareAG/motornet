@@ -38,7 +38,7 @@ public class MultiOutputServiceAdapter<TInput, TOutput> : INoOutputService<TInpu
             using (new AutoObserveStopwatch(() => _messageProcessing))
             {
                 await foreach (var message in _converter.ConvertMessageAsync(dataCloudEvent, token)
-                    .ConfigureAwait(false).WithCancellation(token))
+                                   .ConfigureAwait(false).WithCancellation(token))
                 {
                     if (message?.Data is not null)
                     {
@@ -49,6 +49,11 @@ public class MultiOutputServiceAdapter<TInput, TOutput> : INoOutputService<TInpu
             }
 
             return ProcessedMessageStatus.Success;
+        }
+        catch (OperationCanceledException e)
+        {
+            _logger.LogWarning(LogEvents.ServiceWasStopped, e, "Service was already stopped");
+            return ProcessedMessageStatus.TemporaryFailure;
         }
         catch (ArgumentException)
         {
