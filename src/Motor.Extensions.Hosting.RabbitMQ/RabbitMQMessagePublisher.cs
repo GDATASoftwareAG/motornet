@@ -7,6 +7,7 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;
 
@@ -35,40 +36,52 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
 
     public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
     {
-        if (!_connected)
+        try
         {
-            await StartAsync().ConfigureAwait(false);
+            if (!_connected)
+            {
+                await StartAsync().ConfigureAwait(false);
+            }
+
+            if (_channel is null)
+            {
+                throw new InvalidOperationException("Channel is not created.");
+            }
+
+            var properties = _channel.CreateBasicProperties();
+            properties.DeliveryMode = 2;
+            properties.SetPriority(motorCloudEvent, _options);
+
+            var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
+            var routingKey = motorCloudEvent.GetRabbitMQRoutingKey() ?? _options.PublishingTarget.RoutingKey;
+
+            if (_options.OverwriteExchange)
+            {
+                exchange = _options.PublishingTarget.Exchange;
+            }
+
+            switch (_publisherOptions.CloudEventFormat)
+            {
+                case CloudEventFormat.Protocol:
+                    properties.WriteCloudEventIntoHeader(motorCloudEvent);
+                    _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
+                    break;
+                case CloudEventFormat.Json:
+                    var data = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(),
+                        out _);
+                    _channel.BasicPublish(exchange, routingKey, true, properties, data);
+                    break;
+                default:
+                    throw new UnhandledCloudEventFormatException(_publisherOptions.CloudEventFormat);
+            }
         }
-
-        if (_channel is null)
+        catch (AlreadyClosedException e)
         {
-            throw new InvalidOperationException("Channel is not created.");
+            throw new TemporaryFailureException("Couldn't publish message", e, FailureLevel.Warning);
         }
-
-        var properties = _channel.CreateBasicProperties();
-        properties.DeliveryMode = 2;
-        properties.SetPriority(motorCloudEvent, _options);
-
-        var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
-        var routingKey = motorCloudEvent.GetRabbitMQRoutingKey() ?? _options.PublishingTarget.RoutingKey;
-
-        if (_options.OverwriteExchange)
+        catch (BrokerUnreachableException e)
         {
-            exchange = _options.PublishingTarget.Exchange;
-        }
-
-        switch (_publisherOptions.CloudEventFormat)
-        {
-            case CloudEventFormat.Protocol:
-                properties.WriteCloudEventIntoHeader(motorCloudEvent);
-                _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
-                break;
-            case CloudEventFormat.Json:
-                var data = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(), out _);
-                _channel.BasicPublish(exchange, routingKey, true, properties, data);
-                break;
-            default:
-                throw new UnhandledCloudEventFormatException(_publisherOptions.CloudEventFormat);
+            throw new TemporaryFailureException("Couldn't publish message", e, FailureLevel.Warning);
         }
     }
 

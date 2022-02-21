@@ -35,7 +35,17 @@ public class PrepareDelegatingMessageHandler<TInput> : DelegatingMessageHandler<
         }
         catch (TemporaryFailureException ex)
         {
-            _logger.LogError(LogEvents.ProcessingFailed, ex, "Processing failed");
+            switch (ex.Level)
+            {
+                case FailureLevel.Warning:
+                    _logger.LogWarning(LogEvents.ProcessingFailed, ex, "Processing failed");
+                    break;
+                case FailureLevel.Error:
+                    _logger.LogError(LogEvents.ProcessingFailed, ex, "Processing failed");
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
             processedMessageStatus = ProcessedMessageStatus.TemporaryFailure;
         }
         catch (Exception ex)

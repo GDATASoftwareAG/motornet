@@ -70,6 +70,11 @@ public class QueuedGenericService<TInput> : BackgroundService
             status = await _rootService.HandleMessageAsync(dataCloudEvent, token)
                 .ConfigureAwait(false);
         }
+        catch (OperationCanceledException e)
+        {
+            _logger.LogWarning(LogEvents.ServiceWasStopped, e, "Service was already stopped");
+            status = ProcessedMessageStatus.TemporaryFailure;
+        }
         catch (Exception ex)
         {
             _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
