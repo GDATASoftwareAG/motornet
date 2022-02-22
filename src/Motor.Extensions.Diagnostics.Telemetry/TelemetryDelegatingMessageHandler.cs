@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -17,8 +16,6 @@ public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandle
 
     public TelemetryDelegatingMessageHandler(ILogger<TelemetryDelegatingMessageHandler<TInput>> logger)
     {
-        Activity.DefaultIdFormat = ActivityIdFormat.W3C;
-        Activity.ForceDefaultIdFormat = true;
         _logger = logger;
     }
 

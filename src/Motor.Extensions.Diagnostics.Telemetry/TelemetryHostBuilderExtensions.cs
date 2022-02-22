@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Utilities.Abstractions;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -32,6 +31,8 @@ public static class TelemetryHostBuilderExtensions
 
     public static IMotorHostBuilder ConfigureOpenTelemetry(this IMotorHostBuilder hostBuilder)
     {
+        Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+        Activity.ForceDefaultIdFormat = true;
         hostBuilder
             .ConfigureServices((hostContext, services) =>
             {
@@ -52,10 +53,6 @@ public static class TelemetryHostBuilderExtensions
                 services.AddOpenTelemetryTracing(builder =>
                 {
                     builder
-                        .AddAspNetCoreInstrumentation(options =>
-                        {
-                            options.Filter = TelemetryRequestFilter(telemetryOptions);
-                        })
                         .Configure((provider, providerBuilder) =>
                         {
                             var httpClientInstrumentationOptions =
@@ -69,6 +66,10 @@ public static class TelemetryHostBuilderExtensions
                                     options.Enrich = httpClientInstrumentationOptions.Enrich;
                                     options.Filter = httpClientInstrumentationOptions.Filter;
                                     options.SetHttpFlavor = httpClientInstrumentationOptions.SetHttpFlavor;
+                                })
+                                .AddAspNetCoreInstrumentation(options =>
+                                {
+                                    options.Filter = TelemetryRequestFilter(telemetryOptions);
                                 })
                                 .AddSource(OpenTelemetryOptions.DefaultActivitySourceName)
                                 .AddSource(telemetryOptions.Sources.ToArray())
