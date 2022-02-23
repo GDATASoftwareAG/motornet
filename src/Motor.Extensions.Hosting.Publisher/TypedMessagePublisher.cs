@@ -15,7 +15,7 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     where TPublisher : IRawMessagePublisher<TOutput>
     where TOutput : class
 {
-    private readonly TPublisher _bytesMessagePublisher;
+    private readonly TPublisher _rawMessagePublisher;
     private readonly ISummary? _messageSerialization;
     private readonly ISummary? _messageEncoding;
     private readonly IMessageSerializer<TOutput> _messageSerializer;
@@ -23,10 +23,10 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     private readonly IMessageEncoder _messageEncoder;
 
     public TypedMessagePublisher(IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
-        TPublisher bytesMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
+        TPublisher rawMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
         IOptions<ContentEncodingOptions> encodingOptions, IMessageEncoder messageEncoder)
     {
-        _bytesMessagePublisher = bytesMessagePublisher;
+        _rawMessagePublisher = rawMessagePublisher;
         _messageSerializer = messageSerializer;
         _encodingOptions = encodingOptions.Value;
         _messageEncoder = messageEncoder;
@@ -34,6 +34,16 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
             metrics?.CreateSummary("message_serialization", "Message serialization duration in ms");
         _messageEncoding =
             metrics?.CreateSummary("message_encoding", "Message encoding duration in ms");
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        return _rawMessagePublisher.StartAsync(cancellationToken);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return _rawMessagePublisher.StopAsync(cancellationToken);
     }
 
     public async Task PublishMessageAsync(MotorCloudEvent<TOutput> motorCloudEvent, CancellationToken token = default)
@@ -57,6 +67,6 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
             bytesEvent.SetEncoding(_messageEncoder.Encoding);
         }
 
-        await _bytesMessagePublisher.PublishMessageAsync(bytesEvent, token);
+        await _rawMessagePublisher.PublishMessageAsync(bytesEvent, token);
     }
 }

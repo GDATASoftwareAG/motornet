@@ -72,6 +72,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
             .CreateWithQueueDeclare(_fixture)
             .Build();
         var publisher = builder.GetPublisher<byte[]>();
+        await publisher.StartAsync();
 
         const byte priority = 222;
         var message = new byte[] { 3, 2, 1 };

@@ -34,16 +34,24 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         _cloudEventFormatter = cloudEventFormatter;
     }
 
-    public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _channel = ConnectionFactory.CurrentChannel;
+        _connected = true;
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        ConnectionFactory.Dispose();
+        return Task.CompletedTask;
+    }
+
+    public Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
     {
         try
         {
-            if (!_connected)
-            {
-                await StartAsync().ConfigureAwait(false);
-            }
-
-            if (_channel is null)
+            if (!_connected || _channel is null)
             {
                 throw new InvalidOperationException("Channel is not created.");
             }
@@ -83,12 +91,6 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         {
             throw new TemporaryFailureException("Couldn't publish message", e, FailureLevel.Warning);
         }
-    }
-
-    private Task StartAsync()
-    {
-        _channel = ConnectionFactory.CurrentChannel;
-        _connected = true;
         return Task.CompletedTask;
     }
 }
