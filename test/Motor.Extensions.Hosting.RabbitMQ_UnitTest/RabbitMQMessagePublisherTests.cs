@@ -26,6 +26,7 @@ public class RabbitMQMessagePublisherTests
         var mock = GetDefaultConnectionFactoryMock<string>();
         var config = GetConfig();
         var publisher = GetPublisher(mock.Object, config);
+        await publisher.StartAsync();
 
         await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>()));
 
@@ -37,6 +38,7 @@ public class RabbitMQMessagePublisherTests
     {
         var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>();
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
+        await publisher.StartAsync();
 
         await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>()));
 
@@ -48,6 +50,7 @@ public class RabbitMQMessagePublisherTests
     {
         var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>();
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
+        await publisher.StartAsync();
 
         await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>()));
 
@@ -60,6 +63,7 @@ public class RabbitMQMessagePublisherTests
         var modelMock = new Mock<IModel>();
         var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
+        await publisher.StartAsync();
 
         await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>()));
 
@@ -76,6 +80,7 @@ public class RabbitMQMessagePublisherTests
             GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
 
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, GetConfig());
+        await publisher.StartAsync();
         const byte priority = 1;
 
         var activity = new Activity(nameof(RabbitMQMessagePublisherTests));
@@ -108,6 +113,7 @@ public class RabbitMQMessagePublisherTests
             GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
         var config = GetConfig();
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, config);
+        await publisher.StartAsync();
         var message = Array.Empty<byte>();
 
         await publisher.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(message));
@@ -126,6 +132,7 @@ public class RabbitMQMessagePublisherTests
             GetDefaultConnectionFactoryMock<string>(modelMock: modelMock, basicProperties: basicProperties);
         var config = GetConfig();
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, config, cloudEventFormat: CloudEventFormat.Json);
+        await publisher.StartAsync();
         var message = MotorCloudEvent.CreateTestCloudEvent(new byte[] { });
 
         await publisher.PublishMessageAsync(message);
@@ -146,6 +153,7 @@ public class RabbitMQMessagePublisherTests
         modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
         var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object);
+        await publisher.StartAsync();
 
         var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
         motorCloudEvent.SetRabbitMQBinding(customExchange, customRoutingKey);
@@ -165,6 +173,7 @@ public class RabbitMQMessagePublisherTests
         modelMock.Setup(x => x.CreateBasicProperties()).Returns(Mock.Of<IBasicProperties>());
         var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(modelMock: modelMock);
         var publisher = GetPublisher(rabbitConnectionFactoryMock.Object, overwriteExchange: true);
+        await publisher.StartAsync();
 
         var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
         motorCloudEvent.SetRabbitMQBinding(customExchange, customRoutingKey);

@@ -89,7 +89,8 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
         {
             throw new ArgumentNullException(nameof(PublisherImplType));
         }
-        _serviceCollection.AddTransient(typeof(ITypedMessagePublisher<TOutput>), PublisherImplType);
+        _serviceCollection.AddSingleton(typeof(ITypedMessagePublisher<TOutput>), PublisherImplType);
+        _serviceCollection.AddHostedService<TypedPublisherService<TOutput>>();
 
         _configSection ??= Context.Configuration.GetSection(PublisherSection);
         _serviceCollection.Configure<PublisherOptions>(_configSection);

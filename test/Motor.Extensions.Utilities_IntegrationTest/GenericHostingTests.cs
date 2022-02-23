@@ -52,7 +52,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
             var httpClient = new HttpClient();
 
-            await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 2).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 3).ConfigureAwait(false);
             var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
             Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
