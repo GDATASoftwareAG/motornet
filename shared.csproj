@@ -28,4 +28,8 @@
         <None Include="../../rsc/Icon_Motor_NET_128.png" Pack="true" PackagePath="/" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    </ItemGroup>
+
 </Project>
