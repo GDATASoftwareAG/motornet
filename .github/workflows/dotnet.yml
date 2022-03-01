@@ -2,9 +2,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   release:
     types:
       - published
@@ -17,42 +17,42 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: "6.0.102"
-    - name: check format
-      run: dotnet format --severity error --verify-no-changes ./Motor.NET.sln
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.102"
+      - name: check format
+        run: dotnet format --severity error --verify-no-changes ./Motor.NET.sln
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
-    - name: Install dependencies
-      run: dotnet restore Motor.NET.sln
-    - name: Build
-      run: dotnet build --configuration Release --no-restore Motor.NET.sln
-    - name: Test
-      run: dotnet test --no-restore Motor.NET.sln
-    - name: Pack
-      run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
-    - name: Publish Bridge
-      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: artifacts
-        path: ./artifacts/*.nupkg
-    - name: Upload Artifact Bridge
-      uses: actions/upload-artifact@v2
-      with:
-        name: artifacts-bridge
-        path: ./artifacts-bridge/*
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+      - name: Install dependencies
+        run: dotnet restore Motor.NET.sln
+      - name: Build
+        run: dotnet build --configuration Release --no-restore Motor.NET.sln
+      - name: Test
+        run: dotnet test --no-restore Motor.NET.sln
+      - name: Pack
+        run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
+      - name: Publish Bridge
+        run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ./artifacts/*.nupkg
+      - name: Upload Artifact Bridge
+        uses: actions/upload-artifact@v2
+        with:
+          name: artifacts-bridge
+          path: ./artifacts-bridge/*
 
   #code-ql:
   #  runs-on: ubuntu-latest
@@ -87,7 +87,7 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Push to NuGet Feed
-        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push './artifacts/*nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-bridge:
     needs: build
