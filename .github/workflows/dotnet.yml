@@ -47,7 +47,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: artifacts
-          path: ./artifacts/*.?(s)nupkg
+          path: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
       - name: Upload Artifact Bridge
         uses: actions/upload-artifact@v2
         with:
