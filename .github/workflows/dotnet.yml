@@ -87,7 +87,7 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Push to NuGet Feed
-        run: dotnet nuget push './artifacts/*nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-bridge:
     needs: build
