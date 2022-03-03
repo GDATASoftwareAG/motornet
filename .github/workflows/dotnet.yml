@@ -47,7 +47,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: artifacts
-          path: ./artifacts/*.nupkg
+          path: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
       - name: Upload Artifact Bridge
         uses: actions/upload-artifact@v2
         with:
@@ -87,7 +89,7 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Push to NuGet Feed
-        run: dotnet nuget push './artifacts/*nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-bridge:
     needs: build
