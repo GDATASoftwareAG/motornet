@@ -3,7 +3,7 @@ using Prometheus.Client;
 
 namespace Motor.Extensions.Diagnostics.Metrics.Abstractions;
 
-public interface IMetricsFactory<T> : IMetricFactory
+public interface IMetricsFactory<out T> : IMetricFactory
 {
     IEnumerable<string> Names { get; }
 }
