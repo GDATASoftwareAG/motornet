@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,53 +101,8 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             return;
         }
 
-        var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-        if (_options.Queue.MaxPriority is not null)
-        {
-            arguments.Add("x-max-priority", _options.Queue.MaxPriority);
-        }
-
-        if (_options.Queue.MaxLength is not null)
-        {
-            arguments.Add("x-max-length", _options.Queue.MaxLength);
-        }
-
-        if (_options.Queue.MaxLengthBytes is not null)
-        {
-            arguments.Add("x-max-length-bytes", _options.Queue.MaxLengthBytes);
-        }
-
-        if (_options.Queue.MessageTtl is not null)
-        {
-            arguments.Add("x-message-ttl", _options.Queue.MessageTtl);
-        }
-
-        switch (_options.Queue.Mode)
-        {
-            case QueueMode.Default:
-                break;
-            case QueueMode.Lazy:
-                arguments.Add("x-queue-mode", "lazy");
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        _channel?.QueueDeclare(
-            _options.Queue.Name,
-            _options.Queue.Durable,
-            false,
-            _options.Queue.AutoDelete,
-            arguments
-        );
-        foreach (var routingKeyConfig in _options.Queue.Bindings)
-        {
-            _channel?.QueueBind(
-                _options.Queue.Name,
-                routingKeyConfig.Exchange,
-                routingKeyConfig.RoutingKey,
-                routingKeyConfig.Arguments);
-        }
+        DeclareAndBindConsumerQueue();
+        DeclareAndBindConsumerDeadLetterExchangeQueue();
     }
 
     private void StartConsumerOnChannel()
@@ -182,6 +138,9 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
                     case ProcessedMessageStatus.TemporaryFailure:
                         _channel?.BasicReject(args.DeliveryTag, true);
                         break;
+                    case ProcessedMessageStatus.Failure:
+                        _channel?.BasicReject(args.DeliveryTag, false);
+                        break;
                     case ProcessedMessageStatus.InvalidInput:
                         _channel?.BasicReject(args.DeliveryTag, false);
                         break;
@@ -201,5 +160,94 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume");
             _applicationLifetime.StopApplication();
         }
+    }
+
+    private Dictionary<string, object> BuildQueueDeclareArguments(int? maxPriority, int? maxLength, long? maxLengthBytes, int? messageTtl, bool includeDeadLetterExchangeArguments = true)
+    {
+        var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
+        if (maxPriority is not null)
+        {
+            arguments.Add("x-max-priority", maxPriority);
+        }
+
+        if (maxLength is not null)
+        {
+            arguments.Add("x-max-length", maxLength);
+        }
+
+        if (maxLengthBytes is not null)
+        {
+            arguments.Add("x-max-length-bytes", maxLengthBytes);
+        }
+
+        if (messageTtl is not null)
+        {
+            arguments.Add("x-message-ttl", messageTtl);
+        }
+
+        if (_options.Queue.DeadLetterExchange is not null && includeDeadLetterExchangeArguments)
+        {
+            arguments.Add("x-dead-letter-exchange", _options.Queue.DeadLetterExchange.Binding!.Exchange);
+            arguments.Add("x-dead-letter-routing-key", _options.Queue.DeadLetterExchange.Binding!.RoutingKey);   
+        }
+
+        switch (_options.Queue.Mode)
+        {
+            case QueueMode.Default:
+                break;
+            case QueueMode.Lazy:
+                arguments.Add("x-queue-mode", "lazy");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        return arguments;
+    }
+
+    private void DeclareAndBindConsumerQueue()
+    {
+        var arguments = BuildQueueDeclareArguments(_options.Queue.MaxPriority, _options.Queue.MaxLength,
+            _options.Queue.MaxLengthBytes, _options.Queue.MessageTtl);
+        _channel?.QueueDeclare(
+            _options.Queue.Name,
+            _options.Queue.Durable,
+            false,
+            _options.Queue.AutoDelete,
+            arguments
+        );
+        foreach (var routingKeyConfig in _options.Queue.Bindings)
+        {
+            _channel?.QueueBind(
+                _options.Queue.Name,
+                routingKeyConfig.Exchange,
+                routingKeyConfig.RoutingKey,
+                routingKeyConfig.Arguments);
+        }
+    }
+
+    private void DeclareAndBindConsumerDeadLetterExchangeQueue()
+    {
+        if (_options.Queue.DeadLetterExchange is null) return;
+
+        var argumentsWithoutDeadLetterExchange = BuildQueueDeclareArguments(
+            _options.Queue.DeadLetterExchange.MaxPriority, _options.Queue.DeadLetterExchange.MaxLength,
+            _options.Queue.DeadLetterExchange.MaxLengthBytes, _options.Queue.DeadLetterExchange.MessageTtl, false);
+        
+        var deadLetterExchangeQueueName = string.IsNullOrWhiteSpace(_options.Queue.DeadLetterExchange.Name)
+            ? $"{_options.Queue.Name}Dlx"
+            : _options.Queue.DeadLetterExchange.Name;
+        _channel?.QueueDeclare(
+            deadLetterExchangeQueueName,
+            _options.Queue.Durable,
+            false,
+            _options.Queue.AutoDelete,
+            argumentsWithoutDeadLetterExchange
+        );
+        _channel?.QueueBind(
+            deadLetterExchangeQueueName,
+            _options.Queue.DeadLetterExchange.Binding!.Exchange,
+            _options.Queue.DeadLetterExchange.Binding.RoutingKey,
+            _options.Queue.DeadLetterExchange.Binding.Arguments);
     }
 }

@@ -41,6 +41,7 @@ public class RabbitMQTestBuilder
     private static readonly Random _random = new();
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
     private bool createQueue;
+    private bool withDeadLetterExchange;
     private RabbitMQFixture Fixture;
     private bool isBuilt;
     private readonly IList<Message> messages = new List<Message>();
@@ -66,10 +67,16 @@ public class RabbitMQTestBuilder
         return q;
     }
 
-    public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback)
+    public RabbitMQTestBuilder WithDeadLetterExchange()
+    {
+        withDeadLetterExchange = true;
+        return this;
+    }
+    
+    public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback, bool create = true)
     {
         Callback = callback;
-        createQueue = true;
+        createQueue = create;
         return this;
     }
 
@@ -145,6 +152,11 @@ public class RabbitMQTestBuilder
         arguments.Add("x-max-length", options.Queue.MaxLength);
         arguments.Add("x-max-length-bytes", options.Queue.MaxLengthBytes);
         arguments.Add("x-message-ttl", options.Queue.MessageTtl);
+        if (options.Queue.DeadLetterExchange is not null)
+        {
+            arguments.Add("x-dead-letter-exchange", options.Queue.DeadLetterExchange.Binding!.Exchange);
+            arguments.Add("x-dead-letter-routing-key", options.Queue.DeadLetterExchange.Binding!.RoutingKey);
+        }
         channel.QueueDeclare(
             options.Queue.Name,
             options.Queue.Durable,
@@ -164,6 +176,16 @@ public class RabbitMQTestBuilder
 
     private RabbitMQConsumerOptions<T> GetConsumerConfig<T>()
     {
+        var deadLetterExchange = withDeadLetterExchange
+            ? new RabbitMQDeadLetterExchangeOptions
+            {
+                Binding = new RabbitMQBindingOptions
+                {
+                    Exchange = "amq.topic",
+                    RoutingKey = $"dlx.{RoutingKey}"
+                }
+            }
+            : null;
         return new()
         {
             Host = "host",
@@ -180,7 +202,8 @@ public class RabbitMQTestBuilder
                             Exchange = "amq.topic",
                             RoutingKey = RoutingKey
                         }
-                    }
+                },
+                DeadLetterExchange = deadLetterExchange
             },
             PrefetchCount = PrefetchCount
         };
@@ -238,6 +261,9 @@ public class RabbitMQTestBuilder
 
         using var channel = Fixture.Connection.CreateModel();
         channel.QueueDeclarePassive(QueueName);
+        
+        if (withDeadLetterExchange)
+            channel.QueueDeclarePassive($"{QueueName}Dlx");
         return true;
     }
 
@@ -289,10 +315,12 @@ public class RabbitMQTestBuilder
         };
     }
 
-    public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue()
+    public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue(string queueName)
     {
-        var message = (byte[])null;
-        var priority = (byte)0;
+        var message = (byte[]) null;
+        var priority = (byte) 0;
+
+        //var queueName = fromDeadLetterExchange ? $"{QueueName}Dlx" : QueueName;
         using (var channel = Fixture.Connection.CreateModel())
         {
             var consumer = new EventingBasicConsumer(channel);
@@ -302,7 +330,7 @@ public class RabbitMQTestBuilder
                 message = args.Body.ToArray();
             };
 
-            channel.BasicConsume(QueueName, false, consumer);
+            channel.BasicConsume(queueName, false, consumer);
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 

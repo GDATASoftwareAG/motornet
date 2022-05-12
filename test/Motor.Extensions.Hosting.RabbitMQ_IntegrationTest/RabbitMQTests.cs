@@ -28,13 +28,46 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
     {
         var builder = RabbitMQTestBuilder
             .CreateWithoutQueueDeclare(_fixture)
-            .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success))
+            .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success), false)
             .Build();
         var consumer = builder.GetConsumer<string>();
 
         await consumer.StartAsync();
 
         Assert.True(builder.IsConsumerQueueDeclared());
+    }
+    
+    [Fact]
+    public async Task ConsumerStartAsync_WithQueueName_DlxQueueExists()
+    {
+        var builder = RabbitMQTestBuilder
+            .CreateWithoutQueueDeclare(_fixture)
+            .WithDeadLetterExchange()
+            .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success), false)
+            .Build();
+        var consumer = builder.GetConsumer<string>();
+    
+        await consumer.StartAsync();
+    
+        Assert.True(builder.IsConsumerQueueDeclared());
+    }
+
+    [Fact]
+    public async Task ConsumerStartAsync_ConsumerWithDlxRejectMessage_MessageIsInDlxQueue()
+    {
+        var message = new byte[] {1, 2, 3};
+        var builder = RabbitMQTestBuilder
+            .CreateWithQueueDeclare(_fixture)
+            .WithDeadLetterExchange()
+            .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Failure))
+            .WithSinglePublishedMessage(145, message)
+            .Build();
+        var consumer = builder.GetConsumer<string>();
+        
+        await consumer.StartAsync();
+    
+        var results = await builder.GetMessageFromQueue($"{builder.QueueName}Dlx");
+        Assert.Equal(message, results.TypedData);
     }
 
     [Fact]
@@ -82,7 +115,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
 
         await publisher.PublishMessageAsync(cloudEvent);
 
-        var results = await builder.GetMessageFromQueue();
+        var results = await builder.GetMessageFromQueue(builder.QueueName);
         Assert.Equal(priority, results.GetRabbitMQPriority());
         Assert.Equal(message, results.Data);
     }
