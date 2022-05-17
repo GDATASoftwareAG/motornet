@@ -72,7 +72,7 @@ public class RabbitMQTestBuilder
         withDeadLetterExchange = true;
         return this;
     }
-    
+
     public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback, bool create = true)
     {
         Callback = callback;
@@ -261,9 +261,12 @@ public class RabbitMQTestBuilder
 
         using var channel = Fixture.Connection.CreateModel();
         channel.QueueDeclarePassive(QueueName);
-        
+
         if (withDeadLetterExchange)
+        {
             channel.QueueDeclarePassive($"{QueueName}Dlx");
+        }
+
         return true;
     }
 
@@ -317,10 +320,9 @@ public class RabbitMQTestBuilder
 
     public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue(string queueName)
     {
-        var message = (byte[]) null;
-        var priority = (byte) 0;
+        var message = (byte[])null;
+        var priority = (byte)0;
 
-        //var queueName = fromDeadLetterExchange ? $"{QueueName}Dlx" : QueueName;
         using (var channel = Fixture.Connection.CreateModel())
         {
             var consumer = new EventingBasicConsumer(channel);

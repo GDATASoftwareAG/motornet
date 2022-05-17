@@ -59,6 +59,11 @@ public class MultiOutputServiceAdapter<TInput, TOutput> : INoOutputService<TInpu
         {
             throw;
         }
+        catch (FailureException e)
+        {
+            _logger.LogError(LogEvents.ProcessingFailed, e, "Message processing failed");
+            return ProcessedMessageStatus.Failure;
+        }
         catch (Exception e)
         {
             _logger.LogError(LogEvents.ProcessingFailed, e, "Processing failed.");

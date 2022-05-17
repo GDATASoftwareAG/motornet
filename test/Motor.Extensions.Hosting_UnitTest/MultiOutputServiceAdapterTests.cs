@@ -8,6 +8,7 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
+using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.TestUtilities;
 using Xunit;
 
@@ -153,6 +154,20 @@ namespace Motor.Extensions.Hosting_UnitTest
             publisherMock.Verify(
                 x => x.PublishMessageAsync(It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult3),
                     It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleMessageAsync_MessageProcessingFailure_ReturnsFailure()
+        {
+            var converterMock = FakeService;
+            converterMock.Setup(x =>
+                    x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+                .Throws(new FailureException("message processing failed"));
+            var messageHandler = GetMessageHandler(service: converterMock.Object);
+
+            var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_7"));
+
+            Assert.Equal(ProcessedMessageStatus.Failure, actual);
         }
 
         private async IAsyncEnumerable<MotorCloudEvent<string>> CreateReturnValues(params string[] data)

@@ -188,7 +188,7 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         if (_options.Queue.DeadLetterExchange is not null && includeDeadLetterExchangeArguments)
         {
             arguments.Add("x-dead-letter-exchange", _options.Queue.DeadLetterExchange.Binding!.Exchange);
-            arguments.Add("x-dead-letter-routing-key", _options.Queue.DeadLetterExchange.Binding!.RoutingKey);   
+            arguments.Add("x-dead-letter-routing-key", _options.Queue.DeadLetterExchange.Binding!.RoutingKey);
         }
 
         switch (_options.Queue.Mode)
@@ -228,12 +228,15 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
 
     private void DeclareAndBindConsumerDeadLetterExchangeQueue()
     {
-        if (_options.Queue.DeadLetterExchange is null) return;
+        if (_options.Queue.DeadLetterExchange is null)
+        {
+            return;
+        }
 
         var argumentsWithoutDeadLetterExchange = BuildQueueDeclareArguments(
             _options.Queue.DeadLetterExchange.MaxPriority, _options.Queue.DeadLetterExchange.MaxLength,
             _options.Queue.DeadLetterExchange.MaxLengthBytes, _options.Queue.DeadLetterExchange.MessageTtl, false);
-        
+
         var deadLetterExchangeQueueName = string.IsNullOrWhiteSpace(_options.Queue.DeadLetterExchange.Name)
             ? $"{_options.Queue.Name}Dlx"
             : _options.Queue.DeadLetterExchange.Name;

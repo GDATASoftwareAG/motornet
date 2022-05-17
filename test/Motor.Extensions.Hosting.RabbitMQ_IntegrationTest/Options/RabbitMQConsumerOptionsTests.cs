@@ -82,7 +82,7 @@ public class RabbitMQConsumerOptionsTests
         Assert.Equal(255, consumerOptions.Queue.MaxPriority);
         Assert.Equal(86_400_000, consumerOptions.Queue.MessageTtl);
     }
-    
+
     [Fact]
     public void BindConsumerOptions_ConfigWithQueueButWithoutDeadLetterExchange_DeadLetterExchangeIsNull()
     {
@@ -93,7 +93,7 @@ public class RabbitMQConsumerOptionsTests
 
         Assert.Null(consumerOptions.Queue.DeadLetterExchange);
     }
-    
+
     [Fact]
     public void BindConsumerOptions_ConfigWithDeadLetterExchange_ContainsExpectedValues()
     {
@@ -110,7 +110,7 @@ public class RabbitMQConsumerOptionsTests
         Assert.Equal("some.exchange", consumerOptions.Queue.DeadLetterExchange.Binding.Exchange);
         Assert.Equal("some.routing.key", consumerOptions.Queue.DeadLetterExchange.Binding.RoutingKey);
     }
-    
+
     [Fact]
     public void BindConsumerOptions_ConfigWithDeadLetterExchange_ContainsDefaultLimits()
     {
@@ -122,7 +122,7 @@ public class RabbitMQConsumerOptionsTests
         Assert.Empty(consumerOptions.Queue.DeadLetterExchange?.Name);
         Assert.Equal(86_400_000, consumerOptions.Queue.DeadLetterExchange?.MessageTtl);
         Assert.Equal(1_000_000, consumerOptions.Queue.DeadLetterExchange?.MaxLength);
-        Assert.Equal( 200 * 1024 * 1024, consumerOptions.Queue.DeadLetterExchange?.MaxLengthBytes);
+        Assert.Equal(200 * 1024 * 1024, consumerOptions.Queue.DeadLetterExchange?.MaxLengthBytes);
         Assert.Equal(255, consumerOptions.Queue.DeadLetterExchange?.MaxPriority);
     }
 }

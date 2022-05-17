@@ -36,7 +36,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
 
         Assert.True(builder.IsConsumerQueueDeclared());
     }
-    
+
     [Fact]
     public async Task ConsumerStartAsync_WithQueueName_DlxQueueExists()
     {
@@ -46,16 +46,16 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
             .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.Success), false)
             .Build();
         var consumer = builder.GetConsumer<string>();
-    
+
         await consumer.StartAsync();
-    
+
         Assert.True(builder.IsConsumerQueueDeclared());
     }
 
     [Fact]
     public async Task ConsumerStartAsync_ConsumerWithDlxRejectMessage_MessageIsInDlxQueue()
     {
-        var message = new byte[] {1, 2, 3};
+        var message = new byte[] { 1, 2, 3 };
         var builder = RabbitMQTestBuilder
             .CreateWithQueueDeclare(_fixture)
             .WithDeadLetterExchange()
@@ -63,9 +63,9 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
             .WithSinglePublishedMessage(145, message)
             .Build();
         var consumer = builder.GetConsumer<string>();
-        
+
         await consumer.StartAsync();
-    
+
         var results = await builder.GetMessageFromQueue($"{builder.QueueName}Dlx");
         Assert.Equal(message, results.TypedData);
     }
