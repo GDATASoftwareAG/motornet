@@ -56,6 +56,9 @@ public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandle
                     case ProcessedMessageStatus.CriticalFailure:
                         activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.CriticalFailure)));
                         break;
+                    case ProcessedMessageStatus.Failure:
+                        activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.Failure)));
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

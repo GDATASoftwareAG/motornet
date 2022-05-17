@@ -27,6 +27,7 @@ public class TooManyTemporaryFailuresStatistics<TInput>
                     break;
                 case ProcessedMessageStatus.CriticalFailure:
                 case ProcessedMessageStatus.TemporaryFailure:
+                case ProcessedMessageStatus.Failure:
                     TemporaryFailureCountSinceLastHandledMessage++;
                     break;
                 default:

@@ -179,6 +179,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                     break;
                 case ProcessedMessageStatus.CriticalFailure:
                     break;
+                case ProcessedMessageStatus.Failure:
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
