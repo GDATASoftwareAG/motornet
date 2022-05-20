@@ -46,15 +46,17 @@ public class RabbitMQTestBuilder
     private bool isBuilt;
     private readonly IList<Message> messages = new List<Message>();
     internal string QueueName { get; init; }
+    internal string DlxQueueName { get; init; }
     internal string RoutingKey { get; init; }
 
     public static RabbitMQTestBuilder CreateWithoutQueueDeclare(RabbitMQFixture fixture)
     {
         var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-
+        var queueName = randomizerString.Generate();
         return new RabbitMQTestBuilder
         {
-            QueueName = randomizerString.Generate(),
+            QueueName = queueName,
+            DlxQueueName = $"{queueName}Dlx",
             RoutingKey = randomizerString.Generate(),
             Fixture = fixture
         };
@@ -154,8 +156,8 @@ public class RabbitMQTestBuilder
         arguments.Add("x-message-ttl", options.Queue.MessageTtl);
         if (options.Queue.DeadLetterExchange is not null)
         {
-            arguments.Add("x-dead-letter-exchange", options.Queue.DeadLetterExchange.Binding!.Exchange);
-            arguments.Add("x-dead-letter-routing-key", options.Queue.DeadLetterExchange.Binding!.RoutingKey);
+            arguments.Add("x-dead-letter-exchange", options.Queue.DeadLetterExchange.Binding.Exchange);
+            arguments.Add("x-dead-letter-routing-key", options.Queue.DeadLetterExchange.Binding.RoutingKey);
         }
         channel.QueueDeclare(
             options.Queue.Name,
@@ -264,7 +266,7 @@ public class RabbitMQTestBuilder
 
         if (withDeadLetterExchange)
         {
-            channel.QueueDeclarePassive($"{QueueName}Dlx");
+            channel.QueueDeclarePassive(DlxQueueName);
         }
 
         return true;

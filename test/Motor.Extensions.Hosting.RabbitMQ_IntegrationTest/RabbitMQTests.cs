@@ -66,7 +66,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
 
         await consumer.StartAsync();
 
-        var results = await builder.GetMessageFromQueue($"{builder.QueueName}Dlx");
+        var results = await builder.GetMessageFromQueue(builder.DlxQueueName);
         Assert.Equal(message, results.TypedData);
     }
 

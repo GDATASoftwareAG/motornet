@@ -162,33 +162,33 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         }
     }
 
-    private Dictionary<string, object> BuildQueueDeclareArguments(int? maxPriority, int? maxLength, long? maxLengthBytes, int? messageTtl, bool includeDeadLetterExchangeArguments = true)
+    private Dictionary<string, object> BuildQueueDeclareArguments(RabbitMQQueueLimitOptions rabbitMqQueueLimitOptions, bool includeDeadLetterExchangeArguments = true)
     {
         var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
-        if (maxPriority is not null)
+        if (rabbitMqQueueLimitOptions.MaxPriority is not null)
         {
-            arguments.Add("x-max-priority", maxPriority);
+            arguments.Add("x-max-priority", rabbitMqQueueLimitOptions.MaxPriority);
         }
 
-        if (maxLength is not null)
+        if (rabbitMqQueueLimitOptions.MaxLength is not null)
         {
-            arguments.Add("x-max-length", maxLength);
+            arguments.Add("x-max-length", rabbitMqQueueLimitOptions.MaxLength);
         }
 
-        if (maxLengthBytes is not null)
+        if (rabbitMqQueueLimitOptions.MaxLengthBytes is not null)
         {
-            arguments.Add("x-max-length-bytes", maxLengthBytes);
+            arguments.Add("x-max-length-bytes", rabbitMqQueueLimitOptions.MaxLengthBytes);
         }
 
-        if (messageTtl is not null)
+        if (rabbitMqQueueLimitOptions.MessageTtl is not null)
         {
-            arguments.Add("x-message-ttl", messageTtl);
+            arguments.Add("x-message-ttl", rabbitMqQueueLimitOptions.MessageTtl);
         }
 
         if (_options.Queue.DeadLetterExchange is not null && includeDeadLetterExchangeArguments)
         {
-            arguments.Add("x-dead-letter-exchange", _options.Queue.DeadLetterExchange.Binding!.Exchange);
-            arguments.Add("x-dead-letter-routing-key", _options.Queue.DeadLetterExchange.Binding!.RoutingKey);
+            arguments.Add("x-dead-letter-exchange", _options.Queue.DeadLetterExchange.Binding.Exchange);
+            arguments.Add("x-dead-letter-routing-key", _options.Queue.DeadLetterExchange.Binding.RoutingKey);
         }
 
         switch (_options.Queue.Mode)
@@ -207,8 +207,8 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
 
     private void DeclareAndBindConsumerQueue()
     {
-        var arguments = BuildQueueDeclareArguments(_options.Queue.MaxPriority, _options.Queue.MaxLength,
-            _options.Queue.MaxLengthBytes, _options.Queue.MessageTtl);
+        var limits = _options.Queue as RabbitMQQueueLimitOptions;
+        var arguments = BuildQueueDeclareArguments(limits);
         _channel?.QueueDeclare(
             _options.Queue.Name,
             _options.Queue.Durable,
@@ -233,9 +233,8 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             return;
         }
 
-        var argumentsWithoutDeadLetterExchange = BuildQueueDeclareArguments(
-            _options.Queue.DeadLetterExchange.MaxPriority, _options.Queue.DeadLetterExchange.MaxLength,
-            _options.Queue.DeadLetterExchange.MaxLengthBytes, _options.Queue.DeadLetterExchange.MessageTtl, false);
+        var limits = _options.Queue.DeadLetterExchange as RabbitMQQueueLimitOptions;
+        var argumentsWithoutDeadLetterExchange = BuildQueueDeclareArguments(limits, false);
 
         var deadLetterExchangeQueueName = string.IsNullOrWhiteSpace(_options.Queue.DeadLetterExchange.Name)
             ? $"{_options.Queue.Name}Dlx"
@@ -249,7 +248,7 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         );
         _channel?.QueueBind(
             deadLetterExchangeQueueName,
-            _options.Queue.DeadLetterExchange.Binding!.Exchange,
+            _options.Queue.DeadLetterExchange.Binding.Exchange,
             _options.Queue.DeadLetterExchange.Binding.RoutingKey,
             _options.Queue.DeadLetterExchange.Binding.Arguments);
     }
