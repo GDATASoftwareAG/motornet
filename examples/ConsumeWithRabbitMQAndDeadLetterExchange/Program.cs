@@ -38,6 +38,14 @@ public class SomeNoOutputService : INoOutputService<SomeMessage>
     {
         // Get the input message from the cloud event
         var input = inputEvent.TypedData;
+        if (!IsValid(input))
+        {
+            // Depending on the configuration of RepublishInvalidInputToDeadLetterExchange (cf. appsettings.json)
+            // the message will be either republished to the configured dead Letter exchange if set to true
+
+            // However, if set to false, which is also the default, the message will be acknowledged
+            return Task.FromResult(ProcessedMessageStatus.InvalidInput);
+        }
 
         // Process the message
         var processingResult = ProcessMessage(input);
@@ -59,6 +67,11 @@ public class SomeNoOutputService : INoOutputService<SomeMessage>
     private static int ProcessMessage(SomeMessage message)
     {
         return message.FancyNumber * message.FancyNumber;
+    }
+
+    private static bool IsValid(SomeMessage message)
+    {
+        return message.FancyNumber > 0;
     }
 }
 

@@ -11,6 +11,7 @@
     },
     "DeadLetterExchange": {
       "Name": "testDlx",
+      "RepublishInvalidInputToDeadLetterExchange": true,
       "MessageTtl": 5,
       "MaxPriority": 100,
       "MaxLengthBytes": 1234,

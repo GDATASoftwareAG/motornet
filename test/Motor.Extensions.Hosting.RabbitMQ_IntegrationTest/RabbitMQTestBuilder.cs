@@ -42,6 +42,7 @@ public class RabbitMQTestBuilder
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> Callback;
     private bool createQueue;
     private bool withDeadLetterExchange;
+    private bool withRepublishToDeadLetterExchangeOnInvalidInput;
     private RabbitMQFixture Fixture;
     private bool isBuilt;
     private readonly IList<Message> messages = new List<Message>();
@@ -72,6 +73,12 @@ public class RabbitMQTestBuilder
     public RabbitMQTestBuilder WithDeadLetterExchange()
     {
         withDeadLetterExchange = true;
+        return this;
+    }
+
+    public RabbitMQTestBuilder WithRepublishToDeadLetterExchangeOnInvalidInput(bool republishToDeadLetterExchange)
+    {
+        withRepublishToDeadLetterExchangeOnInvalidInput = republishToDeadLetterExchange;
         return this;
     }
 
@@ -126,7 +133,7 @@ public class RabbitMQTestBuilder
                 )
                 .Execute(() =>
                 {
-                    var messageInConsumerQueue = MessageInConsumerQueue();
+                    var messageInConsumerQueue = MessagesInQueue(QueueName);
                     Assert.Equal((uint)messages.Count, messageInConsumerQueue);
                 });
         }
@@ -181,6 +188,7 @@ public class RabbitMQTestBuilder
         var deadLetterExchange = withDeadLetterExchange
             ? new RabbitMQDeadLetterExchangeOptions
             {
+                RepublishInvalidInputToDeadLetterExchange = withRepublishToDeadLetterExchangeOnInvalidInput,
                 Binding = new RabbitMQBindingOptions
                 {
                     Exchange = "amq.topic",
@@ -272,10 +280,10 @@ public class RabbitMQTestBuilder
         return true;
     }
 
-    public uint MessageInConsumerQueue()
+    public uint MessagesInQueue(string queueName)
     {
         using var channel = Fixture.Connection.CreateModel();
-        var queueDeclarePassive = channel.QueueDeclarePassive(QueueName);
+        var queueDeclarePassive = channel.QueueDeclarePassive(queueName);
         return queueDeclarePassive.MessageCount;
     }
 

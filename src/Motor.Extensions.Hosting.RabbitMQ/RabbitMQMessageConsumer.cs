@@ -142,7 +142,14 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
                         _channel?.BasicReject(args.DeliveryTag, false);
                         break;
                     case ProcessedMessageStatus.InvalidInput:
-                        _channel?.BasicReject(args.DeliveryTag, false);
+                        if (_options.Queue.DeadLetterExchange is null || _options.Queue.DeadLetterExchange.RepublishInvalidInputToDeadLetterExchange)
+                        {
+                            _channel?.BasicReject(args.DeliveryTag, false);
+                        }
+                        else
+                        {
+                            _channel?.BasicAck(args.DeliveryTag, false);
+                        }
                         break;
                     case ProcessedMessageStatus.CriticalFailure:
                         _logger.LogWarning(LogEvents.CriticalFailureOnConsume,

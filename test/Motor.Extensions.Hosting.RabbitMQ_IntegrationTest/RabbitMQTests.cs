@@ -70,6 +70,27 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         Assert.Equal(message, results.TypedData);
     }
 
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    public async Task ConsumerStartAsync_CallbackInvalidInput_VerifyCorrectBehaviorOnInvalidInput(bool republishOnInvalidInput, uint expectedNumberOfMessagesInDlxQueue)
+    {
+        var builder = RabbitMQTestBuilder
+            .CreateWithQueueDeclare(_fixture)
+            .WithDeadLetterExchange()
+            .WithRepublishToDeadLetterExchangeOnInvalidInput(republishOnInvalidInput)
+            .WithSingleRandomPublishedMessage()
+            .WithConsumerCallback((_, _) => Task.FromResult(ProcessedMessageStatus.InvalidInput))
+            .Build();
+        var consumer = builder.GetConsumer<string>();
+
+        await consumer.StartAsync();
+
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        Assert.Equal((uint)0, builder.MessagesInQueue(builder.QueueName));
+        Assert.Equal(expectedNumberOfMessagesInDlxQueue, builder.MessagesInQueue(builder.DlxQueueName));
+    }
+
     [Fact]
     public async Task ConsumerStartAsync_ConsumeMessage_ConsumedEqualsPublished()
     {
@@ -133,7 +154,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         await consumer.StartAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(2));
-        Assert.Equal((uint)0, builder.MessageInConsumerQueue());
+        Assert.Equal((uint)0, builder.MessagesInQueue(builder.QueueName));
     }
 
     [Fact]
@@ -157,7 +178,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         await consumer.StartAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(messageProcessingTimeSeconds + raceConditionTimeout));
-        Assert.Equal((uint)0, builder.MessageInConsumerQueue());
+        Assert.Equal((uint)0, builder.MessagesInQueue(builder.QueueName));
     }
 
     [Fact]
@@ -197,7 +218,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         await consumer.StartAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(2));
-        Assert.Equal((uint)0, builder.MessageInConsumerQueue());
+        Assert.Equal((uint)0, builder.MessagesInQueue(builder.QueueName));
     }
 
 
@@ -255,7 +276,7 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         await consumer.StopAsync();
 
         await Task.Delay(TimeSpan.FromSeconds(3));
-        Assert.Equal(RabbitMQTestBuilder.PrefetchCount, builder.MessageInConsumerQueue());
+        Assert.Equal(RabbitMQTestBuilder.PrefetchCount, builder.MessagesInQueue(builder.QueueName));
     }
 
     [Fact]
