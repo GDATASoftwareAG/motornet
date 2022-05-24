@@ -5,5 +5,6 @@ public enum ProcessedMessageStatus
     Success,
     TemporaryFailure,
     InvalidInput,
-    CriticalFailure
+    CriticalFailure,
+    Failure
 }

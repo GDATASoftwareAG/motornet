@@ -85,6 +85,7 @@ public class SQSConsumer<TData> : IMessageConsumer<TData>, IDisposable where TDa
                     await DeleteMessageAsync(message, token).ConfigureAwait(false);
                     break;
                 case ProcessedMessageStatus.CriticalFailure:
+                case ProcessedMessageStatus.Failure:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(processedMessageStatus),

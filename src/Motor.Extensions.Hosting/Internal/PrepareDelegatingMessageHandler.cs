@@ -48,6 +48,11 @@ public class PrepareDelegatingMessageHandler<TInput> : DelegatingMessageHandler<
             }
             processedMessageStatus = ProcessedMessageStatus.TemporaryFailure;
         }
+        catch (FailureException e)
+        {
+            _logger.LogError(LogEvents.ProcessingFailed, e, "Message processing failed");
+            return ProcessedMessageStatus.Failure;
+        }
         catch (Exception ex)
         {
             _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,

@@ -1,0 +1,25 @@
+{
+  "Queue": {
+    "Name": "test",
+    "Durable": false,
+    "AutoDelete": true,
+    "MaxLength": 10,
+    "MaxPriority": 20,
+    "MessageTtl": 30,
+    "Arguments": {
+      "string": "teststring"
+    },
+    "DeadLetterExchange": {
+      "Name": "testDlx",
+      "RepublishInvalidInputToDeadLetterExchange": true,
+      "MessageTtl": 5,
+      "MaxPriority": 100,
+      "MaxLengthBytes": 1234,
+      "MaxLength": 54321,
+      "Binding": {
+        "Exchange": "some.exchange",
+        "RoutingKey": "some.routing.key"
+      }
+    }
+  }
+}

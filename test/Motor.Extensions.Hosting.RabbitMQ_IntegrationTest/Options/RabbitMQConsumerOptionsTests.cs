@@ -82,4 +82,49 @@ public class RabbitMQConsumerOptionsTests
         Assert.Equal(255, consumerOptions.Queue.MaxPriority);
         Assert.Equal(86_400_000, consumerOptions.Queue.MessageTtl);
     }
+
+    [Fact]
+    public void BindConsumerOptions_ConfigWithQueueButWithoutDeadLetterExchange_DeadLetterExchangeIsNull()
+    {
+        var jsonConfig = GetJsonConfig("consumer-queue");
+        var consumerOptions = new RabbitMQConsumerOptions<string>();
+
+        jsonConfig.Bind(consumerOptions);
+
+        Assert.Null(consumerOptions.Queue.DeadLetterExchange);
+    }
+
+    [Fact]
+    public void BindConsumerOptions_ConfigWithDeadLetterExchange_ContainsExpectedValues()
+    {
+        var jsonConfig = GetJsonConfig("consumer-queue-with-dlx");
+        var consumerOptions = new RabbitMQConsumerOptions<string>();
+
+        jsonConfig.Bind(consumerOptions);
+
+        Assert.Equal("testDlx", consumerOptions.Queue.DeadLetterExchange?.Name);
+        Assert.True(consumerOptions.Queue.DeadLetterExchange.RepublishInvalidInputToDeadLetterExchange);
+        Assert.Equal(5, consumerOptions.Queue.DeadLetterExchange?.MessageTtl);
+        Assert.Equal(54321, consumerOptions.Queue.DeadLetterExchange?.MaxLength);
+        Assert.Equal(1234, consumerOptions.Queue.DeadLetterExchange?.MaxLengthBytes);
+        Assert.Equal(100, consumerOptions.Queue.DeadLetterExchange?.MaxPriority);
+        Assert.Equal("some.exchange", consumerOptions.Queue.DeadLetterExchange.Binding.Exchange);
+        Assert.Equal("some.routing.key", consumerOptions.Queue.DeadLetterExchange.Binding.RoutingKey);
+    }
+
+    [Fact]
+    public void BindConsumerOptions_ConfigWithDeadLetterExchange_ContainsDefaults()
+    {
+        var jsonConfig = GetJsonConfig("consumer-queue-with-dlx-default-limits");
+        var consumerOptions = new RabbitMQConsumerOptions<string>();
+
+        jsonConfig.Bind(consumerOptions);
+
+        Assert.Empty(consumerOptions.Queue.DeadLetterExchange?.Name);
+        Assert.False(consumerOptions.Queue.DeadLetterExchange.RepublishInvalidInputToDeadLetterExchange);
+        Assert.Equal(86_400_000, consumerOptions.Queue.DeadLetterExchange?.MessageTtl);
+        Assert.Equal(1_000_000, consumerOptions.Queue.DeadLetterExchange?.MaxLength);
+        Assert.Equal(200 * 1024 * 1024, consumerOptions.Queue.DeadLetterExchange?.MaxLengthBytes);
+        Assert.Equal(255, consumerOptions.Queue.DeadLetterExchange?.MaxPriority);
+    }
 }
