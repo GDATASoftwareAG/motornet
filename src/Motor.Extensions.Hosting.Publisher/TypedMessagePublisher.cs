@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Diagnostics.Metrics;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
+using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Prometheus.Client;
@@ -15,6 +18,7 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     where TPublisher : IRawMessagePublisher<TOutput>
     where TOutput : class
 {
+    private readonly ILogger<TypedMessagePublisher<TOutput, TPublisher>> _logger;
     private readonly TPublisher _rawMessagePublisher;
     private readonly ISummary? _messageSerialization;
     private readonly ISummary? _messageEncoding;
@@ -22,10 +26,12 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     private readonly ContentEncodingOptions _encodingOptions;
     private readonly IMessageEncoder _messageEncoder;
 
-    public TypedMessagePublisher(IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
+    public TypedMessagePublisher(ILogger<TypedMessagePublisher<TOutput, TPublisher>> logger,
+        IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
         TPublisher rawMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
         IOptions<ContentEncodingOptions> encodingOptions, IMessageEncoder messageEncoder)
     {
+        _logger = logger;
         _rawMessagePublisher = rawMessagePublisher;
         _messageSerializer = messageSerializer;
         _encodingOptions = encodingOptions.Value;
@@ -48,25 +54,36 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
 
     public async Task PublishMessageAsync(MotorCloudEvent<TOutput> motorCloudEvent, CancellationToken token = default)
     {
-        byte[] bytes, encodedBytes;
-        using (new AutoObserveStopwatch(() => _messageSerialization))
+        var parentContext = motorCloudEvent.GetActivityContext();
+        using var activity = TypedMessagePublisherUtils.ActivitySource.StartActivity(nameof(PublishMessageAsync), ActivityKind.Client, parentContext);
+        using (activity?.Start())
+        using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",
+                   activity?.TraceId, activity?.SpanId))
         {
-            bytes = _messageSerializer.Serialize(motorCloudEvent.TypedData);
+            if (activity is not null)
+            {
+                motorCloudEvent.SetActivity(activity);
+            }
+            byte[] bytes, encodedBytes;
+            using (new AutoObserveStopwatch(() => _messageSerialization))
+            {
+                bytes = _messageSerializer.Serialize(motorCloudEvent.TypedData);
+            }
+
+            using (new AutoObserveStopwatch(() => _messageEncoding))
+            {
+                encodedBytes = await _messageEncoder.EncodeAsync(bytes, token);
+            }
+
+            var bytesEvent = motorCloudEvent.CreateNew(encodedBytes, true);
+            bytesEvent.SetMotorVersion();
+
+            if (!_encodingOptions.IgnoreEncoding)
+            {
+                bytesEvent.SetEncoding(_messageEncoder.Encoding);
+            }
+
+            await _rawMessagePublisher.PublishMessageAsync(bytesEvent, token);
         }
-
-        using (new AutoObserveStopwatch(() => _messageEncoding))
-        {
-            encodedBytes = await _messageEncoder.EncodeAsync(bytes, token);
-        }
-
-        var bytesEvent = motorCloudEvent.CreateNew(encodedBytes, true);
-        bytesEvent.SetMotorVersion();
-
-        if (!_encodingOptions.IgnoreEncoding)
-        {
-            bytesEvent.SetEncoding(_messageEncoder.Encoding);
-        }
-
-        await _rawMessagePublisher.PublishMessageAsync(bytesEvent, token);
     }
 }

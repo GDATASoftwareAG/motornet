@@ -8,6 +8,7 @@
         <ProjectReference Include="..\Motor.Extensions.ContentEncoding.Abstractions\Motor.Extensions.ContentEncoding.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
+        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Telemetry\Motor.Extensions.Diagnostics.Telemetry.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
         <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
     </ItemGroup>
