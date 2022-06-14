@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
@@ -109,7 +110,9 @@ public class TypedMessagePublisherTests
         }
 
         var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
-        return new TypedMessagePublisher<string, IRawMessagePublisher<string>>(null, publisher, serializer,
+        return new TypedMessagePublisher<string, IRawMessagePublisher<string>>(
+            Mock.Of<ILogger<TypedMessagePublisher<string, IRawMessagePublisher<string>>>>(),
+            null, publisher, serializer,
             Options.Create(encodingOptions), encoder);
     }
 }
