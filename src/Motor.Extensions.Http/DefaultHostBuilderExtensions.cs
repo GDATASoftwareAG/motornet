@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,9 +44,11 @@ public static class DefaultHostBuilderExtensions
             .AddPolicyHandler((provider, _) =>
             {
                 var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
+                var nonTransientStatusCodesToRetry = config?.Value.NonTransientStatusCodesToRetry ?? Array.Empty<int>();
                 return HttpPolicyExtensions
                     .HandleTransientHttpError()
                     .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
+                    .OrResult(r => nonTransientStatusCodesToRetry.Contains((int)r.StatusCode))
                     .WaitAndRetryAsync(
                         config?.Value.NumberOfRetries ?? HttpOptions.DefaultNumberOfRetries,
                         i => TimeSpan.FromSeconds(Math.Pow(2, i)));
