@@ -8,8 +8,8 @@ using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
-using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.TestUtilities;
+using Prometheus.Client;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest
@@ -32,8 +32,8 @@ namespace Motor.Extensions.Hosting_UnitTest
 
             metricsFactoryMock.Verify(x =>
                 x.CreateSummary("message_processing", "Message processing duration in ms",
-                    false, null,
-                    null, null, null));
+                    false, null as IReadOnlyList<QuantileEpsilonPair>, null, null, null)
+            );
         }
 
         [Fact]
