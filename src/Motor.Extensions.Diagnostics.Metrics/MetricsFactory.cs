@@ -37,6 +37,12 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
         return _metricFactory.CreateCounter(metricsName, help, labelNames, includeTimestamp);
     }
 
+    public IMetricFamily<ICounter> CreateCounter(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateCounter(metricsName, help, labelNames);
+    }
+
     public IMetricFamily<ICounter> CreateCounter(string name, string help, bool includeTimestamp = false, params string[] labelNames)
     {
         var metricsName = PrependNamespace(name);
@@ -53,6 +59,12 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
     {
         var metricsName = PrependNamespace(name);
         return _metricFactory.CreateCounterInt64(metricsName, help, labelNames, includeTimestamp);
+    }
+
+    public IMetricFamily<ICounter<long>> CreateCounterInt64(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateCounterInt64(metricsName, help, labelNames);
     }
 
     public IMetricFamily<ICounter<long>> CreateCounterInt64(string name, string help, bool includeTimestamp = false, params string[] labelNames)
@@ -73,6 +85,12 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
         return _metricFactory.CreateGauge(metricsName, help, labelNames, includeTimestamp);
     }
 
+    public IMetricFamily<IGauge> CreateGauge(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateGauge(metricsName, help, labelNames);
+    }
+
     public IMetricFamily<IGauge> CreateGauge(string name, string help, bool includeTimestamp = false, params string[] labelNames)
     {
         var metricsName = PrependNamespace(name);
@@ -89,6 +107,12 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
     {
         var metricsName = PrependNamespace(name);
         return _metricFactory.CreateGaugeInt64(metricsName, help, labelNames, includeTimestamp);
+    }
+
+    public IMetricFamily<IGauge<long>> CreateGaugeInt64(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateGaugeInt64(metricsName, help, labelNames);
     }
 
     public IMetricFamily<IGauge<long>> CreateGaugeInt64(string name, string help, bool includeTimestamp = false, params string[] labelNames)
@@ -110,6 +134,24 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
         return _metricFactory.CreateHistogram(metricsName, help, labelNames, includeTimestamp, buckets);
     }
 
+    public IMetricFamily<IHistogram> CreateHistogram(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateHistogram(metricsName, help, labelNames);
+    }
+
+    public IMetricFamily<IHistogram> CreateHistogram(string name, string help, double[]? buckets = null, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateHistogram(metricsName, help, buckets, labelNames);
+    }
+
+    public IMetricFamily<IHistogram> CreateHistogram(string name, string help, bool includeTimestamp = false, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateHistogram(metricsName, help, includeTimestamp, labelNames);
+    }
+
     public IMetricFamily<IHistogram> CreateHistogram(string name, string help, bool includeTimestamp = false, double[]? buckets = null,
         params string[] labelNames)
     {
@@ -129,10 +171,35 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
         return _metricFactory.CreateUntyped(metricsName, help, labelNames, includeTimestamp);
     }
 
+    public IMetricFamily<IUntyped> CreateUntyped(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateUntyped(metricsName, help, labelNames);
+    }
+
     public IMetricFamily<IUntyped> CreateUntyped(string name, string help, bool includeTimestamp = false, params string[] labelNames)
     {
         var metricsName = PrependNamespace(name);
         return _metricFactory.CreateUntyped(metricsName, help, includeTimestamp, labelNames);
+    }
+
+    public IMetricFamily<ISummary> CreateSummary(string name, string help, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateSummary(metricsName, help, labelNames);
+    }
+
+    public IMetricFamily<ISummary> CreateSummary(string name, string help, bool includeTimestamp = false, params string[] labelNames)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateSummary(metricsName, help, includeTimestamp, labelNames);
+    }
+
+    public IMetricFamily<ISummary> CreateSummary(string name, string help, string[] labelNames, IReadOnlyList<QuantileEpsilonPair> objectives, TimeSpan maxAge,
+        int? ageBuckets, int? bufCap)
+    {
+        var metricsName = PrependNamespace(name);
+        return _metricFactory.CreateSummary(metricsName, help, labelNames, objectives, maxAge, ageBuckets, bufCap);
     }
 
     public ISummary CreateSummary(string name, string help, bool includeTimestamp = false, IReadOnlyList<QuantileEpsilonPair>? objectives = null,
@@ -149,10 +216,26 @@ public sealed class MetricsFactory<T> : IMetricsFactory<T>
         return _metricFactory.CreateSummary(metricsName, help, labelNames, includeTimestamp, objectives, maxAge, ageBuckets, bufCap);
     }
 
-    public IMetricFamily<ISummary> CreateSummary(string name, string help, string[] labelNames, bool includeTimestamp = false,
+    public IMetricFamily<ISummary> CreateSummary(string name, string help, string[] labelNames, bool includeTimestamp,
         IReadOnlyList<QuantileEpsilonPair>? objectives = null, TimeSpan? maxAge = null, int? ageBuckets = null, int? bufCap = null)
     {
         var metricsName = PrependNamespace(name);
-        return _metricFactory.CreateSummary(metricsName, help, includeTimestamp, labelNames, objectives, maxAge, ageBuckets, bufCap);
+        return _metricFactory.CreateSummary(metricsName, help, labelNames, includeTimestamp, objectives, maxAge, ageBuckets, bufCap);
+    }
+
+    public void Release(string name)
+    {
+        var metricsName = PrependNamespace(name);
+        _metricFactory.Release(metricsName);
+    }
+
+    public void Release<TMetric>(IMetricFamily<TMetric> metricFamily) where TMetric : IMetric
+    {
+        _metricFactory.Release(metricFamily);
+    }
+
+    public void Release<TMetric, TLabels>(IMetricFamily<TMetric, TLabels> metricFamily) where TMetric : IMetric where TLabels : struct, ITuple, IEquatable<TLabels>
+    {
+        _metricFactory.Release(metricFamily);
     }
 }
