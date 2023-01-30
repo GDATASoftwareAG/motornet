@@ -8,72 +8,71 @@ using Motor.Extensions.TestUtilities;
 using Motor.Extensions.Utilities.Abstractions;
 using Xunit;
 
-namespace Motor.Extensions.Utilities_IntegrationTest
+namespace Motor.Extensions.Utilities_IntegrationTest;
+
+public class TestService
 {
-    public class TestService
+}
+
+public class HomeController : Controller
+{
+
+    public HomeController(TestService testService)
     {
-    }
-
-    public class HomeController : Controller
-    {
-
-        public HomeController(TestService testService)
+        if (testService is null)
         {
-            if (testService is null)
-            {
-                throw new ArgumentNullException();
-            }
-        }
-
-        // 
-        // GET: /
-        public string Index()
-        {
-            return "This is my default action...";
+            throw new ArgumentNullException();
         }
     }
 
-    public class TestStartup : IMotorStartup
+    // 
+    // GET: /
+    public string Index()
     {
-        public void ConfigureServices(WebHostBuilderContext context, IServiceCollection services)
-        {
-            services.AddControllers();
-            services.AddTransient<TestService>();
-        }
+        return "This is my default action...";
+    }
+}
 
-        public void Configure(WebHostBuilderContext context, IApplicationBuilder app)
-        {
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
-            });
-        }
+public class TestStartup : IMotorStartup
+{
+    public void ConfigureServices(WebHostBuilderContext context, IServiceCollection services)
+    {
+        services.AddControllers();
+        services.AddTransient<TestService>();
     }
 
-
-    public class DefaultHostingTest : IClassFixture<MotorHostApplicationFactory<TestStartup>>
+    public void Configure(WebHostBuilderContext context, IApplicationBuilder app)
     {
-        private readonly MotorHostApplicationFactory<TestStartup> _factory;
-
-        public DefaultHostingTest(MotorHostApplicationFactory<TestStartup> factory)
+        app.UseEndpoints(endpoints =>
         {
-            _factory = factory;
-        }
+            endpoints.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+        });
+    }
+}
 
-        [Theory]
-        [InlineData("/")]
-        public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
-        {
-            // Arrange
-            var client = _factory.CreateClient();
 
-            // Act
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+public class DefaultHostingTest : IClassFixture<MotorHostApplicationFactory<TestStartup>>
+{
+    private readonly MotorHostApplicationFactory<TestStartup> _factory;
 
-            // Assert
-            response.EnsureSuccessStatusCode(); // Status Code 200-299
-        }
+    public DefaultHostingTest(MotorHostApplicationFactory<TestStartup> factory)
+    {
+        _factory = factory;
+    }
+
+    [Theory]
+    [InlineData("/")]
+    public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync(url).ConfigureAwait(false);
+
+        // Assert
+        response.EnsureSuccessStatusCode(); // Status Code 200-299
     }
 }

@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0.102"
+          dotnet-version: "7.0.101"
       - name: check format
         run: dotnet format --severity error --verify-no-changes ./Motor.NET.sln
 
@@ -32,7 +32,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
       - name: Install dependencies
         run: dotnet restore Motor.NET.sln
       - name: Build
@@ -67,7 +67,7 @@ jobs:
   #  - name: Setup .NET
   #    uses: actions/setup-dotnet@v1
   #    with:
-  #      dotnet-version: 6.0.x
+  #      dotnet-version: 7.0.x
   #  - name: Install dependencies
   #    run: dotnet restore Motor.NET.sln
   #  - name: Build
@@ -87,7 +87,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
       - name: Push to NuGet Feed
         run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 

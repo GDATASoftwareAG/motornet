@@ -20,7 +20,7 @@ await MotorHost.CreateDefaultBuilder()
     })
     .ConfigurePublisher<ByteData>((ctx, builder) =>
     {
-        var s = ctx.Configuration["PublisherType"];
+        var s = ctx.Configuration["PublisherType"] ?? string.Empty;
         var publisherType = Enum.Parse<BridgePublisherType>(s, true);
         switch (publisherType)
         {
@@ -38,7 +38,7 @@ await MotorHost.CreateDefaultBuilder()
     })
     .ConfigureConsumer<ByteData>((ctx, builder) =>
     {
-        var s = ctx.Configuration["ConsumerType"];
+        var s = ctx.Configuration["ConsumerType"] ?? string.Empty;
         var consumerType = Enum.Parse<BridgeConsumerType>(s, true);
         switch (consumerType)
         {
