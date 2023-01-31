@@ -173,34 +173,30 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         {
             var processedMessageStatus = taskAwaiter?.GetResult();
             _messageSemaphore.Release();
-            switch (processedMessageStatus)
-            {
-                case ProcessedMessageStatus.Success:
-                    break;
-                case ProcessedMessageStatus.TemporaryFailure:
-                    break;
-                case ProcessedMessageStatus.InvalidInput:
-                    break;
-                case ProcessedMessageStatus.CriticalFailure:
-                    break;
-                case ProcessedMessageStatus.Failure:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            if (msg.Offset % _options.CommitPeriod != 0)
-            {
-                return;
-            }
 
             try
             {
-                _consumer?.Commit(msg);
+                switch (processedMessageStatus)
+                {
+                    case ProcessedMessageStatus.Success:
+                        _consumer?.StoreOffset(msg);
+                        break;
+                    case ProcessedMessageStatus.TemporaryFailure:
+                        break;
+                    case ProcessedMessageStatus.InvalidInput:
+                        _consumer?.StoreOffset(msg);
+                        break;
+                    case ProcessedMessageStatus.CriticalFailure:
+                        break;
+                    case ProcessedMessageStatus.Failure:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
             catch (KafkaException e)
             {
-                _logger.LogError($"Commit error: {e.Error.Reason}");
+                _logger.LogError(e, "Commit error: {Reason}", e.Error.Reason);
             }
         });
     }
