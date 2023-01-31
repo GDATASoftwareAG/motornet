@@ -106,6 +106,33 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         Assert.Equal(motorCloudEvent.Id, id);
     }
 
+    [Fact(Timeout = 50000)]
+    public async Task Consume_LimitMaxConcurrentMessages_StartProcessingLimitedNumberOfMessagesSimultaneously()
+    {
+        const int maxConcurrentMessages = 5;
+        var topic = _randomizerString.Generate();
+        const string message = "testMessage";
+        for (var i = 0; i < maxConcurrentMessages * 2; i++)
+        {
+            await PublishMessage(topic, "someKey", message);
+        }
+        var consumer = GetConsumer<string>(topic, maxConcurrentMessages);
+        var numberOfParallelMessages = 0;
+        consumer.ConsumeCallbackAsync = async (_, cancellationToken) =>
+        {
+            numberOfParallelMessages++;
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+            numberOfParallelMessages--;
+            return await Task.FromResult(ProcessedMessageStatus.Success);
+        };
+
+        await consumer.StartAsync();
+        consumer.ExecuteAsync();
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(maxConcurrentMessages, numberOfParallelMessages);
+    }
+
     private async Task PublishMessage(string topic, string key, string value)
     {
         using var producer = new ProducerBuilder<string, byte[]>(GetPublisherConfig<string>(topic)).Build();
@@ -114,9 +141,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         producer.Flush();
     }
 
-    private KafkaMessageConsumer<T> GetConsumer<T>(string topic)
+    private KafkaMessageConsumer<T> GetConsumer<T>(string topic, int maxConcurrentMessages = 1000)
     {
-        var options = Options.Create(GetConsumerConfig<T>(topic));
+        var options = Options.Create(GetConsumerConfig<T>(topic, maxConcurrentMessages));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
         return new KafkaMessageConsumer<T>(fakeLoggerMock, options, null, GetApplicationNameService(),
             new JsonEventFormatter());
@@ -134,7 +161,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         return new()
         {
             Topic = topic,
-            BootstrapServers = $"{_fixture.Hostname}:{_fixture.Port}",
+            BootstrapServers = _fixture.BootstrapServers,
         };
     }
 
@@ -145,18 +172,19 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         return mock.Object;
     }
 
-    private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")
+    private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, int maxConcurrentMessages, string groupId = "group_id")
     {
         return new()
         {
             Topic = topic,
             GroupId = groupId,
             CommitPeriod = 1,
-            BootstrapServers = $"{_fixture.Hostname}:{_fixture.Port}",
+            BootstrapServers = _fixture.BootstrapServers,
             EnableAutoCommit = false,
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,
-            AutoOffsetReset = AutoOffsetReset.Earliest
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            MaxConcurrentMessages = maxConcurrentMessages
         };
     }
 }

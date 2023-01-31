@@ -25,6 +25,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private IConsumer<string?, byte[]>? _consumer;
+    private readonly SemaphoreSlim _messageSemaphore;
 
     public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
@@ -40,6 +41,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             "Contains a summary of current consumer lag of each partition", new[] { "topic", "partition" });
         _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
             "Contains current number consumer lag of each partition", false, "topic", "partition");
+        _messageSemaphore = new SemaphoreSlim(config.Value.MaxConcurrentMessages);
     }
 
     public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
@@ -66,10 +68,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     public async Task ExecuteAsync(CancellationToken token = default)
     {
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             while (!token.IsCancellationRequested)
             {
+                await _messageSemaphore.WaitAsync(token);
                 try
                 {
                     var msg = _consumer?.Consume(token);
@@ -169,6 +172,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         taskAwaiter?.OnCompleted(() =>
         {
             var processedMessageStatus = taskAwaiter?.GetResult();
+            _messageSemaphore.Release();
             switch (processedMessageStatus)
             {
                 case ProcessedMessageStatus.Success:

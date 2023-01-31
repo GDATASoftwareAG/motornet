@@ -1,30 +1,33 @@
 using System.Threading.Tasks;
-using TestContainers.Container.Abstractions;
-using TestContainers.Container.Abstractions.Hosting;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
+using DotNet.Testcontainers.Containers;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
 
 public class KafkaFixture : IAsyncLifetime
 {
-    private readonly GenericContainer _kafka;
+    private readonly KafkaTestcontainer _container;
+    private const int KafkaPort = 9093;
 
     public KafkaFixture()
     {
-        _kafka = new ContainerBuilder<KafkaContainer>()
+        _container = new TestcontainersBuilder<KafkaTestcontainer>()
+            .WithPortBinding(KafkaPort, true)
+            .WithKafka(new KafkaTestcontainerConfiguration("confluentinc/cp-kafka:6.1.9"))
             .Build();
     }
 
-    public string Hostname => _kafka.GetDockerHostIpAddress();
-    public int Port => _kafka.GetMappedPort(KafkaContainer.KAFKA_PORT);
+    public string BootstrapServers => _container.BootstrapServers;
 
     public async Task InitializeAsync()
     {
-        await _kafka.StartAsync();
+        await _container.StartAsync();
     }
 
     public async Task DisposeAsync()
     {
-        await _kafka.StopAsync();
+        await _container.StopAsync();
     }
 }

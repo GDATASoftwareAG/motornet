@@ -20,12 +20,12 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
 public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
 {
     private readonly IRandomizerString _randomizerString;
-    private readonly string _baseSQSUrl;
+    private readonly SQSFixture _fixture;
 
     public SQSMessageConsumerTests(SQSFixture fixture)
     {
+        _fixture = fixture;
         _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-        _baseSQSUrl = $"http://{fixture.Hostname}:{fixture.Port}";
     }
 
     [Fact(Timeout = 50000)]
@@ -40,7 +40,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
         await sqs.CreateQueueAsync(queueName);
         await PublishMessage(sqs, queueName, expectedMessage);
 
-        var consumer = GetConsumer<string>(Options.Create(clientOptions), $"{_baseSQSUrl}/queue/{queueName}");
+        var consumer = GetConsumer<string>(Options.Create(clientOptions), $"{_fixture.BaseSQSUrl}/queue/{queueName}");
         var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
     }
@@ -67,8 +67,8 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
     {
         var clientOptions = new SQSClientOptions
         {
-            ServiceUrl = $"{_baseSQSUrl}",
-            QueueUrl = $"{_baseSQSUrl}/queue/{queueName}"
+            ServiceUrl = $"{_fixture.BaseSQSUrl}",
+            QueueUrl = $"{_fixture.BaseSQSUrl}/queue/{queueName}"
         };
         return clientOptions;
     }
@@ -77,7 +77,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
     {
         await sqsClient.SendMessageAsync(new SendMessageRequest
         {
-            QueueUrl = $"{_baseSQSUrl}/queue/{queue}",
+            QueueUrl = $"{_fixture.BaseSQSUrl}/queue/{queue}",
             MessageBody = message
         });
     }

@@ -30,7 +30,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         _natsUrl = $"{fixture.Hostname}:{fixture.Port}";
     }
 
-    [Fact(Timeout = 50000, Skip = "does not run on ci")]
+    [Fact(Timeout = 50000)]
     public async void PublishMessageWithoutException()
     {
         const string expectedMessage = "testMessage";
@@ -50,7 +50,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
     }
 
-    [Fact(Timeout = 50000, Skip = "does not run on ci")]
+    [Fact(Timeout = 50000)]
     public async void PublishMessageAsJsonFormat()
     {
         const string expectedMessage = "testMessage";
@@ -73,7 +73,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
 
     }
 
-    [Fact(Timeout = 50000, Skip = "does not run on ci")]
+    [Fact(Timeout = 50000)]
     public async void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
     {
         const string expectedMessage = "testMessage";
