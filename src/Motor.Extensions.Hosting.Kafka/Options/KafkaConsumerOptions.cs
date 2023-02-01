@@ -11,4 +11,5 @@ public class KafkaConsumerOptions<T> : ConsumerConfig
 
     public string? Topic { get; set; }
     public int CommitPeriod { get; set; } = 1000;
+    public int MaxConcurrentMessages { get; set; } = 1000;
 }
