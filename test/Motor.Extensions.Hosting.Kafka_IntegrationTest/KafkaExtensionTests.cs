@@ -110,6 +110,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     public async Task Consume_LimitMaxConcurrentMessages_StartProcessingLimitedNumberOfMessagesSimultaneously()
     {
         const int maxConcurrentMessages = 5;
+        var taskCompletionSource = new TaskCompletionSource();
         var topic = _randomizerString.Generate();
         const string message = "testMessage";
         for (var i = 0; i < maxConcurrentMessages * 2; i++)
@@ -117,20 +118,23 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
             await PublishMessage(topic, "someKey", message);
         }
         var consumer = GetConsumer<string>(topic, maxConcurrentMessages);
-        var numberOfParallelMessages = 0;
+        var numberOfStartedMessages = 0;
         consumer.ConsumeCallbackAsync = async (_, cancellationToken) =>
         {
-            numberOfParallelMessages++;
-            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-            numberOfParallelMessages--;
+            numberOfStartedMessages++;
+            taskCompletionSource.TrySetResult();
+            await Task.Delay(-1, cancellationToken);  // Wait indefinitely
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-        await Task.Delay(TimeSpan.FromSeconds(2));
 
-        Assert.Equal(maxConcurrentMessages, numberOfParallelMessages);
+        // Wait until processing begins
+        await taskCompletionSource.Task;
+        // Give consumer enough time to process further messages
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        Assert.Equal(maxConcurrentMessages, numberOfStartedMessages);
     }
 
     private async Task PublishMessage(string topic, string key, string value)
