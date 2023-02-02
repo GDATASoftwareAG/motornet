@@ -74,6 +74,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest
 
         private static async Task<string> GetMessageFromDestinationQueue(IModel channel)
         {
+            var taskCompletionSource = new TaskCompletionSource();
             var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
             var consumer = new EventingBasicConsumer(channel);
             var messageFromDestinationQueue = string.Empty;
@@ -81,12 +82,10 @@ namespace Motor.Extensions.Utilities_IntegrationTest
             {
                 var bytes = args.Body;
                 messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
+                taskCompletionSource.TrySetResult();
             };
             channel.BasicConsume(destinationQueueName, false, consumer);
-            while (messageFromDestinationQueue == string.Empty)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(50)).ConfigureAwait(false);
-            }
+            await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
 
             return messageFromDestinationQueue;
         }

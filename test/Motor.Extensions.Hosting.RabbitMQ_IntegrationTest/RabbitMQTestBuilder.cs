@@ -332,6 +332,7 @@ public class RabbitMQTestBuilder
     {
         var message = (byte[])null;
         var priority = (byte)0;
+        var taskCompletionSource = new TaskCompletionSource();
 
         using (var channel = Fixture.Connection.CreateModel())
         {
@@ -340,10 +341,11 @@ public class RabbitMQTestBuilder
             {
                 priority = args.BasicProperties.Priority;
                 message = args.Body.ToArray();
+                taskCompletionSource.TrySetResult();
             };
 
             channel.BasicConsume(queueName, false, consumer);
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
         }
 
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(message);
