@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading;
 using Motor.Extensions.Hosting.RabbitMQ.Options;

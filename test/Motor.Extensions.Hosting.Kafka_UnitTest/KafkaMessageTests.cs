@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -96,7 +97,8 @@ public class KafkaMessageTests
     {
         var options = Options.Create(GetConsumerConfig<T>(KafkaTopic));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
-        return new KafkaMessageConsumer<T>(fakeLoggerMock, options, null, GetApplicationNameService(),
+        var fakeLifetimeMock = Mock.Of<IHostApplicationLifetime>();
+        return new KafkaMessageConsumer<T>(fakeLoggerMock, options, fakeLifetimeMock, null, GetApplicationNameService(),
             new JsonEventFormatter());
     }
 
