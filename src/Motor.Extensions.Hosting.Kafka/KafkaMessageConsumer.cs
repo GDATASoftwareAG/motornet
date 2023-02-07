@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Confluent.Kafka;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka.Options;
+using Polly;
 using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Kafka;
@@ -24,16 +26,19 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<IGauge>? _consumerLagGauge;
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
+    private readonly IHostApplicationLifetime _applicationLifetime;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly SemaphoreSlim _messageSemaphore;
 
     public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
+        IHostApplicationLifetime applicationLifetime,
         IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
         IApplicationNameService applicationNameService,
         CloudEventFormatter cloudEventFormatter)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _applicationLifetime = applicationLifetime;
         _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(config));
         _cloudEventFormatter = cloudEventFormatter;
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
@@ -76,23 +81,23 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 try
                 {
                     var msg = _consumer?.Consume(token);
-                    if (msg != null && !msg.IsPartitionEOF)
+                    if (msg is { IsPartitionEOF: false })
                     {
-                        SingleMessageHandling(token, msg);
+                        SingleMessageHandlingAsync(msg, token);
                     }
                     else
                     {
-                        _logger.LogDebug("No messages received");
+                        _logger.LogDebug(LogEvents.NoMessageReceived, "No messages received");
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogInformation("Terminating Kafka listener...");
+                    _logger.LogInformation(LogEvents.TerminatingKafkaListener, "Terminating Kafka listener...");
                     break;
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Failed to receive message.", e);
+                    _logger.LogError(LogEvents.MessageReceivedFailure, e, "Failed to receive message.");
                 }
             }
         }, token).ConfigureAwait(false);
@@ -162,47 +167,63 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         }
     }
 
-    private void SingleMessageHandling(CancellationToken token, ConsumeResult<string?, byte[]> msg)
+    private async Task SingleMessageHandlingAsync(ConsumeResult<string?, byte[]> msg, CancellationToken token)
     {
-        _logger.LogDebug(
-            $"Received message from topic '{msg.Topic}:{msg.Partition}' with offset: '{msg.Offset}[{msg.TopicPartitionOffset}]'");
-        var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
-
-        var taskAwaiter = ConsumeCallbackAsync?.Invoke(cloudEvent, token).GetAwaiter();
-        taskAwaiter?.OnCompleted(() =>
+        try
         {
-            var processedMessageStatus = taskAwaiter?.GetResult();
-            _messageSemaphore.Release();
-            switch (processedMessageStatus)
-            {
-                case ProcessedMessageStatus.Success:
-                    break;
-                case ProcessedMessageStatus.TemporaryFailure:
-                    break;
-                case ProcessedMessageStatus.InvalidInput:
-                    break;
-                case ProcessedMessageStatus.CriticalFailure:
-                    break;
-                case ProcessedMessageStatus.Failure:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            _logger.LogDebug(LogEvents.ReceivedMessage,
+                "Received message from topic '{Topic}:{Partition}' with offset: '{Offset}[{TopicPartitionOffset}]'",
+                msg.Topic, msg.Partition, msg.Offset, msg.TopicPartitionOffset);
+            var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
 
-            if (msg.Offset % _options.CommitPeriod != 0)
-            {
-                return;
-            }
+            var retryPolicy = Policy
+                .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
+                .WaitAndRetryAsync(_options.RetriesOnTemporaryFailure,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            var status = await retryPolicy.ExecuteAsync(() => ConsumeCallbackAsync!.Invoke(cloudEvent, token));
+            HandleMessageStatus(msg, status);
+        }
+        catch (Exception e)
+        {
+            _logger.LogCritical(LogEvents.MessageHandlingUnexpectedException, e,
+                "Unexpected exception in message handling");
+            _applicationLifetime.StopApplication();
+        }
+    }
 
-            try
-            {
-                _consumer?.Commit(msg);
-            }
-            catch (KafkaException e)
-            {
-                _logger.LogError($"Commit error: {e.Error.Reason}");
-            }
-        });
+    private void HandleMessageStatus(ConsumeResult<string?, byte[]> msg, ProcessedMessageStatus? status)
+    {
+        switch (status)
+        {
+            case ProcessedMessageStatus.Success:
+            case ProcessedMessageStatus.InvalidInput:
+            case ProcessedMessageStatus.Failure:
+                if (msg.Offset.Value % _options.CommitPeriod == 0)
+                {
+                    try
+                    {
+                        _consumer?.Commit(msg);
+                    }
+                    catch (KafkaException e)
+                    {
+                        _logger.LogError(LogEvents.CommitError, e, "Commit error: {Reason}", e.Error.Reason);
+                    }
+                }
+                _messageSemaphore.Release();
+                break;
+            case ProcessedMessageStatus.TemporaryFailure:
+                _logger.LogWarning(LogEvents.FailureDespiteRetrying,
+                    "Message consume fails despite retrying");
+                _applicationLifetime.StopApplication();
+                break;
+            case ProcessedMessageStatus.CriticalFailure:
+                _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
+                    "Message consume fails with critical failure");
+                _applicationLifetime.StopApplication();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Unhandled ProcessedMessageStatus");
+        }
     }
 
     public MotorCloudEvent<byte[]> KafkaMessageToCloudEvent(Message<string?, byte[]> msg)

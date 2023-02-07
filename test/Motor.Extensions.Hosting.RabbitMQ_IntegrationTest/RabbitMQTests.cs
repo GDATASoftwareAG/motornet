@@ -203,6 +203,9 @@ public class RabbitMQTests : IClassFixture<RabbitMQFixture>
         {
             await Task.Delay(TimeSpan.FromMilliseconds(10));
         }
+        // Give RabbitMQConsumer enough time to acknowledge message
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
         Assert.Equal((uint)0, builder.MessagesInQueue(builder.QueueName));
     }
 

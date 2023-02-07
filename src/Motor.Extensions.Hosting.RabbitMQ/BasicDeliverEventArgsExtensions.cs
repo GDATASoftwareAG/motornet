@@ -1,7 +1,5 @@
 using System;
-using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;

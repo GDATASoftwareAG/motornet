@@ -4,7 +4,6 @@ using System.Text;
 using CloudNative.CloudEvents;
 using Moq;
 using Motor.Extensions.ContentEncoding.Abstractions;
-using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
