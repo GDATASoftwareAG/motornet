@@ -40,7 +40,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
         await sqs.CreateQueueAsync(queueName);
         await PublishMessage(sqs, queueName, expectedMessage);
 
-        var consumer = GetConsumer<string>(Options.Create(clientOptions), $"{_fixture.BaseSQSUrl}/queue/{queueName}");
+        var consumer = GetConsumer<string>(Options.Create(clientOptions), $"{_fixture.BaseSQSUrl}queue/{queueName}");
         var rawConsumedSQSMessage = await RawConsumedSqsMessage(consumer);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedSQSMessage));
     }
@@ -68,7 +68,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
         var clientOptions = new SQSClientOptions
         {
             ServiceUrl = $"{_fixture.BaseSQSUrl}",
-            QueueUrl = $"{_fixture.BaseSQSUrl}/queue/{queueName}"
+            QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queueName}"
         };
         return clientOptions;
     }
@@ -77,7 +77,7 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
     {
         await sqsClient.SendMessageAsync(new SendMessageRequest
         {
-            QueueUrl = $"{_fixture.BaseSQSUrl}/queue/{queue}",
+            QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queue}",
             MessageBody = message
         });
     }

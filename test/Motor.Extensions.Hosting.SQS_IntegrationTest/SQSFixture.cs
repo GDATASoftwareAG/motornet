@@ -1,32 +1,21 @@
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
 
 public class SQSFixture : IAsyncLifetime
 {
-    private readonly TestcontainersContainer _sqsContainer;
-    private const int SQSPort = 9324;
+    private readonly SQSContainer _container = new SQSBuilder().Build();
 
-    public SQSFixture()
+    public string BaseSQSUrl => _container.BaseSQSUrl;
+
+    public Task InitializeAsync()
     {
-        _sqsContainer = new TestcontainersBuilder<TestcontainersContainer>()
-            .WithImage("roribio16/alpine-sqs:1.2.0")
-            .WithPortBinding(SQSPort, true)
-            .Build();
+        return _container.StartAsync();
     }
 
-    public string BaseSQSUrl => $"http://{_sqsContainer.Hostname}:{_sqsContainer.GetMappedPublicPort(SQSPort)}";
-
-    public async Task InitializeAsync()
+    public Task DisposeAsync()
     {
-        await _sqsContainer.StartAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _sqsContainer.StopAsync();
+        return _container.DisposeAsync().AsTask();
     }
 }
