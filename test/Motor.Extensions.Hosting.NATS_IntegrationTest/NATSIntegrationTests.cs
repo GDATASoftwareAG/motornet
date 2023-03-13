@@ -27,7 +27,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
     public NATSIntegrationTests(NATSFixture fixture)
     {
         _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-        _natsUrl = $"{fixture.Hostname}:{fixture.Port}";
+        _natsUrl = fixture.ConnectionString;
     }
 
     [Fact(Timeout = 50000)]
