@@ -11,6 +11,7 @@ public static class LogEvents
     public static readonly EventId TerminatingKafkaListener = new(4, nameof(TerminatingKafkaListener));
     public static readonly EventId MessageReceivedFailure = new(5, nameof(MessageReceivedFailure));
     public static readonly EventId ReceivedMessage = new(6, nameof(ReceivedMessage));
+    public static readonly EventId UnknownProcessedMessageStatus = new(7, nameof(UnknownProcessedMessageStatus));
 
     public static readonly EventId MessageHandlingUnexpectedException =
         new(7, nameof(MessageHandlingUnexpectedException));
