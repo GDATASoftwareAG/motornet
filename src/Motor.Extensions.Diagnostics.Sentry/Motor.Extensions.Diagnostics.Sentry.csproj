@@ -6,7 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-        <PackageReference Include="Sentry.Serilog" Version="3.33.1" />
+        <PackageReference Include="Sentry.Serilog" Version="3.34.0" />
     </ItemGroup>
 
     <ItemGroup>
