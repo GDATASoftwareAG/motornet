@@ -10,20 +10,19 @@ namespace Motor.Extensions.Diagnostics.Metrics;
 public class PrometheusDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TInput>
     where TInput : class
 {
-    private readonly IMetricFamily<ICounter> _messageProcessingTotal;
+    private readonly IMetricFamily<ISummary> _messageProcessing;
 
-    public PrometheusDelegatingMessageHandler(
-        IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
+    public PrometheusDelegatingMessageHandler(IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
     {
-        _messageProcessingTotal =
-            metricsFactory.CreateCounter("message_processing_total", "Message processing status total", false, "status");
+        _messageProcessing =
+            metricsFactory.CreateSummary("message_processing", "Message processing duration in ms", false, "status");
     }
 
     public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
         CancellationToken token = default)
     {
         var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
-        using (new AutoIncCounter(() => _messageProcessingTotal.WithLabels(processedMessageStatus.ToString())))
+        using (new AutoObserveStopwatch(() => _messageProcessing.WithLabels(processedMessageStatus.ToString())))
         {
             processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token);
         }
