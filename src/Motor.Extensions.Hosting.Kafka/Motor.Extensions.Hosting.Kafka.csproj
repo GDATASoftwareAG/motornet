@@ -10,7 +10,7 @@
         <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.7.1" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
-        <PackageReference Include="Polly" Version="7.2.4" />
+        <PackageReference Include="Polly" Version="8.1.0" />
         <PackageReference Include="System.Text.Json" Version="7.0.3" />
     </ItemGroup>
 
