@@ -20,6 +20,7 @@ public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where
         _elementsInQueue = metricsFactory?.CreateGauge("task_queue_enqueued_elements", "", false, "type")
             ?.WithLabels(typeof(T).Name);
         _totalMessages = metricsFactory?.CreateCounter("total_messages", "", false, "type")?.WithLabels(typeof(T).Name);
+        LastDequeuedAt = DateTimeOffset.UtcNow;
     }
 
     public Task<ProcessedMessageStatus> QueueBackgroundWorkItem(T item)
@@ -31,6 +32,11 @@ public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where
 
         var taskCompletionStatus = new TaskCompletionSource<ProcessedMessageStatus>();
 
+        if (_workItems.IsEmpty)
+        {
+            // Simulate recent dequeue to avoid HealthCheck triggering immediately
+            LastDequeuedAt = DateTimeOffset.UtcNow;
+        }
         _workItems.Enqueue(new QueueItem<T>(item, taskCompletionStatus));
         _elementsInQueue?.Inc();
         _totalMessages?.Inc();
