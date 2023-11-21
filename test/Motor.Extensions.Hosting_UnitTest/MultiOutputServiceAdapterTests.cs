@@ -22,20 +22,6 @@ public class MultiOutputServiceAdapterTests
 
     private static Mock<ITypedMessagePublisher<string>> FakePublisher => new();
 
-
-    [Fact]
-    public void Ctor_WithMetricsFactory_SummaryIsCreated()
-    {
-        var metricsFactoryMock = new Mock<IMetricsFactory<SingleOutputServiceAdapter<string, string>>>();
-
-        GetMessageHandler(metrics: metricsFactoryMock.Object);
-
-        metricsFactoryMock.Verify(x =>
-            x.CreateSummary("message_processing", "Message processing duration in ms",
-                false, null as IReadOnlyList<QuantileEpsilonPair>, null, null, null)
-        );
-    }
-
     [Fact]
     public async Task HandleMessageAsync_WithContextAndInput_HasContext()
     {
@@ -180,7 +166,6 @@ public class MultiOutputServiceAdapterTests
 
     private MultiOutputServiceAdapter<string, string> GetMessageHandler(
         ILogger<SingleOutputServiceAdapter<string, string>>? logger = null,
-        IMetricsFactory<SingleOutputServiceAdapter<string, string>>? metrics = null,
         IMultiOutputService<string, string>? service = null,
         ITypedMessagePublisher<string>? publisher = null)
     {
@@ -188,7 +173,7 @@ public class MultiOutputServiceAdapterTests
         service ??= FakeService.Object;
         publisher ??= FakePublisher.Object;
 
-        return new MultiOutputServiceAdapter<string, string>(logger, metrics, service, publisher);
+        return new MultiOutputServiceAdapter<string, string>(logger, service, publisher);
     }
 
     private static MotorCloudEvent<string> CreateMotorEvent(string data = "")
