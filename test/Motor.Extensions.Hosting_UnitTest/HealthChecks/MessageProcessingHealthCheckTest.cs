@@ -1,20 +1,28 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.HealthChecks;
+using Motor.Extensions.Hosting.Internal;
+using Motor.Extensions.TestUtilities;
 using Xunit;
 
 namespace Motor.Extensions.Hosting_UnitTest.HealthChecks;
 
 public class MessageProcessingHealthCheckTest
 {
+    private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(50);
+
     [Fact]
-    public async void CheckHealthAsync_LastDequeuedAtExceededTimeoutRangeAndQueueNotEmpty_ServiceIsUnhealthy()
+    public async void CheckHealthAsync_QueueHasMessagesWithoutRecentAcknowledgement_ServiceIsUnhealthy()
     {
-        var healthCheck = CreateHealthCheck(true, 10);
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        await Task.Delay(_timeout * 2);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -22,9 +30,13 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_LastDequeuedAtWithinTimeoutRangeAndQueueNotEmpty_ServiceIsHealthy()
+    public async void CheckHealthAsync_QueueHasMessagesButMessageWasRecentlyAcknowledged_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(false, 10);
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message0"));
+        await queue.DequeueAsync(CancellationToken.None);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message1"));
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -32,9 +44,11 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_LastDequeuedAtExceededTimeoutRangeAndQueueEmpty_ServiceIsHealthy()
+    public async void CheckHealthAsync_QueueRemainsEmptyLongerThanTimeout_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(true, 0);
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        await Task.Delay(_timeout * 2);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -42,30 +56,70 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_LastDequeuedAtWithinTimeoutRangeAndQueueEmpty_ServiceIsHealthy()
+    public async void CheckHealthAsync_QueueBecomesEmptyLongerThanTimeout_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(false, 0);
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        await queue.DequeueAsync(CancellationToken.None);
+        await Task.Delay(_timeout * 2);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
         Assert.Equal(HealthStatus.Healthy, result);
     }
 
-    private MessageProcessingHealthCheck<string> CreateHealthCheck(bool exceededMaxTimeSinceLastProcessedMessage,
-        int itemCount)
+    [Fact]
+    public async void CheckHealthAsync_QueueIsEmptyAndMessageWasRecentlyAcknowledged_ServiceIsHealthy()
     {
-        var maxTimeSinceLastProcessedMessage = TimeSpan.FromMilliseconds(100);
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        await queue.DequeueAsync(CancellationToken.None);
+
+        var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
+
+        Assert.Equal(HealthStatus.Healthy, result);
+    }
+
+    [Fact]
+    public async void CheckHealthAsync_MessageAppearsInQueueAfterQueueHasBeenEmpty_ServiceIsHealthy()
+    {
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        await Task.Delay(_timeout * 2);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+
+        var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
+
+        Assert.Equal(HealthStatus.Healthy, result);
+    }
+
+    [Fact]
+    public async void CheckHealthAsync_MessageRemainsInQueueLongerThanTimeout_ServiceIsUnhealthy()
+    {
+        var queue = CreateEmptyQueue();
+        var healthCheck = CreateHealthCheck(queue);
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        await Task.Delay(_timeout * 2);
+
+        var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
+
+        Assert.Equal(HealthStatus.Unhealthy, result);
+    }
+
+    private MessageProcessingHealthCheck<string> CreateHealthCheck(IBackgroundTaskQueue<MotorCloudEvent<string>> queue)
+    {
         var config = new MessageProcessingOptions
         {
-            MaxTimeSinceLastProcessedMessage = maxTimeSinceLastProcessedMessage
+            MaxTimeSinceLastProcessedMessage = _timeout
         };
-        var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
-        queue.Setup(q => q.LastDequeuedAt).Returns(exceededMaxTimeSinceLastProcessedMessage
-            ? DateTimeOffset.UtcNow.Subtract(maxTimeSinceLastProcessedMessage + TimeSpan.FromMilliseconds(50))
-            : DateTimeOffset.UtcNow.Subtract(maxTimeSinceLastProcessedMessage - TimeSpan.FromMilliseconds(50)));
-        queue.Setup(q => q.ItemCount).Returns(itemCount);
-        return new MessageProcessingHealthCheck<string>(
-            Options.Create(config),
-            queue.Object);
+        return new MessageProcessingHealthCheck<string>(Options.Create(config), queue);
+    }
+
+    private IBackgroundTaskQueue<MotorCloudEvent<string>> CreateEmptyQueue()
+    {
+        var queue = new BackgroundTaskQueue<MotorCloudEvent<string>>(null);
+        return queue;
     }
 }
