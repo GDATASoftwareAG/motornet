@@ -101,7 +101,7 @@ public class TypedConsumerService<TInput> : BackgroundService
         }
         catch (Exception e)
         {
-            _logger.LogError(LogEvents.UnexpectedErrorOnMessageProcessing, e, "Invalid Input");
+            _logger.LogError(LogEvents.UnexpectedErrorOnMessageProcessing, e, "Unexpected error on message processing");
             return ProcessedMessageStatus.CriticalFailure;
         }
     }
