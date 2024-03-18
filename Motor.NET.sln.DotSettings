@@ -3,4 +3,5 @@
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=NATS/@EntryIndexedValue">NATS</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=SQS/@EntryIndexedValue">SQS</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=nofile/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Otlp/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=ulimit/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
