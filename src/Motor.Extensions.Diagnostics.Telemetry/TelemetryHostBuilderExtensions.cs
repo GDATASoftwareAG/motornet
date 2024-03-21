@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Utilities.Abstractions;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -33,77 +29,60 @@ public static class TelemetryHostBuilderExtensions
     {
         Activity.DefaultIdFormat = ActivityIdFormat.W3C;
         Activity.ForceDefaultIdFormat = true;
-        hostBuilder
-            .ConfigureServices((hostContext, services) =>
+        hostBuilder.ConfigureServices((hostContext, services) =>
+        {
+            UsedExporter? usedExport;
+            if (hostContext.Configuration.GetSection(OtlpExporter).Exists())
             {
-                var usedExport = UsedExporter.Jaeger;
-                if (hostContext.Configuration.GetSection(OtlpExporter).Exists())
-                {
-                    services.Configure<OtlpExporterOptions>(hostContext.Configuration.GetSection(OtlpExporter));
-                    usedExport = UsedExporter.Oltp;
-                }
-                else
-                {
-                    services.Configure<JaegerExporterOptions>(hostContext.Configuration.GetSection(JaegerExporter));
-                }
+                services.Configure<OtlpExporterOptions>(hostContext.Configuration.GetSection(OtlpExporter));
+                usedExport = UsedExporter.Oltp;
+            }
+            else
+            {
+                services.Configure<JaegerExporterOptions>(hostContext.Configuration.GetSection(JaegerExporter));
+                usedExport = UsedExporter.Jaeger;
+            }
 
-                var telemetryOptions = new OpenTelemetryOptions();
-                hostContext.Configuration.GetSection(OpenTelemetry).Bind(telemetryOptions);
-                services.AddSingleton(telemetryOptions);
-                services.AddOpenTelemetryTracing(builder =>
+            var telemetryOptions = new OpenTelemetryOptions();
+            hostContext.Configuration.GetSection(OpenTelemetry).Bind(telemetryOptions);
+            services.AddSingleton(telemetryOptions);
+            services.AddOpenTelemetry().WithTracing(builder =>
+            {
+                builder.AddAspNetCoreInstrumentation(options =>
+                    {
+                        options.Filter = TelemetryRequestFilter(telemetryOptions);
+                    })
+                    .AddSource(OpenTelemetryOptions.DefaultActivitySourceName)
+                    .AddSource(telemetryOptions.Sources.ToArray())
+                    .SetMotorSampler(telemetryOptions)
+                    .AddExporter(usedExport);
+                if (builder is IDeferredTracerProviderBuilder deferredTracerProviderBuilder)
                 {
-                    builder
-                        .Configure((provider, providerBuilder) =>
+                    deferredTracerProviderBuilder.Configure((provider, providerBuilder) =>
+                    {
+                        providerBuilder.ConfigureResource(resourceBuilder =>
                         {
-                            var httpClientInstrumentationOptions =
-                                provider.GetService<IOptions<HttpClientInstrumentationOptions>>()?.Value ??
-                                new HttpClientInstrumentationOptions();
                             var applicationNameService = provider.GetRequiredService<IApplicationNameService>();
-                            var logger = provider.GetRequiredService<ILogger<OpenTelemetryOptions>>();
-                            providerBuilder = providerBuilder
-                                .AddHttpClientInstrumentation(options =>
+                            resourceBuilder.AddAttributes(new Dictionary<string, object>
                                 {
-                                    options.Enrich = httpClientInstrumentationOptions.Enrich;
-                                    options.Filter = httpClientInstrumentationOptions.Filter;
-                                    options.SetHttpFlavor = httpClientInstrumentationOptions.SetHttpFlavor;
-                                })
-                                .AddAspNetCoreInstrumentation(options =>
-                                {
-                                    options.Filter = TelemetryRequestFilter(telemetryOptions);
-                                })
-                                .AddSource(OpenTelemetryOptions.DefaultActivitySourceName)
-                                .AddSource(telemetryOptions.Sources.ToArray())
-                                .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                                    .AddService(applicationNameService.GetFullName(),
-                                        serviceVersion: applicationNameService.GetVersion())
-                                    .AddAttributes(new Dictionary<string, object>
                                     {
-                                            {
-                                                AttributeMotorNetEnvironment,
-                                                hostContext.HostingEnvironment.EnvironmentName.ToLower()
-                                            },
-                                            {
-                                                AttributeMotorNetLibraryVersion,
-                                                applicationNameService.GetLibVersion()
-                                            }
-                                    }))
-                                .SetMotorSampler(telemetryOptions);
-
-                            switch (usedExport)
-                            {
-                                case UsedExporter.Oltp:
-                                    providerBuilder.AddOtlpExporter(logger, provider);
-                                    break;
-                                default:
-                                    providerBuilder.AddJaegerExporter(logger, provider);
-                                    break;
-                            }
+                                        AttributeMotorNetEnvironment,
+                                        hostContext.HostingEnvironment.EnvironmentName.ToLower()
+                                    },
+                                    {
+                                        AttributeMotorNetLibraryVersion,
+                                        applicationNameService.GetLibVersion()
+                                    }
+                                })
+                                .AddService(applicationNameService.GetFullName(),
+                                    serviceVersion: applicationNameService.GetVersion());
                         });
-                });
+                    });
+                }
             });
+        });
         return hostBuilder;
     }
-
 
     private static Func<HttpContext, bool> TelemetryRequestFilter(OpenTelemetryOptions openTelemetryOptions) =>
         req => !openTelemetryOptions.FilterOutTelemetryRequests ||
@@ -115,7 +94,7 @@ public static class TelemetryHostBuilderExtensions
     {
         Sampler sampler = options.SamplingProbability switch
         {
-            > 0.9999 => new AlwaysOnSampler(),
+            >= 1 => new AlwaysOnSampler(),
             _ => new TraceIdRatioBasedSampler(options.SamplingProbability)
         };
 
@@ -123,46 +102,18 @@ public static class TelemetryHostBuilderExtensions
         return builder;
     }
 
-    private static void AddJaegerExporter(this TracerProviderBuilder builder, ILogger logger,
-        IServiceProvider provider)
+    private static void AddExporter(this TracerProviderBuilder builder, UsedExporter? exporter)
     {
-        try
+        switch (exporter)
         {
-            var options = provider.GetService<IOptions<JaegerExporterOptions>>()!.Value;
-            Dns.GetHostEntry(options.AgentHost);
-            builder.AddJaegerExporter(internalOptions =>
-            {
-                internalOptions.AgentHost = options.AgentHost;
-                internalOptions.AgentPort = options.AgentPort;
-            });
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(LogEvents.JaegerConfigurationFailed, ex,
-                "Jaeger configuration failed.");
-        }
-    }
-
-    private static void AddOtlpExporter(this TracerProviderBuilder builder, ILogger logger,
-        IServiceProvider provider)
-    {
-        try
-        {
-            var options = provider.GetService<IOptions<OtlpExporterOptions>>()!.Value;
-            Dns.GetHostEntry(options.Endpoint.Host);
-            builder.AddOtlpExporter(internalOptions =>
-            {
-                internalOptions.Endpoint = options.Endpoint;
-                internalOptions.Headers = options.Headers;
-                internalOptions.TimeoutMilliseconds = options.TimeoutMilliseconds;
-                internalOptions.ExportProcessorType = options.ExportProcessorType;
-                internalOptions.BatchExportProcessorOptions = options.BatchExportProcessorOptions;
-            });
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(LogEvents.JaegerConfigurationFailed, ex,
-                "Otlp configuration failed.");
+            case UsedExporter.Oltp:
+                builder.AddOtlpExporter();
+                break;
+            case UsedExporter.Jaeger:
+                builder.AddJaegerExporter();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(exporter), exporter, null);
         }
     }
 }

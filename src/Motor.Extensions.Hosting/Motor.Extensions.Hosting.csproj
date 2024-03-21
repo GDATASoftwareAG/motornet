@@ -12,8 +12,8 @@
     </ItemGroup>
     
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
-      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.11" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.01" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
