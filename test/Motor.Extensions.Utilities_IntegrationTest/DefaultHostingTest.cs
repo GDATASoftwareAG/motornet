@@ -70,7 +70,7 @@ public class DefaultHostingTest : IClassFixture<MotorHostApplicationFactory<Test
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.GetAsync(url).ConfigureAwait(false);
+        var response = await client.GetAsync(url);
 
         // Assert
         response.EnsureSuccessStatusCode(); // Status Code 200-299

@@ -13,7 +13,7 @@ public class TooManyTemporaryFailuresStatisticsTest
     [Theory]
     [InlineData(ProcessedMessageStatus.Success)]
     [InlineData(ProcessedMessageStatus.InvalidInput)]
-    public async void RegisterMessageStatusAsync_StatusHandledCorrectly_SetLastHandledMessage(
+    public async Task RegisterMessageStatusAsync_StatusHandledCorrectly_SetLastHandledMessage(
         ProcessedMessageStatus status)
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
@@ -28,7 +28,7 @@ public class TooManyTemporaryFailuresStatisticsTest
     [Theory]
     [InlineData(ProcessedMessageStatus.CriticalFailure)]
     [InlineData(ProcessedMessageStatus.TemporaryFailure)]
-    public async void RegisterMessageStatusAsync_StatusNotHandledCorrectly_DoesNotSetLastHandledMessage(
+    public async Task RegisterMessageStatusAsync_StatusNotHandledCorrectly_DoesNotSetLastHandledMessage(
         ProcessedMessageStatus status)
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
@@ -45,7 +45,7 @@ public class TooManyTemporaryFailuresStatisticsTest
     [InlineData(4, ProcessedMessageStatus.TemporaryFailure)]
     [InlineData(1, ProcessedMessageStatus.CriticalFailure)]
     [InlineData(4, ProcessedMessageStatus.CriticalFailure)]
-    public async void RegisterMessageStatusAsync_StatusNotHandledCorrectly_IncreasesTemporaryFailureCount(
+    public async Task RegisterMessageStatusAsync_StatusNotHandledCorrectly_IncreasesTemporaryFailureCount(
         uint count, ProcessedMessageStatus status)
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
@@ -61,7 +61,7 @@ public class TooManyTemporaryFailuresStatisticsTest
     [Theory]
     [InlineData(ProcessedMessageStatus.Success)]
     [InlineData(ProcessedMessageStatus.InvalidInput)]
-    public async void RegisterMessageStatusAsync_StatusHandledCorrectly_ResetTemporaryFailureCount(
+    public async Task RegisterMessageStatusAsync_StatusHandledCorrectly_ResetTemporaryFailureCount(
         ProcessedMessageStatus status)
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>
@@ -75,8 +75,7 @@ public class TooManyTemporaryFailuresStatisticsTest
     }
 
     [Fact]
-    public async void
-        RegisterMessageStatusAsync_ManyStatusesNotHandledCorrectlyInParallel_CorrectTemporaryFailureCount()
+    public async Task RegisterMessageStatusAsync_ManyStatusesNotHandledCorrectlyInParallel_CorrectTemporaryFailureCount()
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
         var notHandledCorrectlyTasks = new List<Task>(100);

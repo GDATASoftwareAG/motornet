@@ -23,9 +23,9 @@ public class QueuedGenericServiceTests
     {
         var queuedGenericService = CreateQueuedGenericService();
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
 
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StopAsync(CancellationToken.None);
     }
 
     [Fact]
@@ -34,9 +34,9 @@ public class QueuedGenericServiceTests
         var service = new Mock<INoOutputService<string>>();
         var queuedGenericService = CreateQueuedGenericService(service.Object);
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
-        await Task.Delay(100).ConfigureAwait(false);
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+        await queuedGenericService.StopAsync(CancellationToken.None);
 
         service.Verify(
             t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
@@ -48,7 +48,7 @@ public class QueuedGenericServiceTests
     [InlineData(4)]
     [InlineData(8)]
     [InlineData(null)]
-    public async void ExecuteAsync_MultipleMessage_ParallelProcessingBasedOnConfig(
+    public async Task ExecuteAsync_MultipleMessage_ParallelProcessingBasedOnConfig(
         int? parallelProcessesOrProcessorCount)
     {
         parallelProcessesOrProcessorCount ??= Environment.ProcessorCount;
@@ -80,9 +80,9 @@ public class QueuedGenericServiceTests
                 ParallelProcesses = parallelProcessesOrProcessorCount
             });
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
-        await Task.Delay(Convert.ToInt32(Math.Floor(waitTimeInMs * 0.5))).ConfigureAwait(false);
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
+        await Task.Delay(Convert.ToInt32(Math.Floor(waitTimeInMs * 0.5)));
+        await queuedGenericService.StopAsync(CancellationToken.None);
 
         service.Verify(t => t
                 .HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
@@ -110,13 +110,13 @@ public class QueuedGenericServiceTests
 
         var queuedGenericService = CreateQueuedGenericService(service.Object, queue);
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
-        await Task.Delay(100).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
 
-        var actualStatus = await taskCompletionSource.Task.ConfigureAwait(false);
+        var actualStatus = await taskCompletionSource.Task;
         Assert.Equal(expectedStatus, actualStatus);
 
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StopAsync(CancellationToken.None);
     }
 
     [Fact]
@@ -131,9 +131,9 @@ public class QueuedGenericServiceTests
         var queuedGenericService = CreateQueuedGenericService(service.Object,
             hostApplicationLifetime: hostApplicationLifetime.Object);
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
-        await Task.Delay(100).ConfigureAwait(false);
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+        await queuedGenericService.StopAsync(CancellationToken.None);
 
         hostApplicationLifetime.Verify(t => t.StopApplication(), Times.Never);
     }
@@ -150,9 +150,9 @@ public class QueuedGenericServiceTests
         var queuedGenericService = CreateQueuedGenericService(service.Object,
             hostApplicationLifetime: hostApplicationLifetime.Object);
 
-        await queuedGenericService.StartAsync(CancellationToken.None).ConfigureAwait(false);
-        await Task.Delay(100).ConfigureAwait(false);
-        await queuedGenericService.StopAsync(CancellationToken.None).ConfigureAwait(false);
+        await queuedGenericService.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+        await queuedGenericService.StopAsync(CancellationToken.None);
 
         hostApplicationLifetime.Verify(t => t.StopApplication(), Times.AtLeastOnce);
     }

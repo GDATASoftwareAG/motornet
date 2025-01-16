@@ -39,14 +39,14 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         const string message = "12345";
         using var host = GetReverseStringService();
         var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
 
-        await host.StartAsync().ConfigureAwait(false);
+        await host.StartAsync();
         PublishMessageIntoQueueOfService(channel, message);
 
         var actual = await GetMessageFromDestinationQueue(channel);
         Assert.Equal("54321", actual);
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync();
     }
 
     private static IHost GetReverseStringService()

@@ -22,7 +22,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyHost_Throws(string host)
+    public void FromConsumerConfig_NullOrEmptyHost_Throws(string? host)
     {
         var cfg = GetConsumerConfig(host, "user", "password", "vHost", "name", "exchange", "routingKey");
 
@@ -34,7 +34,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyUser_Throws(string user)
+    public void FromConsumerConfig_NullOrEmptyUser_Throws(string? user)
     {
         var cfg = GetConsumerConfig("host", user, "password", "vHost", "name", "exchange", "routingKey");
 
@@ -46,7 +46,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyPassword_Throws(string password)
+    public void FromConsumerConfig_NullOrEmptyPassword_Throws(string? password)
     {
         var cfg = GetConsumerConfig("host", "user", password, "vHost", "name", "exchange", "routingKey");
 
@@ -58,7 +58,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyVirtualHost_Throws(string vHost)
+    public void FromConsumerConfig_NullOrEmptyVirtualHost_Throws(string? vHost)
     {
         var cfg = GetConsumerConfig("host", "user", "password", vHost, "name", "exchange", "routingKey");
 
@@ -85,7 +85,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyQueueName_Throws(string name)
+    public void FromConsumerConfig_NullOrEmptyQueueName_Throws(string? name)
     {
         var cfg = GetConsumerConfig("host", "user", "password", "vHost", name, "exchange", "routingKey");
 
@@ -97,7 +97,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyExchange_Throws(string exchange)
+    public void FromConsumerConfig_NullOrEmptyExchange_Throws(string? exchange)
     {
         var cfg = GetConsumerConfig("host", "user", "password", "vHost", "qName", exchange, "routingKey");
 
@@ -109,7 +109,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromConsumerConfig_NullOrEmptyRoutingKey_Throws(string routingKey)
+    public void FromConsumerConfig_NullOrEmptyRoutingKey_Throws(string? routingKey)
     {
         var cfg = GetConsumerConfig("host", "user", "password", "vHost", "qName", "exchange", routingKey);
 
@@ -146,7 +146,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyHost_Throws(string host)
+    public void FromPublisherConfig_NullOrEmptyHost_Throws(string? host)
     {
         var cfg = GetPublisherConfig(host, "user", "password", "vHost", "exchange", "routingKey");
 
@@ -158,7 +158,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyUser_Throws(string user)
+    public void FromPublisherConfig_NullOrEmptyUser_Throws(string? user)
     {
         var cfg = GetPublisherConfig("host", user, "password", "vHost", "exchange", "routingKey");
 
@@ -170,7 +170,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyPassword_Throws(string password)
+    public void FromPublisherConfig_NullOrEmptyPassword_Throws(string? password)
     {
         var cfg = GetPublisherConfig("host", "user", password, "vHost", "exchange", "routingKey");
 
@@ -182,7 +182,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyVirtualHost_Throws(string vHost)
+    public void FromPublisherConfig_NullOrEmptyVirtualHost_Throws(string? vHost)
     {
         var cfg = GetPublisherConfig("host", "user", "password", vHost, "exchange", "routingKey");
 
@@ -194,7 +194,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyExchange_Throws(string exchange)
+    public void FromPublisherConfig_NullOrEmptyExchange_Throws(string? exchange)
     {
         var cfg = GetPublisherConfig("host", "user", "password", "vHost", exchange, "routingKey");
 
@@ -206,7 +206,7 @@ public class RabbitMQConnectionFactoryTests
     [InlineData(" ")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void FromPublisherConfig_NullOrEmptyRoutingKey_Throws(string routingKey)
+    public void FromPublisherConfig_NullOrEmptyRoutingKey_Throws(string? routingKey)
     {
         var cfg = GetPublisherConfig("host", "user", "password", "vHost", "exchange", routingKey);
 

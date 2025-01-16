@@ -9,7 +9,7 @@ namespace Motor.Extensions.Hosting_UnitTest.HealthChecks;
 public class TooManyTemporaryFailuresHealthCheckTest
 {
     [Fact]
-    public async void CheckHealthAsync_NoTemporaryFailure_ServiceHealthy()
+    public async System.Threading.Tasks.Task CheckHealthAsync_NoTemporaryFailure_ServiceHealthy()
     {
         var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
         {
@@ -23,7 +23,7 @@ public class TooManyTemporaryFailuresHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_ManyTemporaryFailuresAfterLastHandledMessage_ServiceIsUnhealthy()
+    public async System.Threading.Tasks.Task CheckHealthAsync_ManyTemporaryFailuresAfterLastHandledMessage_ServiceIsUnhealthy()
     {
         var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
         {
@@ -37,7 +37,7 @@ public class TooManyTemporaryFailuresHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_SingleTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
+    public async System.Threading.Tasks.Task CheckHealthAsync_SingleTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
     {
         var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
         {
@@ -51,7 +51,7 @@ public class TooManyTemporaryFailuresHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_SingleTemporaryFailureAfterLastHandledMessage_ServiceIsHealthy()
+    public async System.Threading.Tasks.Task CheckHealthAsync_SingleTemporaryFailureAfterLastHandledMessage_ServiceIsHealthy()
     {
         var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
         {
@@ -65,7 +65,7 @@ public class TooManyTemporaryFailuresHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_ManyTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
+    public async System.Threading.Tasks.Task CheckHealthAsync_ManyTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
     {
         var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
         {

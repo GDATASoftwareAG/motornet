@@ -29,7 +29,7 @@ public class MultiOutputServiceAdapterTests
         var context = CreateMotorEvent("message");
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
-        await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
+        await messageHandler.HandleMessageAsync(context);
 
         converterMock.Verify(x => x.ConvertMessageAsync(context, It.IsAny<CancellationToken>()), Times.Exactly(1));
     }
@@ -44,7 +44,7 @@ public class MultiOutputServiceAdapterTests
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            messageHandler.HandleMessageAsync(CreateMotorEvent("message_1"))).ConfigureAwait(false);
+            messageHandler.HandleMessageAsync(CreateMotorEvent("message_1")));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class MultiOutputServiceAdapterTests
             .Throws(new Exception("someException"));
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
-        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_3")).ConfigureAwait(false);
+        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_3"));
 
         Assert.Equal(ProcessedMessageStatus.TemporaryFailure, actual);
     }
@@ -72,7 +72,7 @@ public class MultiOutputServiceAdapterTests
         var messageHandler = GetMessageHandler(service: converterMock.Object,
             publisher: publisherMock.Object);
 
-        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5")).ConfigureAwait(false);
+        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5"));
 
         Assert.Equal(ProcessedMessageStatus.Success, actual);
         publisherMock.Verify(
@@ -90,7 +90,7 @@ public class MultiOutputServiceAdapterTests
         var publisherMock = FakePublisher;
         var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
 
-        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5")).ConfigureAwait(false);
+        var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5"));
 
         Assert.Equal(ProcessedMessageStatus.Success, actual);
         publisherMock.Verify(
