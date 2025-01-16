@@ -16,7 +16,7 @@
     <PropertyGroup>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>Motor.NET is a microservice framework based on Microsoft.Extensions.Hosting.</Description>
-        <Copyright>Copyright (C) 2021 G DATA CyberDefense AG</Copyright>
+        <Copyright>Copyright (C) 2025 G DATA CyberDefense AG</Copyright>
         <Company>G DATA CyberDefense AG</Company>
         <RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
         <PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
