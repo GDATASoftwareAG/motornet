@@ -41,12 +41,14 @@ jobs:
         run: dotnet restore Motor.NET.sln
       - name: Build
         run: dotnet build --configuration Release --no-restore Motor.NET.sln
-      - name: Test
-        run: dotnet test --no-restore Motor.NET.sln
+      - name: Test .NET8
+        run: dotnet test --no-restore Motor.NET.sln --framework net8.0
+      - name: Test .NET9
+        run: dotnet test --no-restore Motor.NET.sln --framework net9.0
       - name: Pack
         run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
       - name: Publish Bridge
-        run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
+        run: dotnet publish --framework net9.0 -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
