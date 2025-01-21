@@ -31,7 +31,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
     }
 
     [Fact(Timeout = 50000)]
-    public async void PublishMessageWithoutException()
+    public async Task PublishMessageWithoutException()
     {
         const string expectedMessage = "testMessage";
         var topicName = _randomizerString.Generate();
@@ -51,7 +51,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
     }
 
     [Fact(Timeout = 50000)]
-    public async void PublishMessageAsJsonFormat()
+    public async Task PublishMessageAsJsonFormat()
     {
         const string expectedMessage = "testMessage";
         var topicName = _randomizerString.Generate();
@@ -74,7 +74,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
     }
 
     [Fact(Timeout = 50000)]
-    public async void Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
+    public async Task Consume_RawPublishIntoNATSAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
     {
         const string expectedMessage = "testMessage";
         var topicName = _randomizerString.Generate();

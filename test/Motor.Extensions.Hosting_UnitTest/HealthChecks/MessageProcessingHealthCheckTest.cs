@@ -17,7 +17,7 @@ public class MessageProcessingHealthCheckTest
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(50);
 
     [Fact]
-    public async void CheckHealthAsync_QueueHasMessagesWithoutRecentAcknowledgement_ServiceIsUnhealthy()
+    public async Task CheckHealthAsync_QueueHasMessagesWithoutRecentAcknowledgement_ServiceIsUnhealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -30,7 +30,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_QueueHasMessagesButMessageWasRecentlyAcknowledged_ServiceIsHealthy()
+    public async Task CheckHealthAsync_QueueHasMessagesButMessageWasRecentlyAcknowledged_ServiceIsHealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -44,7 +44,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_QueueRemainsEmptyLongerThanTimeout_ServiceIsHealthy()
+    public async Task CheckHealthAsync_QueueRemainsEmptyLongerThanTimeout_ServiceIsHealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -56,7 +56,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_QueueBecomesEmptyLongerThanTimeout_ServiceIsHealthy()
+    public async Task CheckHealthAsync_QueueBecomesEmptyLongerThanTimeout_ServiceIsHealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -70,7 +70,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_QueueIsEmptyAndMessageWasRecentlyAcknowledged_ServiceIsHealthy()
+    public async Task CheckHealthAsync_QueueIsEmptyAndMessageWasRecentlyAcknowledged_ServiceIsHealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -83,7 +83,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_MessageAppearsInQueueAfterQueueHasBeenEmpty_ServiceIsHealthy()
+    public async Task CheckHealthAsync_MessageAppearsInQueueAfterQueueHasBeenEmpty_ServiceIsHealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
@@ -96,7 +96,7 @@ public class MessageProcessingHealthCheckTest
     }
 
     [Fact]
-    public async void CheckHealthAsync_MessageRemainsInQueueLongerThanTimeout_ServiceIsUnhealthy()
+    public async Task CheckHealthAsync_MessageRemainsInQueueLongerThanTimeout_ServiceIsUnhealthy()
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);

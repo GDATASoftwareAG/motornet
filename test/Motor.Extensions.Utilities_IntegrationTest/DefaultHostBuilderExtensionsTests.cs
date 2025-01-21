@@ -10,7 +10,11 @@ public class DefaultHostBuilderExtensionsTests
 {
     [Theory]
     [InlineData("local", "appsettings.json")]
+#if NET9_0_OR_GREATER
+    [InlineData("", "appsettings.json")]
+#else
     [InlineData("", "appsettings.Production.json")]
+#endif
     [InlineData("Production", "appsettings.Production.json")]
     [InlineData("Development", "appsettings.Development.json")]
     public void ConfigureDefaultSettingsBehaviour_SetEnv_EnvConfigLoadedAndDefaultValueReplaced(string env,

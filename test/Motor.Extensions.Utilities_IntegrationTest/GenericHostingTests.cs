@@ -43,8 +43,8 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>();
         var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
-        await host.StartAsync().ConfigureAwait(false);
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
             PublishMessageIntoQueueOfService(channel, message);
@@ -52,12 +52,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 3).ConfigureAwait(false);
+        await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 3);
         var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
         Assert.Equal(HealthStatus.Unhealthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync();
     }
 
     [Fact(Timeout = 60000)]
@@ -73,8 +73,8 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>();
         var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
-        await host.StartAsync().ConfigureAwait(false);
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
             PublishMessageIntoQueueOfService(channel, message);
@@ -86,7 +86,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
         Assert.Equal(HealthStatus.Healthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync();
     }
 
     [Fact(Timeout = 60000)]
@@ -98,8 +98,8 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         const string message = "somestring";
         using var host = GetStringService<TemporaryFailingConverter>();
         var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
-        await host.StartAsync().ConfigureAwait(false);
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
             PublishMessageIntoQueueOfService(channel, message);
@@ -107,12 +107,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        await Task.Delay(TimeSpan.FromSeconds(10));
         var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
         Assert.Equal(HealthStatus.Unhealthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync();
     }
 
     [Fact(Timeout = 60000)]
@@ -124,8 +124,8 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         const string message = "somestring";
         using var host = GetStringService<SometimesFailingConverter>();
         var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel).ConfigureAwait(false);
-        await host.StartAsync().ConfigureAwait(false);
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
             PublishMessageIntoQueueOfService(channel, message);
@@ -133,7 +133,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        await Task.Delay(TimeSpan.FromSeconds(10));
         var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
