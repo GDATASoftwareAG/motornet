@@ -138,7 +138,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
         Assert.Equal(HealthStatus.Healthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync();
     }
 
     private static IHost GetStringService<TConverter>() where TConverter : class, ISingleOutputService<string, string>
