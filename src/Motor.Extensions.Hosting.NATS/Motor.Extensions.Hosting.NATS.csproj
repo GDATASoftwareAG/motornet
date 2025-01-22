@@ -5,11 +5,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.7.1" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+        <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.8.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.1" />
         <PackageReference Include="NATS.Client" Version="0.14.7" />
-        <PackageReference Include="System.Text.Json" Version="7.0.3" />
+        <PackageReference Include="System.Text.Json" Version="9.0.1" />
     </ItemGroup>
 
     <ItemGroup>
