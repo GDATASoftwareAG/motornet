@@ -58,8 +58,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-
         await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await consumer.StopAsync();
+
         Assert.Equal(message, Encoding.UTF8.GetString(rawConsumedKafkaMessage));
     }
 
@@ -82,8 +83,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-
         await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await consumer.StopAsync();
+
         Assert.Equal(motorCloudEvent.Id, id);
     }
 
@@ -107,8 +109,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-
         await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await consumer.StopAsync();
+
         Assert.Equal(motorCloudEvent.Id, id);
     }
 
@@ -135,12 +138,13 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to process further messages
         await Task.Delay(TimeSpan.FromSeconds(1));
+
         Assert.Equal(maxConcurrentMessages, numberOfStartedMessages);
+        await consumer.StopAsync();
     }
 
     [Theory(Timeout = 50000)]
@@ -164,11 +168,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to process further messages
         await Task.Delay(TimeSpan.FromSeconds(1));
+        await consumer.StopAsync();
+
         Assert.Single(distinctHandledMessages);
     }
 
@@ -199,11 +204,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to process further messages
         await Task.Delay(TimeSpan.FromSeconds(1));
+        await consumer.StopAsync();
+
         Assert.True(messages.SetEquals(distinctHandledMessages));
     }
 
@@ -225,11 +231,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
         await Task.Delay(TimeSpan.FromSeconds(2 * Math.Pow(2, expectedNumberOfRetries)));
+        await consumer.StopAsync();
+
         Assert.Equal(expectedNumberOfRetries + 1, actualNumberOfTries);
     }
 
@@ -249,11 +256,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
         await Task.Delay(TimeSpan.FromSeconds(2 * Math.Pow(2, numberOfRetries)));
+        await consumer.StopAsync();
+
         _fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
@@ -272,11 +280,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 
         await consumer.StartAsync();
         consumer.ExecuteAsync();
-
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
         await Task.Delay(TimeSpan.FromSeconds(1));
+        await consumer.StopAsync();
+
         _fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
@@ -298,6 +307,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         cts.Cancel();
         await execution;
+        await consumer.StopAsync();
     }
 
     private async Task PublishAndAwaitMessages(Channel<byte[]> channel, int count)
@@ -356,6 +366,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         Assert.Equal(Offset.Unset, GetCommittedOffset(consumer));
         cts.Cancel();
         await execution;
+        await consumer.StopAsync();
     }
 
     [Fact(Timeout = 50000)]
@@ -376,6 +387,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         cts.Cancel();
         await execution;
+        await consumer.StopAsync();
     }
 
     [Fact(Timeout = 50000)]
@@ -399,6 +411,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await execution;
 
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
+        await consumer.StopAsync();
     }
 
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateConsumeCallback(
@@ -414,7 +427,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     {
         _output.WriteLine($"Blocking message");
         await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
-        await Task.Delay(TimeSpan.MaxValue, cancellationToken);
+        await Task.Delay(-1, cancellationToken);
         return ProcessedMessageStatus.Success;
     };
 
