@@ -17,6 +17,7 @@ public static class DefaultHostBuilderExtensions
             {
                 var sentryOptions = new SentrySerilogOptions();
                 context.Configuration.GetSection("Sentry").Bind(sentryOptions);
+                sentryOptions.Dsn ??= string.Empty;
                 SentrySdk.Init(sentryOptions);
                 services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
             });
