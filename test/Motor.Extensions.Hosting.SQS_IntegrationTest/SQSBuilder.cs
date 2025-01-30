@@ -1,31 +1,28 @@
 using System.Collections.Generic;
 using Docker.DotNet.Models;
+using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 
 namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
 
-public sealed class SQSBuilder : ContainerBuilder<SQSBuilder, SQSContainer, SQSConfiguration>
+public sealed class SQSBuilder(SQSConfiguration resourceConfiguration)
+    : ContainerBuilder<SQSBuilder, SQSContainer, SQSConfiguration>(resourceConfiguration)
 {
     public const string DefaultImage = "roribio16/alpine-sqs:1.2.0";
     public const int DefaultPort = 9324;
 
-    protected override SQSConfiguration DockerResourceConfiguration { get; }
+    protected override SQSConfiguration DockerResourceConfiguration { get; } = resourceConfiguration;
 
     public SQSBuilder() : this(new SQSConfiguration())
     {
         DockerResourceConfiguration = Init().DockerResourceConfiguration;
     }
 
-    public SQSBuilder(SQSConfiguration resourceConfiguration) : base(resourceConfiguration)
-    {
-        DockerResourceConfiguration = resourceConfiguration;
-    }
-
     public override SQSContainer Build()
     {
         Validate();
-        return new SQSContainer(DockerResourceConfiguration, TestcontainersSettings.Logger);
+        return new SQSContainer(DockerResourceConfiguration);
     }
 
     protected override SQSBuilder Init()
@@ -33,6 +30,7 @@ public sealed class SQSBuilder : ContainerBuilder<SQSBuilder, SQSContainer, SQSC
         var ulimit = new Ulimit { Name = "nofile", Soft = 1024, Hard = 1024 };
         return base.Init()
             .WithImage(DefaultImage)
+            .WithLogger(ConsoleLogger.Instance)
             .WithPortBinding(DefaultPort, true)
             .WithCreateParameterModifier(g => g.HostConfig.Ulimits = new List<Ulimit> { ulimit })
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("listening on port"));

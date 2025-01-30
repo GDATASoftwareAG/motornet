@@ -4,9 +4,4 @@ using Microsoft.Extensions.Logging;
 
 namespace Motor.Extensions.Hosting.NATS_IntegrationTest;
 
-public class NATSContainer : DockerContainer
-{
-    public NATSContainer(IContainerConfiguration configuration, ILogger logger) : base(configuration, logger)
-    {
-    }
-}
+public class NATSContainer(IContainerConfiguration configuration) : DockerContainer(configuration);
