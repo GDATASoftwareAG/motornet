@@ -9,7 +9,7 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
 public sealed class SQSBuilder(SQSConfiguration resourceConfiguration)
     : ContainerBuilder<SQSBuilder, SQSContainer, SQSConfiguration>(resourceConfiguration)
 {
-    public const string DefaultImage = "roribio16/alpine-sqs:1.2.0";
+    public const string DefaultImage = "softwaremill/elasticmq";
     public const int DefaultPort = 9324;
 
     protected override SQSConfiguration DockerResourceConfiguration { get; } = resourceConfiguration;
@@ -33,7 +33,7 @@ public sealed class SQSBuilder(SQSConfiguration resourceConfiguration)
             .WithLogger(ConsoleLogger.Instance)
             .WithPortBinding(DefaultPort, true)
             .WithCreateParameterModifier(g => g.HostConfig.Ulimits = new List<Ulimit> { ulimit })
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("listening on port"));
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Started SQS rest server"));
     }
 
     protected override SQSBuilder Clone(IResourceConfiguration<CreateContainerParameters> resourceConfiguration)
