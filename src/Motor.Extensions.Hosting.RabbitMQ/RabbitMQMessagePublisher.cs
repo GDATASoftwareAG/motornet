@@ -16,7 +16,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
     private readonly RabbitMQPublisherOptions<TOutput> _options;
     private readonly PublisherOptions _publisherOptions;
     private readonly CloudEventFormatter _cloudEventFormatter;
-    private IModel? _channel;
+    private IChannel? _channel;
     private bool _connected;
 
     internal IRabbitMQConnectionFactory<TOutput> ConnectionFactory { get; }
@@ -34,11 +34,10 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         _cloudEventFormatter = cloudEventFormatter;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _channel = ConnectionFactory.CurrentChannel;
+        _channel = await ConnectionFactory.CurrentChannelAsync();
         _connected = true;
-        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -47,7 +46,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         return Task.CompletedTask;
     }
 
-    public Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
+    public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
     {
         try
         {
@@ -56,8 +55,10 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
                 throw new InvalidOperationException("Channel is not created.");
             }
 
-            var properties = _channel.CreateBasicProperties();
-            properties.DeliveryMode = 2;
+            var properties = new BasicProperties
+            {
+                DeliveryMode = DeliveryModes.Persistent
+            };
             properties.SetPriority(motorCloudEvent, _options);
 
             var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
@@ -72,12 +73,12 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
             {
                 case CloudEventFormat.Protocol:
                     properties.WriteCloudEventIntoHeader(motorCloudEvent);
-                    _channel.BasicPublish(exchange, routingKey, true, properties, motorCloudEvent.TypedData);
+                    await _channel.BasicPublishAsync(exchange, routingKey, true, properties, motorCloudEvent.TypedData, token);
                     break;
                 case CloudEventFormat.Json:
                     var data = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(),
                         out _);
-                    _channel.BasicPublish(exchange, routingKey, true, properties, data);
+                    await _channel.BasicPublishAsync(exchange, routingKey, true, properties, data, token);
                     break;
                 default:
                     throw new UnhandledCloudEventFormatException(_publisherOptions.CloudEventFormat);
@@ -91,6 +92,5 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
         {
             throw new TemporaryFailureException("Couldn't publish message", e, FailureLevel.Warning);
         }
-        return Task.CompletedTask;
     }
 }

@@ -42,12 +42,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         PrepareQueues(messageCount);
         const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>();
-        var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
-            PublishMessageIntoQueueOfService(channel, message);
+            await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
         var httpClient = new HttpClient();
@@ -72,12 +72,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         PrepareQueues(messageCount);
         const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>();
-        var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
-            PublishMessageIntoQueueOfService(channel, message);
+            await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
         var httpClient = new HttpClient();
@@ -97,12 +97,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         PrepareQueues(messageCount);
         const string message = "somestring";
         using var host = GetStringService<TemporaryFailingConverter>();
-        var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
-            PublishMessageIntoQueueOfService(channel, message);
+            await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
         var httpClient = new HttpClient();
@@ -123,12 +123,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         PrepareQueues(messageCount);
         const string message = "somestring";
         using var host = GetStringService<SometimesFailingConverter>();
-        var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
         for (var i = 0; i < messageCount; i++)
         {
-            PublishMessageIntoQueueOfService(channel, message);
+            await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
         var httpClient = new HttpClient();

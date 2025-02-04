@@ -112,28 +112,28 @@ public class RabbitMQTestBuilder
         return this;
     }
 
-    public RabbitMQTestBuilder Build(int retries = 3)
+    public async Task<RabbitMQTestBuilder> BuildAsync(int retries = 3)
     {
         if (createQueue)
         {
             var config = GetConsumerConfig<string>();
-            using (var channel = Fixture.Connection.CreateModel())
+            using (var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync())
             {
-                DeclareQueue(config, channel);
+                await DeclareQueueAsync(config, channel);
                 foreach (var message in messages)
                 {
-                    PublishSingleMessage(channel, message, config);
+                    await PublishSingleMessageAsync(channel, message, config);
                 }
             }
 
-            Policy
+            await Policy
                 .Handle<Exception>()
-                .WaitAndRetry(retries, retryAttempt =>
+                .WaitAndRetryAsync(retries, retryAttempt =>
                     TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
                 )
-                .Execute(() =>
+                .ExecuteAsync(async () =>
                 {
-                    var messageInConsumerQueue = MessagesInQueue(QueueName);
+                    var messageInConsumerQueue = await MessagesInQueueAsync(QueueName);
                     Assert.Equal((uint)messages.Count, messageInConsumerQueue);
                 });
         }
@@ -142,19 +142,19 @@ public class RabbitMQTestBuilder
         return this;
     }
 
-    private void PublishSingleMessage<T>(IModel channel, Message message,
+    private async Task PublishSingleMessageAsync<T>(IChannel channel, Message message,
         RabbitMQConsumerOptions<T> options)
     {
-        var properties = channel.CreateBasicProperties();
-        properties.DeliveryMode = 2;
+        var properties = new BasicProperties();
+        properties.DeliveryMode = DeliveryModes.Persistent;
         properties.Priority = message.Priority;
         properties.Headers = new Dictionary<string, object>();
 
         var bindings = options.Queue.Bindings[0];
-        channel.BasicPublish(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
+        await channel.BasicPublishAsync(bindings.Exchange, bindings.RoutingKey, true, properties, message.Body);
     }
 
-    private void DeclareQueue<T>(RabbitMQConsumerOptions<T> options, IModel channel)
+    private async Task DeclareQueueAsync<T>(RabbitMQConsumerOptions<T> options, IChannel channel)
     {
         var arguments = options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
         arguments.Add("x-max-priority", options.Queue.MaxPriority);
@@ -166,7 +166,7 @@ public class RabbitMQTestBuilder
             arguments.Add("x-dead-letter-exchange", options.Queue.DeadLetterExchange.Binding.Exchange);
             arguments.Add("x-dead-letter-routing-key", options.Queue.DeadLetterExchange.Binding.RoutingKey);
         }
-        channel.QueueDeclare(
+        await channel.QueueDeclareAsync(
             options.Queue.Name,
             options.Queue.Durable,
             false,
@@ -175,7 +175,7 @@ public class RabbitMQTestBuilder
         );
         foreach (var routingKeyConfig in options.Queue.Bindings)
         {
-            channel.QueueBind(
+            await channel.QueueBindAsync(
                 options.Queue.Name,
                 routingKeyConfig.Exchange,
                 routingKeyConfig.RoutingKey,
@@ -219,7 +219,7 @@ public class RabbitMQTestBuilder
         };
     }
 
-    public IMessageConsumer<T> GetConsumer<T>(IHostApplicationLifetime applicationLifetime = null)
+    public async Task<IMessageConsumer<T>> GetConsumerAsync<T>(IHostApplicationLifetime applicationLifetime = null)
     {
         if (!isBuilt)
         {
@@ -228,17 +228,17 @@ public class RabbitMQTestBuilder
 
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
 
-        var channel = Fixture.Connection.CreateModel();
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
 
         applicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
 
         rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentConnection)
-            .Returns(Fixture.Connection);
+            .Setup(f => f.CurrentConnectionAsync())
+            .ReturnsAsync(await Fixture.ConnectionAsync());
 
         rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentChannel)
-            .Returns(channel);
+            .Setup(f => f.CurrentChannelAsync())
+            .ReturnsAsync(channel);
 
         rabbitConnectionFactoryMock
             .Setup(f => f.Dispose())
@@ -262,32 +262,32 @@ public class RabbitMQTestBuilder
         return consumer;
     }
 
-    public bool IsConsumerQueueDeclared()
+    public async Task<bool> IsConsumerQueueDeclaredAsync()
     {
         if (!isBuilt)
         {
             throw new InvalidOperationException();
         }
 
-        using var channel = Fixture.Connection.CreateModel();
-        channel.QueueDeclarePassive(QueueName);
+        await using var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await channel.QueueDeclarePassiveAsync(QueueName);
 
         if (withDeadLetterExchange)
         {
-            channel.QueueDeclarePassive(DlxQueueName);
+            await channel.QueueDeclarePassiveAsync(DlxQueueName);
         }
 
         return true;
     }
 
-    public uint MessagesInQueue(string queueName)
+    public async Task<uint> MessagesInQueueAsync(string queueName)
     {
-        using var channel = Fixture.Connection.CreateModel();
-        var queueDeclarePassive = channel.QueueDeclarePassive(queueName);
+        await using var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        var queueDeclarePassive = await channel.QueueDeclarePassiveAsync(queueName);
         return queueDeclarePassive.MessageCount;
     }
 
-    public IRawMessagePublisher<T> GetPublisher<T>()
+    public async Task<IRawMessagePublisher<T>> GetPublisherAsync<T>()
     {
         if (!isBuilt)
         {
@@ -296,15 +296,15 @@ public class RabbitMQTestBuilder
 
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
 
-        var channel = Fixture.Connection.CreateModel();
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
 
         rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentConnection)
-            .Returns(Fixture.Connection);
+            .Setup(f => f.CurrentConnectionAsync())
+            .ReturnsAsync(await Fixture.ConnectionAsync());
 
         rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentChannel)
-            .Returns(channel);
+            .Setup(f => f.CurrentChannelAsync())
+            .ReturnsAsync(channel);
 
         var options = MSOptions.Create(GetPublisherConfig<T>());
         var publisherOptions = MSOptions.Create(new PublisherOptions());
@@ -328,23 +328,24 @@ public class RabbitMQTestBuilder
         };
     }
 
-    public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueue(string queueName)
+    public async Task<MotorCloudEvent<byte[]>> GetMessageFromQueueAsync(string queueName)
     {
         var message = (byte[])null;
         var priority = (byte)0;
         var taskCompletionSource = new TaskCompletionSource();
 
-        using (var channel = Fixture.Connection.CreateModel())
+        await using (var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync())
         {
-            var consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (_, args) =>
+            var consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += (_, args) =>
             {
                 priority = args.BasicProperties.Priority;
                 message = args.Body.ToArray();
                 taskCompletionSource.TrySetResult();
+                return Task.CompletedTask;
             };
 
-            channel.BasicConsume(queueName, false, consumer);
+            await channel.BasicConsumeAsync(queueName, false, consumer);
             await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
         }
 

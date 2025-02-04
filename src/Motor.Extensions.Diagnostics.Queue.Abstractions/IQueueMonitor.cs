@@ -6,5 +6,5 @@ public record QueueState(string QueueName, long ReadyMessages, long ConsumerCoun
 
 public interface IQueueMonitor
 {
-    Task<QueueState> GetCurrentState();
+    Task<QueueState> GetCurrentStateAsync();
 }

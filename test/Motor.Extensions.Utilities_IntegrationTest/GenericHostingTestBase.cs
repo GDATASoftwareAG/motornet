@@ -32,29 +32,30 @@ public abstract class GenericHostingTestBase
         Environment.SetEnvironmentVariable("DestinationQueueName", randomizerString.Generate());
     }
 
-    protected static async Task CreateQueueForServicePublisherWithPublisherBindingFromConfig(IModel channel)
+    protected static async Task CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(IChannel channel)
     {
-        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
+        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName") ?? "DefaultQueueName";
         const string destinationExchange = "amq.topic";
         var destinationRoutingKey =
-            Environment.GetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey");
-        var emptyArguments = new Dictionary<string, object>();
-        channel.QueueDeclare(destinationQueueName, true, false, false, emptyArguments);
-        channel.QueueBind(destinationQueueName, destinationExchange, destinationRoutingKey, emptyArguments);
+            Environment.GetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey") ??
+            "DefaultRoutingKey";
+        var emptyArguments = new Dictionary<string, object?>();
+        await channel.QueueDeclareAsync(destinationQueueName, true, false, false, emptyArguments);
+        await channel.QueueBindAsync(destinationQueueName, destinationExchange, destinationRoutingKey, emptyArguments);
         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
     }
 
-    protected static void PublishMessageIntoQueueOfService(IModel channel, string messageToPublish,
-        IDictionary<string, object>? rabbitMqHeaders = null)
+    protected static async Task PublishMessageIntoQueueOfServiceAsync(IChannel channel, string messageToPublish,
+        IDictionary<string, object?>? rabbitMqHeaders = null)
     {
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
 
         if (rabbitMqHeaders is not null)
         {
             basicProperties.Headers = rabbitMqHeaders;
         }
 
-        channel.BasicPublish("amq.topic", "serviceQueue", true, basicProperties,
+        await channel.BasicPublishAsync("amq.topic", "serviceQueue", true, basicProperties,
             Encoding.UTF8.GetBytes(messageToPublish));
     }
 }

@@ -39,7 +39,7 @@ internal class QueueMonitorMetricsCollector : ICollector
     public void Collect(IMetricsWriter writer)
     {
         var tasks = _queueMonitors
-            .Select(m => m.GetCurrentState());
+            .Select(m => m.GetCurrentStateAsync());
         var states = Task.WhenAll(tasks).Result;
         WriteMessagesReadyMetric(writer, states);
         WriteActiveConsumersMetric(writer, states);

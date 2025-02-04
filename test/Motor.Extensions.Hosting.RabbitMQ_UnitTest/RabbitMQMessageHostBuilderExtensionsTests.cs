@@ -103,7 +103,7 @@ public class RabbitMQMessageHostBuilderExtensionsTests
 
     private static IConfiguration GetConfigWithVHost(string vHost)
     {
-        var configDict = new Dictionary<string, string>
+        var configDict = new Dictionary<string, string?>
             {
                 { "Host", "localhost" },
                 { "User", "guest" },
