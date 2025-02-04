@@ -1,7 +1,7 @@
 ![Motor.NET Logo](./rsc/Icon_Motor_NET_128_Typo.png "Motor.NET - Drives your microservices")
 
 [![GitHub](https://img.shields.io/github/license/GDATASoftwareAG/motornet)](https://raw.githubusercontent.com/GDATASoftwareAG/motornet/master/LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/GDATASoftwareAG/motornet/.NET%20Core)](https://github.com/GDATASoftwareAG/motornet/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/GDATASoftwareAG/motornet/dotnet.yml?branch=master)](https://github.com/GDATASoftwareAG/motornet/actions)
 [![Nuget](https://img.shields.io/nuget/v/Motor.Extensions.Hosting)](https://www.nuget.org/packages/Motor.Extensions.Hosting/)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f74a6fde2c2d490bb60f42590d554e1c)](https://www.codacy.com/gh/GDATASoftwareAG/motornet/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=GDATASoftwareAG/motornet&amp;utm_campaign=Badge_Grade)
 
