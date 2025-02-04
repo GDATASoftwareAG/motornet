@@ -30,7 +30,7 @@ public class RabbitMQFixture : IAsyncLifetime
         return _container.DisposeAsync().AsTask();
     }
 
-    public IConnection Connection => CreateConnection();
+    public async Task<IConnection> ConnectionAsync() => await CreateConnectionAsync();
 
     public IRabbitMQConnectionFactory<T> ConnectionFactory<T>() =>
         new RabbitMQConnectionFactory<T>(CreateConnectionFactory());
@@ -43,11 +43,11 @@ public class RabbitMQFixture : IAsyncLifetime
         Uri = new Uri(_container.GetConnectionString())
     };
 
-    private IConnection CreateConnection()
+    private async Task<IConnection> CreateConnectionAsync()
     {
-        return Policy
+        return await Policy
             .Handle<BrokerUnreachableException>()
-            .WaitAndRetry(5, i => TimeSpan.FromSeconds(Math.Pow(2, i)))
-            .Execute(() => CreateConnectionFactory().CreateConnection());
+            .WaitAndRetryAsync(5, i => TimeSpan.FromSeconds(Math.Pow(2, i)))
+            .ExecuteAsync(async () => await CreateConnectionFactory().CreateConnectionAsync());
     }
 }

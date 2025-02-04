@@ -14,6 +14,6 @@ public record RabbitMQQueueOptions : RabbitMQQueueLimitOptions
     public bool Durable { get; set; } = true;
     public bool AutoDelete { get; set; }
     public QueueMode Mode { get; set; } = QueueMode.Default;
-    public IDictionary<string, object> Arguments { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object?> Arguments { get; set; } = new Dictionary<string, object?>();
     public RabbitMQDeadLetterExchangeOptions? DeadLetterExchange { get; set; }
 }

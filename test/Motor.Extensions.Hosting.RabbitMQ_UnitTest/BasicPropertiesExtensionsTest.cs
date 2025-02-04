@@ -11,17 +11,10 @@ using Motor.Extensions.TestUtilities;
 using RabbitMQ.Client;
 using Xunit;
 
-namespace Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
+namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest;
 
-public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
+public class BasicPropertiesExtensionsTest
 {
-    private readonly RabbitMQFixture _fixture;
-
-    public BasicPropertiesExtensionsTest(RabbitMQFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     /*
      * Serialization Tests
      */
@@ -29,8 +22,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void Update_NoExtensions_OnlyRequiredAttributesInHeader()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
 
@@ -43,8 +35,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void Update_RabbitMQPriorityExtension_OnlyRequiredAttributesInHeader()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
         cloudEvent.SetRabbitMQPriority(123);
@@ -58,8 +49,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void Update_EncodingExtension_EncodingNotInHeaderInProperties()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var cloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
         const string encoding = "someEncoding";
@@ -79,8 +69,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_NoExtensions_CloudEventWithRequiredExtensions()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var content = new byte[] { 1, 2, 3 };
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
@@ -100,8 +89,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_NoExtensions_CloudEventWithoutSpecificExtensions()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var content = new byte[] { 1, 2, 3 };
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
@@ -123,8 +111,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_RabbitMQPriorityExtension_CloudEventWithRequiredExtensions()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var content = new byte[] { 1, 2, 3 };
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
@@ -147,8 +134,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_EncodingProperty_CloudEventWithRequiredExtensionsAndEncodingExtension()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var content = new byte[] { 1, 2, 3 };
         const string encoding = "someEncoding";
         basicProperties.ContentEncoding = encoding;
@@ -167,8 +153,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_V0_6_0Header_ExtensionsAddedToCloudEvent()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var content = new byte[] { 1, 2, 3 };
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
@@ -177,7 +162,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
-        basicProperties.Headers.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
+        basicProperties.Headers!.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
         basicProperties.ContentEncoding = null;
         basicProperties.Headers.Add(
             $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
@@ -204,8 +189,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
     [Fact]
     public void UpdateAndExtractCloudEvent_V0_6_0HeaderWithIncorrectVersionField_ExtensionsAddedToCloudEvent()
     {
-        var channel = _fixture.Connection.CreateModel();
-        var basicProperties = channel.CreateBasicProperties();
+        var basicProperties = new BasicProperties();
         var publisherOptions = new RabbitMQPublisherOptions<byte[]>();
         var content = new byte[] { 1, 2, 3 };
         var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(content);
@@ -214,7 +198,7 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
-        basicProperties.Headers[
+        basicProperties.Headers![
                 $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"] =
             Encoding.UTF8.GetBytes("\"0.7.1.0\"");
         basicProperties.ContentEncoding = null;
@@ -257,6 +241,6 @@ public class BasicPropertiesExtensionsTest : IClassFixture<RabbitMQFixture>
         // ContentType is required but not saved in the header. Instead, the native
         // AMQP ContentType is used and therefore, we expect #RequiredAttributes - 1
         var requiredAttributes = MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion);
-        Assert.Equal(requiredAttributes.Count() - 1, basicProperties.Headers.Count);
+        Assert.Equal(requiredAttributes.Count() - 1, basicProperties.Headers!.Count);
     }
 }

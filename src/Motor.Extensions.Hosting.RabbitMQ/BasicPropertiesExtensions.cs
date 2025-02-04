@@ -40,7 +40,7 @@ public static class BasicPropertiesExtensions
         self.ContentEncoding = cloudEvent.GetEncoding();
         self.ContentType = cloudEvent.ContentType;
 
-        var headers = new Dictionary<string, object>();
+        var headers = new Dictionary<string, object?>();
 
         var attributesToConsider = cloudEvent.GetPopulatedAttributes()
             .Where(t => !IgnoredAttributes.Contains(t.Key));
@@ -53,11 +53,11 @@ public static class BasicPropertiesExtensions
         self.Headers = headers;
     }
 
-    public static MotorCloudEvent<byte[]> ExtractCloudEvent(this IBasicProperties self,
+    public static MotorCloudEvent<byte[]> ExtractCloudEvent(this IReadOnlyBasicProperties self,
         IApplicationNameService applicationNameService, ReadOnlyMemory<byte> body)
     {
-        var attributes = new Dictionary<string, object>();
-        IDictionary<string, object> headers = new Dictionary<string, object>();
+        var attributes = new Dictionary<string, object?>();
+        IDictionary<string, object?> headers = new Dictionary<string, object?>();
         if (self.IsHeadersPresent() && self.Headers is not null)
         {
             headers = self.Headers;

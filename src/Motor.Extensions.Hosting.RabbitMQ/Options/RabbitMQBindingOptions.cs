@@ -11,5 +11,5 @@ public record RabbitMQBindingOptions
     [NotWhitespaceOrEmpty]
     public string Exchange { get; set; } = string.Empty;
 
-    public IDictionary<string, object> Arguments { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object?> Arguments { get; set; } = new Dictionary<string, object?>();
 }

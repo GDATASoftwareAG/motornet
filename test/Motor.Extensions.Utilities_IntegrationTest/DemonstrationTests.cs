@@ -38,11 +38,11 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
 
         const string message = "12345";
         using var host = GetReverseStringService();
-        var channel = Fixture.Connection.CreateModel();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfig(channel);
+        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
 
         await host.StartAsync();
-        PublishMessageIntoQueueOfService(channel, message);
+        PublishMessageIntoQueueOfServiceAsync(channel, message);
 
         var actual = await GetMessageFromDestinationQueue(channel);
         Assert.Equal("54321", actual);
@@ -72,19 +72,20 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         return host;
     }
 
-    private static async Task<string> GetMessageFromDestinationQueue(IModel channel)
+    private static async Task<string> GetMessageFromDestinationQueue(IChannel channel)
     {
         var taskCompletionSource = new TaskCompletionSource();
-        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName");
-        var consumer = new EventingBasicConsumer(channel);
+        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName") ?? "DefaultQueueName";
+        var consumer = new AsyncEventingBasicConsumer(channel);
         var messageFromDestinationQueue = string.Empty;
-        consumer.Received += (_, args) =>
+        consumer.ReceivedAsync += (_, args) =>
         {
             var bytes = args.Body;
             messageFromDestinationQueue = Encoding.UTF8.GetString(bytes.ToArray());
             taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
         };
-        channel.BasicConsume(destinationQueueName, false, consumer);
+        await channel.BasicConsumeAsync(destinationQueueName, false, consumer);
         await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
 
         return messageFromDestinationQueue;
