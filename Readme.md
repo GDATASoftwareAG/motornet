@@ -25,16 +25,17 @@ You find working examples for different use-cases under the [examples](./example
 
 ## Support Matrix
 
-| Component | Consume              | Publish              | CloudEvents (Protocol) | CloudEvents (JSON) | Metrics            | Compression        | Custom                          |
-|-----------|----------------------|----------------------|------------------------|--------------------|--------------------|--------------------|---------------------------------|
-| RabbitMQ  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing       |
-| Kafka     | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
-| Timer     | (:heavy_check_mark:) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
-| SQS       | (:heavy_check_mark:) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
-| NATS      | (:heavy_check_mark:) | :heavy_check_mark:   | :x:                    | :heavy_check_mark: | :x:                | :x:                |                                 |
+| Component | Consume                | Publish              | CloudEvents (Protocol) | CloudEvents (JSON) | Metrics            | Compression        | Custom                          |
+|-----------|------------------------|----------------------|------------------------|--------------------|--------------------|--------------------|---------------------------------|
+| RabbitMQ  | :heavy_check_mark:     | :heavy_check_mark:   | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | priority, dynamic routing       |
+| Kafka     | :heavy_check_mark:     | :heavy_check_mark:   | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | partitioning key, dynamic topic |
+| Timer     | ( :heavy_check_mark: ) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
+| SQS       | ( :heavy_check_mark: ) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
+| NATS      | ( :heavy_check_mark: ) | :heavy_check_mark:   | :x:                    | :heavy_check_mark: | :x:                | :x:                |                                 |
 
-CloudEvents (Protocol): If supported, the protocol format uses headers from Kafka or RabbitMQ to store CloudEvent metadata.
-CloudEvents (JSON): If supported, CloudEvent published in the enveloped variant, see https://github.com/cloudevents/spec/blob/v1.0.1/json-format.md#3-envelope. 
+**CloudEvents (Protocol)**: If supported, the protocol format uses headers from Kafka or RabbitMQ to store CloudEvent metadata.
+
+**CloudEvents (JSON)**: If supported, CloudEvent published in the enveloped variant, see https://github.com/cloudevents/spec/blob/v1.0.1/json-format.md#3-envelope. 
 
 ## Health Checks
 
