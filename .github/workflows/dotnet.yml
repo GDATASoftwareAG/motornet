@@ -87,6 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
+        id: download
         uses: actions/download-artifact@v4
         with:
           name: artifacts
@@ -97,7 +98,7 @@ jobs:
             8.0.x
             9.0.x
       - name: Push to NuGet Feed
-        run: dotnet nuget push './artifacts/*.nupkg' --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+        run: dotnet nuget push "${{ steps.download.outputs.download-path }}/*.nupkg" --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-bridge:
     needs: build
