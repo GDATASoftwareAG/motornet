@@ -22,6 +22,7 @@ You find working examples for different use-cases under the [examples](./example
 - [Consume and publish multiple messages at once to RabbitMQ](./examples/ConsumeAndMultiOutputPublisherWithRabbitMQ)
 - [Create a service with metrics](./examples/MetricsExample)
 - [Create a service with custom traces](./examples/OpenTelemetryExample)
+- [Create](../examples/MvcExample) and [test](../examples/MvcExample__IntegrationTest) a backend API with AspNetCore MVC
 
 ## Support Matrix
 
