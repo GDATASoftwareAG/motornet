@@ -1,4 +1,7 @@
 using System;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Kafka;
 using Confluent.Kafka;
@@ -24,6 +27,11 @@ internal static class KafkaClientExtensions
         if (cloudEvent.Source is null)
         {
             throw new ArgumentException("Source property of CloudEvent is null");
+        }
+
+        if (cloudEvent.Data is JsonElement element)
+        {
+            cloudEvent.Data = Encoding.UTF8.GetBytes(element.GetRawText());
         }
         var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
             cloudEvent.Type, cloudEvent.Source, cloudEvent.Id, cloudEvent.Time, cloudEvent.DataContentType);
