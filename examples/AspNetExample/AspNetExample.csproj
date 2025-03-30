@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <Product>Motor.NET</Product>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Prometheus.Client.HttpRequestDurations" Version="4.0.0" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.0.7" />
+    </ItemGroup>
+
+</Project>
