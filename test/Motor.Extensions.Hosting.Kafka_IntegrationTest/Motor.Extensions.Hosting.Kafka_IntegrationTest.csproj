@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <PackageReference Include="Divergic.Logging.Xunit" Version="4.3.1" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="RandomDataGenerator.Net" Version="1.0.18" />
         <PackageReference Include="TestContainers.Kafka" Version="4.4.0" />
