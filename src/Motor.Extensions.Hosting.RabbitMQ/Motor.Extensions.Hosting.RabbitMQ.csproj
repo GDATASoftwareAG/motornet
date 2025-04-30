@@ -9,7 +9,7 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.1" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.1" />
         <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.8.0" />
-        <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
+        <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
     </ItemGroup>
 
     <ItemGroup>
