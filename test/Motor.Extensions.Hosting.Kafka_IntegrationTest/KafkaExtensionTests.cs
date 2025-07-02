@@ -42,6 +42,30 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     }
 
     [Fact(Timeout = 50000)]
+    public async Task StopAsync_AlreadyDisposed_NoException()
+    {
+        var consumer = GetConsumer<string>(_topic);
+        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
+        await consumer.StartAsync();
+        _ = consumer.ExecuteAsync();
+        consumer.Dispose();
+
+        await consumer.StopAsync();
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task StopAsync_CalledTwice_Idempotent()
+    {
+        var consumer = GetConsumer<string>(_topic);
+        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
+        await consumer.StartAsync();
+        _ = consumer.ExecuteAsync();
+        await consumer.StopAsync();
+
+        await consumer.StopAsync();
+    }
+
+    [Fact(Timeout = 50000)]
     public async Task Consume_RawPublishIntoKafkaAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
     {
         const string message = "testMessage";
