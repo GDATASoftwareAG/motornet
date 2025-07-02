@@ -7,6 +7,7 @@ public class KafkaConsumerOptions<T> : ConsumerConfig
     public KafkaConsumerOptions()
     {
         EnableAutoCommit = false;
+        EnableAutoOffsetStore = false;
     }
 
     public string? Topic { get; set; }
