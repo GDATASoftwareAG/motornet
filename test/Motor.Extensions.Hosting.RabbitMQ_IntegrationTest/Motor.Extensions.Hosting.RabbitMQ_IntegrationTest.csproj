@@ -6,18 +6,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="RandomDataGenerator.Net" Version="1.0.18" />
-        <PackageReference Include="TestContainers.RabbitMq" Version="4.3.0" />
+        <PackageReference Include="TestContainers.RabbitMq" Version="4.4.0" />
         <PackageReference Include="xunit" Version="2.9.3" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
         <PackageReference Include="Polly" Version="8.5.2" />
     </ItemGroup>

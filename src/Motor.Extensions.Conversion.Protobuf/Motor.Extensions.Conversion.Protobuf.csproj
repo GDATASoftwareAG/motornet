@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.30.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.1" />
     </ItemGroup>
 
