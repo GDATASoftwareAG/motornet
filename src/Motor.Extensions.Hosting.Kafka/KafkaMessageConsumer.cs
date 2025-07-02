@@ -217,7 +217,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly Channel<Task<ConsumeResultAndProcessedMessageStatus>> _processedMessages;
     private readonly Timer _timer;
     private readonly object _commitLock = new();
-    private ConsumeResultAndProcessedMessageStatus? _lastConsumeResultAndProcessedMessageStatus;
+    private bool _pendingCommit;
 
     private async Task ExecuteCommitLoopAsync(CancellationToken cancellationToken)
     {
@@ -240,7 +240,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
                 lock (_commitLock)
                 {
-                    _lastConsumeResultAndProcessedMessageStatus = result;
+                    _consumer?.StoreOffset(result.ConsumeResult);
+                    _pendingCommit = true;
                 }
 
                 if ((result.ConsumeResult.Offset.Value + 1) % _options.CommitPeriod == 0)
@@ -274,15 +275,15 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         lock (_commitLock)
         {
-            if (_lastConsumeResultAndProcessedMessageStatus == null)
+            if (!_pendingCommit)
             {
                 return;
             }
 
+            _pendingCommit = false;
             try
             {
-                _consumer?.Commit(_lastConsumeResultAndProcessedMessageStatus.ConsumeResult);
-                _lastConsumeResultAndProcessedMessageStatus = null;
+                _consumer?.Commit();
             }
             catch (KafkaException e)
             {
