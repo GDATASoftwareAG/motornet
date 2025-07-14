@@ -23,4 +23,8 @@
 
     <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
     
+    <ItemGroup>
+        <InternalsVisibleTo Include="Motor.Extensions.Hosting.Kafka_UnitTest" />
+    </ItemGroup>
+    
 </Project>
