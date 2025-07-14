@@ -123,7 +123,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     public Task StopAsync(CancellationToken token = default)
     {
-        _consumer?.Close();
+        CloseOrDispose();
         return Task.CompletedTask;
     }
 
@@ -360,6 +360,22 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         if (disposing)
         {
             _timer.Dispose();
+            CloseOrDispose();
+        }
+    }
+
+    private void CloseOrDispose()
+    {
+        try
+        {
+            _consumer?.Close();
+        }
+        catch (ObjectDisposedException)
+        {
+            // thrown if the consumer is already closed
+        }
+        finally
+        {
             _consumer?.Dispose();
         }
     }
