@@ -25,7 +25,7 @@ public class MotorMetricsFactory : IMotorMetricsFactory
     )
     {
         var prometheusConfig = options.Value ?? throw new ArgumentNullException(nameof(options), "Prometheus config doesn't exist.");
-        _collectorRegistry = prometheusConfig.CollectorRegistryInstance ?? Prometheus.Client.Metrics.DefaultCollectorRegistry;
+        _collectorRegistry = prometheusConfig.CollectorRegistry ?? Prometheus.Client.Metrics.DefaultCollectorRegistry;
 
         _collectorRegistry.GetOrAdd(
             ThreadPoolGauge.ThreadPoolGaugeConfig,

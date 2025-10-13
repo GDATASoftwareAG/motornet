@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Prometheus.Client;
@@ -17,7 +18,8 @@ internal class ThreadPoolGauge : ICollector
         "motor_extensions_diagnostics_metrics_threadpoolstate",
         "Expose information about the internal .NET global ThreadPool",
         Labels,
-        false
+        false,
+        TimeSpan.Zero
     );
 
     public void Collect(IMetricsWriter writer)
