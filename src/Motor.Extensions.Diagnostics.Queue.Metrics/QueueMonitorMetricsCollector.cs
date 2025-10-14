@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,14 +20,16 @@ internal class QueueMonitorMetricsCollector : ICollector
         "motor_extensions_diagnostics_queue_metrics_messages_ready",
         "Expose information about how many messages are ready to be processed",
         Labels,
-        false
+        false,
+        TimeSpan.Zero
     );
 
     private static readonly MetricConfiguration ActiveConsumersGaugeConfig = new(
         "motor_extensions_diagnostics_queue_metrics_active_consumers",
         "Expose information about how many active consumers are listening on the queue",
         Labels,
-        false
+        false,
+        TimeSpan.Zero
     );
 
     private readonly IEnumerable<IQueueMonitor> _queueMonitors;
