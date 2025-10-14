@@ -12,7 +12,7 @@ namespace Motor.Extensions.TestUtilities;
 
 public class MotorHostApplicationFactory<TStartup> : IAsyncLifetime where TStartup : IMotorStartup
 {
-    private TestServer? server;
+    private TestServer? _server;
 
     public Task InitializeAsync()
     {
@@ -28,15 +28,15 @@ public class MotorHostApplicationFactory<TStartup> : IAsyncLifetime where TStart
             collection.AddHealthChecks();
         });
 
-        server = new TestServer(webHostBuilder);
+        _server = new TestServer(webHostBuilder);
         return Task.CompletedTask;
     }
 
-    public HttpClient CreateClient() => server?.CreateClient()!;
+    public HttpClient CreateClient() => _server?.CreateClient()!;
 
     public Task DisposeAsync()
     {
-        server?.Dispose();
+        _server?.Dispose();
         return Task.CompletedTask;
     }
 }
