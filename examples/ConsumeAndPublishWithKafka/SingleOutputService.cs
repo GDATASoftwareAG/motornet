@@ -36,7 +36,7 @@ public class SingleOutputService : ISingleOutputService<InputMessage, OutputMess
 
         var output = new OutputMessage
         {
-            NotSoFancyText = input.FancyText.Reverse().ToString(),
+            NotSoFancyText = new string(input.FancyText.Reverse().ToArray()),
             NotSoFancyNumber = input.FancyNumber * -1,
         };
         return output;

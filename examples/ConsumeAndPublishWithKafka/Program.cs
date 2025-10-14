@@ -35,3 +35,10 @@ await MotorHost.CreateDefaultBuilder()
         builder.AddSystemJson();
     })
     .RunConsoleAsync();
+
+public partial class Program
+{
+    protected Program()
+    {
+    }
+};
