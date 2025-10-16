@@ -368,15 +368,19 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         try
         {
+            _logger.Log(LogLevel.Critical, "Consumer before try close");
             _consumer?.Close();
+            _logger.Log(LogLevel.Critical, "Consumer try closed");
         }
         catch (ObjectDisposedException)
         {
             // thrown if the consumer is already closed
+            _logger.Log(LogLevel.Critical, "already closed");
         }
         finally
         {
             _consumer?.Dispose();
+            _logger.Log(LogLevel.Critical, "Consumer finally closed");
         }
     }
 

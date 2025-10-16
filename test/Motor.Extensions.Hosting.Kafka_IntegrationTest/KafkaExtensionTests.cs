@@ -27,8 +27,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 {
     private readonly ITestOutputHelper _output;
     private readonly KafkaFixture _fixture;
-    private readonly Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-    private readonly string _topic;
+    private IRandomizerString randomizer => RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
     private const string Message = "message";
     private readonly byte[] _expectedMessage = Encoding.UTF8.GetBytes(Message);
     private readonly Channel<byte[]> _consumedChannel = Channel.CreateUnbounded<byte[]>();
@@ -37,13 +36,13 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     {
         _output = output;
         _fixture = fixture;
-        var randomizer = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-        _topic = randomizer.Generate();
+      
     }
 
     [Fact(Timeout = 50000)]
     public async Task StopAsync_AlreadyDisposed_NoException()
     {
+        var  _topic = randomizer.Generate();
         var consumer = GetConsumer<string>(_topic);
         consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
@@ -56,6 +55,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task StopAsync_CalledTwice_Idempotent()
     {
+        var  _topic = randomizer.Generate();
         var consumer = GetConsumer<string>(_topic);
         consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
@@ -68,6 +68,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_RawPublishIntoKafkaAndConsumeCreateCloudEvent_ConsumedEqualsPublished()
     {
+        var  _topic = randomizer.Generate();
         const string message = "testMessage";
         await PublishMessage(_topic, "someKey", message);
         var consumer = GetConsumer<string>(_topic);
@@ -91,6 +92,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_PublishIntoKafkaAndConsumeWithCloudEvent_ConsumedEqualsPublished()
     {
+        var  _topic = randomizer.Generate();
         var publisher = GetPublisher<byte[]>(_topic);
         var motorCloudEvent =
             MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
@@ -116,6 +118,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_PublishIntoExtensionDefinedTopic_ConsumedEqualsPublished()
     {
+        var  _topic = randomizer.Generate();
         var publisher = GetPublisher<byte[]>("wrong_topic");
         var motorCloudEvent =
             MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
@@ -142,6 +145,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_LimitMaxConcurrentMessages_StartProcessingLimitedNumberOfMessagesSimultaneously()
     {
+        var  _topic = randomizer.Generate();
         const int maxConcurrentMessages = 5;
         var taskCompletionSource = new TaskCompletionSource();
         for (var i = 0; i < maxConcurrentMessages * 2; i++)
@@ -177,6 +181,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     public async Task Consume_SynchronousMessageHandlingWhereProcessingFailed_DoesNotProcessSecondMessage(
         ProcessedMessageStatus returnStatus)
     {
+        var  _topic = randomizer.Generate();
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", "1");
         await PublishMessage(_topic, "someKey", "2");
@@ -208,6 +213,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     public async Task Consume_SynchronousMessageHandlingWithMultipleMessages_AllMessagesProcessed(
         ProcessedMessageStatus processedMessageStatus)
     {
+        var  _topic = randomizer.Generate();
         const int numMessages = 10;
         var taskCompletionSource = new TaskCompletionSource();
         var messages = Enumerable.Range(1, numMessages).Select(i => $"{i}").ToHashSet();
@@ -240,6 +246,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_TemporaryFailure_ExecuteTheConfiguredNumberOfRetries()
     {
+        var  _topic = randomizer.Generate();
         const int expectedNumberOfRetries = 2;
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", Message);
@@ -267,6 +274,8 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_TemporaryFailureEvenAfterRetries_ApplicationIsStopped()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
         const int numberOfRetries = 2;
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", Message);
@@ -292,6 +301,8 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_CriticalFailure_ApplicationIsStopped()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", Message);
         var config = GetConsumerConfig<string>(_topic);
@@ -302,20 +313,26 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
             return await Task.FromResult(ProcessedMessageStatus.CriticalFailure);
         };
 
-        await consumer.StartAsync();
-        consumer.ExecuteAsync();
+        var cts = new CancellationTokenSource();
+        await consumer.StartAsync(cts.Token);
+        var execution = consumer.ExecuteAsync(cts.Token);
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        await consumer.StopAsync();
-
+        await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+        
+        await cts.CancelAsync();
+        _output.WriteLine("before stop");
+        await consumer.StopAsync(CancellationToken.None);
+        _output.WriteLine("after stop");
         _fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
     [Fact(Timeout = 50000)]
     public async Task Consume_AfterProcessingAMessage_CommitsEveryCommitPeriod()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 2;
         config.AutoCommitIntervalMs = null;
@@ -326,7 +343,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         var execution = consumer.ExecuteAsync(cts.Token);
 
         var numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(_consumedChannel, _topic, numberOfProcessedMessages);
 
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         cts.Cancel();
@@ -334,11 +351,11 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await consumer.StopAsync();
     }
 
-    private async Task PublishAndAwaitMessages(Channel<byte[]> channel, int count)
+    private async Task PublishAndAwaitMessages(Channel<byte[]> channel, string topic, int count)
     {
         for (var i = 0; i < count; i++)
         {
-            await PublishMessage(_topic, "someKey", Message);
+            await PublishMessage(topic, "someKey", Message);
         }
 
         for (var i = 0; i < count; i++)
@@ -374,6 +391,9 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_AfterProcessingAMessage_CommitsOnlyEveryCommitPeriod()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
+        //_fixture.CreateTopicAsync(_topic);
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 10;
         config.AutoCommitIntervalMs = null;
@@ -384,7 +404,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         var execution = consumer.ExecuteAsync(cts.Token);
 
         var numberOfProcessedMessages = 9;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(_consumedChannel, _topic, numberOfProcessedMessages);
 
         await Task.Delay(5000, CancellationToken.None);
         Assert.Equal(Offset.Unset, GetCommittedOffset(consumer));
@@ -396,6 +416,8 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_WhenHavingUncommittedMessages_CommitsEveryAutoCommitIntervalMs()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 1000; // default
         config.AutoCommitIntervalMs = 1;
@@ -406,7 +428,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         var execution = consumer.ExecuteAsync(cts.Token);
 
         var numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(_consumedChannel, _topic, numberOfProcessedMessages);
 
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         cts.Cancel();
@@ -417,6 +439,8 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_OnShutdown_Commits()
     {
+        Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var  _topic = randomizer.Generate();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.AutoCommitIntervalMs = null;
         using var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
@@ -426,11 +450,11 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         var execution = consumer.ExecuteAsync(cts.Token);
 
         var numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(_consumedChannel, _topic, numberOfProcessedMessages);
         // Publish another message, that blocks in processing.
         // This makes sure that the first 2 messages have been processed and have been written to the commit channel.
         consumer.ConsumeCallbackAsync = CreateBlockingCallback(_consumedChannel);
-        await PublishAndAwaitMessages(_consumedChannel, 1);
+        await PublishAndAwaitMessages(_consumedChannel, _topic, 1);
         cts.Cancel();
         await execution;
 
@@ -502,6 +526,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         return new()
         {
             Topic = topic,
+            Debug = "all",
             GroupId = groupId,
             CommitPeriod = 1000,
             BootstrapServers = _fixture.BootstrapServers,
