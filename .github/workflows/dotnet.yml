@@ -43,10 +43,6 @@ jobs:
         run: dotnet restore Motor.NET.sln
       - name: Build
         run: dotnet build --configuration Release --no-restore Motor.NET.sln
-      - name: Test .NET8
-        run: dotnet test --no-restore Motor.NET.sln --framework net8.0
-      - name: Test .NET9
-        run: dotnet test --no-restore Motor.NET.sln --framework net9.0
       - name: Pack
         run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
       - name: Publish Bridge
@@ -64,6 +60,39 @@ jobs:
           name: artifacts-bridge
           path: ./artifacts-bridge/*
 
+  test-net8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+      - name: Install dependencies
+        run: dotnet restore Motor.NET.sln
+      - name: Build
+        run: dotnet build --configuration Release --no-restore Motor.NET.sln
+      - name: Test .NET8
+        run: dotnet test --no-restore Motor.NET.sln --framework net8.0
+
+  test-net9:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+      - name: Install dependencies
+        run: dotnet restore Motor.NET.sln
+      - name: Build
+        run: dotnet build --configuration Release --no-restore Motor.NET.sln
+      - name: Test .NET9
+        run: dotnet test --no-restore Motor.NET.sln --framework net9.0
+
+          
   #code-ql:
   #  runs-on: ubuntu-latest
   #  steps:
@@ -84,7 +113,7 @@ jobs:
   #    uses: github/codeql-action/analyze@v1
 
   deploy:
-    needs: build
+    needs: [build, format, test-net8, test-net9]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +132,7 @@ jobs:
         run: dotnet nuget push "${{ steps.download.outputs.download-path }}/*.nupkg" --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
 
   build-bridge:
-    needs: build
+    needs: [build, format, test-net8, test-net9]
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
