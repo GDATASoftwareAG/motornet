@@ -32,6 +32,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private IConsumer<string?, byte[]>? _consumer;
+    private bool _closing;
 
     public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
@@ -84,7 +85,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
             try
             {
-                while (!token.IsCancellationRequested)
+                while (!_closing && !token.IsCancellationRequested)
                 {
                     try
                     {
@@ -223,7 +224,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         RestartCommitTimer();
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (!_closing && !cancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -231,6 +232,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
                 if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
                 {
+                    _closing = true;
                     _applicationLifetime.StopApplication();
                     break;
                 }
@@ -366,6 +368,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private void CloseOrDispose()
     {
+        _closing = true;
         try
         {
             _consumer?.Close();
