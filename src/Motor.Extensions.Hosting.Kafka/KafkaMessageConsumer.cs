@@ -32,7 +32,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private IConsumer<string?, byte[]>? _consumer;
-    private bool _closing;
+    private CancellationTokenSource _internalCts = new();
 
     public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
@@ -79,25 +79,26 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     public async Task ExecuteAsync(CancellationToken token = default)
     {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(_internalCts.Token, token);
         await Task.Run(async () =>
         {
-            var committer = ExecuteCommitLoopAsync(token);
+            var committer = ExecuteCommitLoopAsync(cts.Token);
 
             try
             {
-                while (!_closing && !token.IsCancellationRequested)
+                while (!cts.Token.IsCancellationRequested)
                 {
                     try
                     {
-                        if (!await _processedMessages.Writer.WaitToWriteAsync(token))
+                        if (!await _processedMessages.Writer.WaitToWriteAsync(cts.Token))
                         {
                             break;
                         }
 
-                        var msg = _consumer?.Consume(token);
+                        var msg = _consumer?.Consume(cts.Token);
                         if (msg is { IsPartitionEOF: false })
                         {
-                            await _processedMessages.Writer.WriteAsync(SingleMessageHandlingAsync(msg, token), token);
+                            await _processedMessages.Writer.WriteAsync(SingleMessageHandlingAsync(msg, cts.Token), cts.Token);
                         }
                         else
                         {
@@ -119,7 +120,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
             Commit();
             _logger.LogInformation(LogEvents.TerminatingKafkaListener, "Terminating Kafka listener...");
-        }, token).ConfigureAwait(false);
+        }, cts.Token).ConfigureAwait(false);
     }
 
     public Task StopAsync(CancellationToken token = default)
@@ -224,7 +225,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         RestartCommitTimer();
 
-        while (!_closing && !cancellationToken.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -232,7 +233,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
                 if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
                 {
-                    _closing = true;
+                    await _internalCts.CancelAsync();
                     _applicationLifetime.StopApplication();
                     break;
                 }
@@ -368,7 +369,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private void CloseOrDispose()
     {
-        _closing = true;
+        _internalCts.Cancel();
         try
         {
             _consumer?.Close();
