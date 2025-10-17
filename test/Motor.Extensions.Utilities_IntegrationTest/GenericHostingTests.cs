@@ -185,7 +185,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             .Build();
         return host;
     }
-    
+
     private static Task WaitUntilAsync(Func<Task> action) =>
         Policy.Handle<Exception>().RetryForeverAsync().ExecuteAsync(async () => await action());
 
