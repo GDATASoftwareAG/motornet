@@ -149,10 +149,15 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages);
         var consumer = GetConsumer(topic, config);
         var numberOfStartedMessages = 0;
+        var lockObject = new object();
         consumer.ConsumeCallbackAsync = async (_, cancellationToken) =>
         {
-            numberOfStartedMessages++;
-            taskCompletionSource.TrySetResult();
+            lock (lockObject)
+            {
+                numberOfStartedMessages++;
+                taskCompletionSource.TrySetResult();
+            }
+
             await Task.Delay(-1, cancellationToken); // Wait indefinitely
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
@@ -161,7 +166,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var executionTask = consumer.ExecuteAsync();
         // Wait until processing begins
         await taskCompletionSource.Task;
-        // Give consumer enough time to process further messages
+        // Give consumer enough time to process further messages that would violate the limit
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         Assert.Equal(maxConcurrentMessages, numberOfStartedMessages);
@@ -186,6 +191,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         {
             taskCompletionSource.TrySetResult();
             distinctHandledMessages.Add(Encoding.UTF8.GetString(data.TypedData));
+
             return await Task.FromResult(returnStatus);
         };
 
@@ -193,7 +199,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var executionTask = consumer.ExecuteAsync();
         // Wait until processing begins
         await taskCompletionSource.Task;
-        // Give consumer enough time to process further messages
+        // Give consumer enough time to process further messages that would violate the limit
         await Task.Delay(TimeSpan.FromSeconds(1));
         await consumer.StopAsync();
         await executionTask;
@@ -218,21 +224,29 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         }
 
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
         var consumer = GetConsumer(topic, config);
         var distinctHandledMessages = new HashSet<string>();
+        var lockObject = new object();
         consumer.ConsumeCallbackAsync = async (data, _) =>
         {
-            taskCompletionSource.TrySetResult();
-            distinctHandledMessages.Add(Encoding.UTF8.GetString(data.TypedData));
+            lock (lockObject)
+            {
+                distinctHandledMessages.Add(Encoding.UTF8.GetString(data.TypedData));
+                if (distinctHandledMessages.Count == numMessages)
+                {
+                    taskCompletionSource.TrySetResult();
+                }
+            }
+
             return await Task.FromResult(processedMessageStatus);
         };
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
-        // Wait until processing begins
-        await taskCompletionSource.Task;
-        // Give consumer enough time to process further messages
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        // Wait until last message is processed
+        await WaitForCommittedOffset(consumer, numMessages);
         await consumer.StopAsync();
         await executionTask;
 
@@ -244,9 +258,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         const int expectedNumberOfRetries = 2;
+        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
-        var config = GetConsumerConfig<string>(topic, retriesOnTemporaryFailure: expectedNumberOfRetries);
+        var config = GetConsumerConfig<string>(
+            topic, retriesOnTemporaryFailure: expectedNumberOfRetries, retryBasePeriod: retryBasePeriod);
         var consumer = GetConsumer(topic, config);
         var actualNumberOfTries = 0;
         consumer.ConsumeCallbackAsync = async (_, _) =>
@@ -261,7 +277,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
-        await Task.Delay(TimeSpan.FromSeconds(2 * Math.Pow(2, expectedNumberOfRetries)));
+        await Task.Delay(2 * retryBasePeriod * Math.Pow(2, expectedNumberOfRetries));
         await consumer.StopAsync();
         await executionTask;
 
@@ -274,9 +290,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         const int numberOfRetries = 2;
+        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
-        var config = GetConsumerConfig<string>(topic, retriesOnTemporaryFailure: numberOfRetries);
+        var config = GetConsumerConfig<string>(
+            topic, retriesOnTemporaryFailure: numberOfRetries, retryBasePeriod: retryBasePeriod);
         var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = async (_, _) =>
         {
@@ -289,7 +307,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         // Wait until processing begins
         await taskCompletionSource.Task;
         // Give consumer enough time to handle returned ProcessedMessageStatus
-        await Task.Delay(TimeSpan.FromSeconds(2 * Math.Pow(2, numberOfRetries)));
+        await Task.Delay(2 * retryBasePeriod * Math.Pow(2, numberOfRetries));
         await consumer.StopAsync();
         await executionTask;
 
@@ -315,8 +333,6 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var executionTask = consumer.ExecuteAsync();
         // Wait until processing begins
         await taskCompletionSource.Task;
-        // Give consumer enough time to handle returned ProcessedMessageStatus
-        await Task.Delay(TimeSpan.FromSeconds(1));
         await consumer.StopAsync();
         await executionTask;
 
@@ -338,7 +354,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var execution = consumer.ExecuteAsync(cts.Token);
 
         const int numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(topic, _consumedChannel, numberOfProcessedMessages);
 
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         await cts.CancelAsync();
@@ -346,9 +362,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await consumer.StopAsync(CancellationToken.None);
     }
 
-    private async Task PublishAndAwaitMessages(Channel<byte[]> channel, int count)
+    private async Task PublishAndAwaitMessages(string topic, Channel<byte[]> channel, int count)
     {
-        var topic = NewTopic();
         for (var i = 0; i < count; i++)
         {
             await PublishMessage(topic, "someKey", Message);
@@ -398,10 +413,9 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await consumer.StartAsync(cts.Token);
         var execution = consumer.ExecuteAsync(cts.Token);
 
-        var numberOfProcessedMessages = 9;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        const int numberOfProcessedMessages = 9;
+        await PublishAndAwaitMessages(topic, _consumedChannel, numberOfProcessedMessages);
 
-        await Task.Delay(5000, CancellationToken.None);
         Assert.Equal(Offset.Unset, GetCommittedOffset(consumer));
         await cts.CancelAsync();
         await execution;
@@ -423,7 +437,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var executionTask = consumer.ExecuteAsync(cts.Token);
 
         const int numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(topic, _consumedChannel, numberOfProcessedMessages);
 
         await WaitForCommittedOffset(consumer, numberOfProcessedMessages);
         await cts.CancelAsync();
@@ -445,11 +459,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var executionTask = consumer.ExecuteAsync(cts.Token);
 
         const int numberOfProcessedMessages = 2;
-        await PublishAndAwaitMessages(_consumedChannel, numberOfProcessedMessages);
+        await PublishAndAwaitMessages(topic, _consumedChannel, numberOfProcessedMessages);
         // Publish another message, that blocks in processing.
         // This makes sure that the first 2 messages have been processed and have been written to the commit channel.
         consumer.ConsumeCallbackAsync = CreateBlockingCallback(_consumedChannel);
-        await PublishAndAwaitMessages(_consumedChannel, 1);
+        await PublishAndAwaitMessages(topic, _consumedChannel, 1);
         await cts.CancelAsync();
         await executionTask;
 
@@ -516,7 +530,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     }
 
     private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, int maxConcurrentMessages = 1000,
-        string groupId = "group_id", int retriesOnTemporaryFailure = 10)
+        string groupId = "group_id", int retriesOnTemporaryFailure = 10, TimeSpan? retryBasePeriod = null)
     {
         return new KafkaConsumerOptions<T>
         {
@@ -529,7 +543,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             SessionTimeoutMs = 6000,
             AutoOffsetReset = AutoOffsetReset.Earliest,
             MaxConcurrentMessages = maxConcurrentMessages,
-            RetriesOnTemporaryFailure = retriesOnTemporaryFailure
+            RetriesOnTemporaryFailure = retriesOnTemporaryFailure,
+            RetryBasePeriod = retryBasePeriod ?? TimeSpan.FromSeconds(1)
         };
     }
 }
