@@ -38,6 +38,10 @@ public class MotorWebApplicationFactory<TStartup> : WebApplicationFactory<TStart
         {
             _configureTestServices?.Invoke(services);
         });
+        builder.ConfigureServices(services =>
+        {
+            services.AddHealthChecks();
+        });
         builder.UseEnvironment("Development");
     }
 

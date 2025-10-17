@@ -23,6 +23,7 @@ You find working examples for different use-cases under the [examples](./example
 - [Create a service with metrics](./examples/MetricsExample)
 - [Create a service with custom traces](./examples/OpenTelemetryExample)
 - [Integration tests for message handling services](./examples/ConsumeAndPublishWithKafka_IntegrationTest)
+- [Create](../examples/MvcExample) and [test](../examples/MvcExample__IntegrationTest) a backend API with AspNetCore MVC
 
 ## Support Matrix
 
