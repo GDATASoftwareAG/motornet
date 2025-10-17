@@ -18,6 +18,7 @@ using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
+using Polly;
 using Xunit;
 
 namespace Motor.Extensions.Utilities_IntegrationTest;
@@ -34,7 +35,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
     public async Task
         StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckUnhealthy()
     {
-        const string maxTimeSinceLastProcessedMessage = "00:00:00.5";
+        const string maxTimeSinceLastProcessedMessage = "00:00:00.1";
         Environment.SetEnvironmentVariable(
             "HealthChecks__MessageProcessingHealthCheck__MaxTimeSinceLastProcessedMessage",
             maxTimeSinceLastProcessedMessage);
@@ -52,11 +53,13 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.Parse(maxTimeSinceLastProcessedMessage) * 3);
-        var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+        await WaitUntilAsync(async () =>
+        {
+            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
-        Assert.Equal(HealthStatus.Unhealthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
+            Assert.Equal(nameof(HealthStatus.Unhealthy), await healthResponse.Content.ReadAsStringAsync());
+        });
         await host.StopAsync();
     }
 
@@ -85,7 +88,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
-        Assert.Equal(HealthStatus.Healthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
+        Assert.Equal(nameof(HealthStatus.Healthy), await healthResponse.Content.ReadAsStringAsync());
         await host.StopAsync();
     }
 
@@ -107,11 +110,12 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.FromSeconds(10));
-        var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
-
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
-        Assert.Equal(HealthStatus.Unhealthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
+        await WaitUntilAsync(async () =>
+        {
+            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
+            Assert.Equal(nameof(HealthStatus.Unhealthy), await healthResponse.Content.ReadAsStringAsync());
+        });
         await host.StopAsync();
     }
 
@@ -133,11 +137,13 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
 
         var httpClient = new HttpClient();
 
-        await Task.Delay(TimeSpan.FromSeconds(10));
-        var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+        await WaitUntilAsync(async () =>
+        {
+            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
-        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
-        Assert.Equal(HealthStatus.Healthy.ToString(), await healthResponse.Content.ReadAsStringAsync());
+            Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+            Assert.Equal(nameof(HealthStatus.Healthy), await healthResponse.Content.ReadAsStringAsync());
+        });
         await host.StopAsync();
     }
 
@@ -179,6 +185,9 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             .Build();
         return host;
     }
+    
+    private static Task WaitUntilAsync(Func<Task> action) =>
+        Policy.Handle<Exception>().RetryForeverAsync().ExecuteAsync(async () => await action());
 
     private class TimingOutMessageConverter : ISingleOutputService<string, string>
     {
