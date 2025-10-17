@@ -23,22 +23,14 @@ using Xunit.Abstractions;
 namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
 
 [Collection("KafkaMessage")]
-public class KafkaExtensionTests : IClassFixture<KafkaFixture>
+public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture) : IClassFixture<KafkaFixture>
 {
-    private readonly ITestOutputHelper _output;
-    private readonly KafkaFixture _fixture;
     private const string Message = "message";
     private readonly byte[] _expectedMessage = Encoding.UTF8.GetBytes(Message);
     private readonly Channel<byte[]> _consumedChannel = Channel.CreateUnbounded<byte[]>();
     private readonly IRandomizerString _topicRandomizer =
         RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = "^[A-Z]{10}" });
     private string NewTopic() => _topicRandomizer.Generate();
-
-    public KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
-    {
-        _output = output;
-        _fixture = fixture;
-    }
 
     [Fact(Timeout = 50000)]
     public async Task StopAsync_AlreadyDisposed_NoException()
@@ -368,7 +360,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         {
             var offset = GetCommittedOffset(consumer);
 
-            _output.WriteLine($"Waiting for offset {expectedOffset} got {offset}");
+            output.WriteLine($"Waiting for offset {expectedOffset} got {offset}");
             if (offset == expectedOffset)
             {
                 return;
@@ -460,7 +452,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateConsumeCallback(
         ProcessedMessageStatus statusToReturn, Channel<byte[]> channel) => async (data, _) =>
     {
-        _output.WriteLine($"Processed message with status {statusToReturn.ToString()}");
+        output.WriteLine($"Processed message with status {statusToReturn.ToString()}");
         await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
         return await Task.FromResult(statusToReturn);
     };
@@ -468,7 +460,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateBlockingCallback(
         Channel<byte[]> channel) => async (data, cancellationToken) =>
     {
-        _output.WriteLine($"Blocking message");
+        output.WriteLine($"Blocking message");
         await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
         await Task.Delay(-1, cancellationToken);
         return ProcessedMessageStatus.Success;
@@ -486,7 +478,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         IHostApplicationLifetime fakeLifetimeMock = null)
     {
         var options = Options.Create(config ?? GetConsumerConfig<T>(topic));
-        var logger = _output.BuildLoggerFor<KafkaMessageConsumer<T>>();
+        var logger = output.BuildLoggerFor<KafkaMessageConsumer<T>>();
         fakeLifetimeMock ??= Mock.Of<IHostApplicationLifetime>();
         return new KafkaMessageConsumer<T>(logger, options, fakeLifetimeMock, null, GetApplicationNameService(),
             new JsonEventFormatter());
@@ -504,7 +496,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         return new()
         {
             Topic = topic,
-            BootstrapServers = _fixture.BootstrapServers,
+            BootstrapServers = fixture.BootstrapServers,
         };
     }
 
@@ -523,7 +515,7 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
             Topic = topic,
             GroupId = groupId,
             CommitPeriod = 1000,
-            BootstrapServers = _fixture.BootstrapServers,
+            BootstrapServers = fixture.BootstrapServers,
             EnableAutoCommit = false,
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,
