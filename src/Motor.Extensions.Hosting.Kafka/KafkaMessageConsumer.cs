@@ -198,7 +198,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             var retryPolicy = Policy
                 .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
                 .WaitAndRetryAsync(_options.RetriesOnTemporaryFailure,
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+                    retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt));
             var status = await retryPolicy.ExecuteAsync(
                 (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken), token);
             return new ConsumeResultAndProcessedMessageStatus(msg, status);
