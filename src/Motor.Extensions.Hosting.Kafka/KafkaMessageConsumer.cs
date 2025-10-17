@@ -32,7 +32,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private IConsumer<string?, byte[]>? _consumer;
-    private CancellationTokenSource _internalCts = new();
+    private readonly CancellationTokenSource _internalCts = new();
 
     public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
@@ -369,10 +369,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private void CloseOrDispose()
     {
-        _internalCts.Cancel();
         try
         {
             _consumer?.Close();
+            _internalCts.Cancel();
         }
         catch (ObjectDisposedException)
         {
@@ -387,5 +387,6 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     public void Dispose()
     {
         Dispose(true);
+        _internalCts.Dispose();
     }
 }
