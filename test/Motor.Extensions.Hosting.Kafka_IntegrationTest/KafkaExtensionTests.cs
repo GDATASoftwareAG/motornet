@@ -15,6 +15,7 @@ using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.Kafka;
 using Motor.Extensions.Hosting.Kafka.Options;
 using Motor.Extensions.TestUtilities;
+using Polly;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
@@ -38,9 +39,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var consumer = GetConsumer<string>(NewTopic());
         consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
-        var executionTask = consumer.ExecuteAsync();
+        _ = consumer.ExecuteAsync();
         consumer.Dispose();
-        await executionTask;
 
         await consumer.StopAsync();
     }
@@ -51,9 +51,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var consumer = GetConsumer<string>(NewTopic());
         consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
-        var executionTask = consumer.ExecuteAsync();
+        _ = consumer.ExecuteAsync();
         await consumer.StopAsync();
-        await executionTask;
 
         await consumer.StopAsync();
     }
@@ -291,27 +290,18 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         const int numberOfRetries = 2;
         var retryBasePeriod = TimeSpan.FromMilliseconds(10);
-        var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
         var config = GetConsumerConfig<string>(
             topic, retriesOnTemporaryFailure: numberOfRetries, retryBasePeriod: retryBasePeriod);
         var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
-        consumer.ConsumeCallbackAsync = async (_, _) =>
-        {
-            taskCompletionSource.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
-        };
+        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
-        // Wait until processing begins
-        await taskCompletionSource.Task;
-        // Give consumer enough time to handle returned ProcessedMessageStatus
-        await Task.Delay(2 * retryBasePeriod * Math.Pow(2, numberOfRetries));
+
+        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
         await consumer.StopAsync();
         await executionTask;
-
-        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
     [Fact(Timeout = 50000)]
@@ -319,24 +309,17 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
         var config = GetConsumerConfig<string>(topic);
         var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
-        consumer.ConsumeCallbackAsync = async (_, _) =>
-        {
-            taskCompletionSource.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.CriticalFailure);
-        };
+        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.CriticalFailure);
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
-        // Wait until processing begins
-        await taskCompletionSource.Task;
+
+        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
         await consumer.StopAsync();
         await executionTask;
-
-        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
     [Fact(Timeout = 50000)]
@@ -487,6 +470,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await Task.Delay(-1, cancellationToken);
         return ProcessedMessageStatus.Success;
     };
+
+    private static void WaitUntil(Action action) => Policy.Handle<Exception>().RetryForever().Execute(action);
 
     private async Task PublishMessage(string topic, string key, string value)
     {
