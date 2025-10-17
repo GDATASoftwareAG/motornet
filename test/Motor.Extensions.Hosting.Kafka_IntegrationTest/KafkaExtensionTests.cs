@@ -27,7 +27,6 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
 {
     private readonly ITestOutputHelper _output;
     private readonly KafkaFixture _fixture;
-    private readonly Mock<IHostApplicationLifetime> _fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
     private readonly string _topic;
     private const string Message = "message";
     private readonly byte[] _expectedMessage = Encoding.UTF8.GetBytes(Message);
@@ -267,11 +266,12 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_TemporaryFailureEvenAfterRetries_ApplicationIsStopped()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         const int numberOfRetries = 2;
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", Message);
         var config = GetConsumerConfig<string>(_topic, retriesOnTemporaryFailure: numberOfRetries);
-        var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = async (data, _) =>
         {
             taskCompletionSource.TrySetResult();
@@ -286,16 +286,17 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await Task.Delay(TimeSpan.FromSeconds(2 * Math.Pow(2, numberOfRetries)));
         await consumer.StopAsync();
 
-        _fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
     [Fact(Timeout = 50000)]
     public async Task Consume_CriticalFailure_ApplicationIsStopped()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(_topic, "someKey", Message);
         var config = GetConsumerConfig<string>(_topic);
-        var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = async (data, _) =>
         {
             taskCompletionSource.TrySetResult();
@@ -310,16 +311,17 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
         await Task.Delay(TimeSpan.FromSeconds(1));
         await consumer.StopAsync();
 
-        _fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Once);
     }
 
     [Fact(Timeout = 50000)]
     public async Task Consume_AfterProcessingAMessage_CommitsEveryCommitPeriod()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 2;
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        using var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -374,10 +376,11 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_AfterProcessingAMessage_CommitsOnlyEveryCommitPeriod()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 10;
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        using var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -396,10 +399,11 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_WhenHavingUncommittedMessages_CommitsEveryAutoCommitIntervalMs()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 1000; // default
         config.AutoCommitIntervalMs = 1;
-        using var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        using var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -417,9 +421,10 @@ public class KafkaExtensionTests : IClassFixture<KafkaFixture>
     [Fact(Timeout = 50000)]
     public async Task Consume_OnShutdown_Commits()
     {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var config = GetConsumerConfig<string>(_topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(_topic, config, _fakeLifetimeMock.Object);
+        using var consumer = GetConsumer(_topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
