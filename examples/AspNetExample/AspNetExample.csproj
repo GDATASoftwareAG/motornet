@@ -14,7 +14,7 @@
     
     <ItemGroup>
         <PackageReference Include="Prometheus.Client.HttpRequestDurations" Version="4.0.0" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.0.7" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' != '' and $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFramework.Replace(`net`,``))','9.0'))">
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
