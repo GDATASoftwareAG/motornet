@@ -7,7 +7,8 @@ public class NATSFixture : IAsyncLifetime
 {
     private readonly NATSContainer _container = new NATSBuilder().Build();
 
-    public string ConnectionString => $"{_container.Hostname}:{_container.GetMappedPublicPort(NATSBuilder.DefaultPort)}";
+    public string ConnectionString =>
+        $"{_container.Hostname}:{_container.GetMappedPublicPort(NATSBuilder.DefaultPort)}";
 
     public Task InitializeAsync()
     {

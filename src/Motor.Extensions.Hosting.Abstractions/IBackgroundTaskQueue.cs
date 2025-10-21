@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions;
 
-public interface IBackgroundTaskQueue<T> where T : notnull
+public interface IBackgroundTaskQueue<T>
+    where T : notnull
 {
     int ItemCount { get; }
     DateTimeOffset LastDequeuedAt { get; }

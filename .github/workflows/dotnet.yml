@@ -26,8 +26,10 @@ jobs:
           dotnet-version: |
             8.0.x
             9.0.x
+      - name: Install tools
+        run: dotnet tool restore
       - name: check format
-        run: dotnet format --severity error --verify-no-changes ./Motor.NET.sln
+        run: dotnet csharpier check .
 
   build:
     runs-on: ubuntu-latest

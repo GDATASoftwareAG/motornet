@@ -6,23 +6,16 @@ namespace Motor.Extensions.Conversion.Protobuf_UnitTest;
 
 public class ProtobufSerializerTests
 {
-    private InputMsg ValidMessage => new InputMsg { Forename = "Foo", Surename = "Bar", Age = 42 };
+    private InputMsg ValidMessage =>
+        new InputMsg
+        {
+            Forename = "Foo",
+            Surename = "Bar",
+            Age = 42,
+        };
 
-    private byte[] ValidSerializedMessage => new byte[]
-    {
-            0x0a,
-            0x03,
-            0x46,
-            0x6f,
-            0x6f,
-            0x12,
-            0x03,
-            0x42,
-            0x61,
-            0x72,
-            0x18,
-            0x2a
-    };
+    private byte[] ValidSerializedMessage =>
+        new byte[] { 0x0a, 0x03, 0x46, 0x6f, 0x6f, 0x12, 0x03, 0x42, 0x61, 0x72, 0x18, 0x2a };
 
     [Fact]
     public void Serialize_ValidMessage_SerializedMessage()

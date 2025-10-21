@@ -10,16 +10,17 @@ using Xunit;
 
 namespace Motor.Extensions.TestUtilities;
 
-public class MotorHostApplicationFactory<TStartup> : IAsyncLifetime where TStartup : IMotorStartup
+public class MotorHostApplicationFactory<TStartup> : IAsyncLifetime
+    where TStartup : IMotorStartup
 {
     private TestServer? _server;
 
     public Task InitializeAsync()
     {
         var useSetting = new Dictionary<string, string>
-            {
-                {MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString()}
-            };
+        {
+            { MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString() },
+        };
 
         var webHostBuilder = new WebHostBuilder();
         MotorHostBuilderHelper.ConfigureWebHost(webHostBuilder, s => useSetting.GetValueOrDefault(s), typeof(TStartup));

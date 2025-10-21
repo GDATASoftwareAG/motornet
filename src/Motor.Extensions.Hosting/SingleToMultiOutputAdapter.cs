@@ -19,10 +19,11 @@ public class SingleToMultiOutputAdapter<TInput, TOutput> : IMultiOutputService<T
     }
 
     public async IAsyncEnumerable<MotorCloudEvent<TOutput>> ConvertMessageAsync(
-        MotorCloudEvent<TInput> dataCloudEvent, [EnumeratorCancellation] CancellationToken token)
+        MotorCloudEvent<TInput> dataCloudEvent,
+        [EnumeratorCancellation] CancellationToken token
+    )
     {
-        var convertMessage = await _service.ConvertMessageAsync(dataCloudEvent, token)
-            .ConfigureAwait(false);
+        var convertMessage = await _service.ConvertMessageAsync(dataCloudEvent, token).ConfigureAwait(false);
         if (convertMessage != null)
         {
             yield return convertMessage;

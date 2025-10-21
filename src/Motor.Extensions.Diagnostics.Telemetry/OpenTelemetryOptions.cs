@@ -17,7 +17,7 @@ public record OpenTelemetryOptions
     public List<string> Sources { get; init; } = new();
 
     /// <summary>
-    /// 
+    ///
     /// If Filter returns false, health and metrics requests are collected.
     /// If Filter returns true, the request is filtered out.
     /// </summary>

@@ -15,27 +15,34 @@ public class MultiOutputServiceAdapter<TInput, TOutput> : INoOutputService<TInpu
     private readonly ILogger<SingleOutputServiceAdapter<TInput, TOutput>> _logger;
     private readonly ITypedMessagePublisher<TOutput> _publisher;
 
-    public MultiOutputServiceAdapter(ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
+    public MultiOutputServiceAdapter(
+        ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
         IMultiOutputService<TInput, TOutput> converter,
-        ITypedMessagePublisher<TOutput> publisher)
+        ITypedMessagePublisher<TOutput> publisher
+    )
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _converter = converter ?? throw new ArgumentNullException(nameof(converter));
         _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
     }
 
-    public async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default)
+    public async Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         try
         {
-            await foreach (var message in _converter.ConvertMessageAsync(dataCloudEvent, token)
-                               .ConfigureAwait(false).WithCancellation(token))
+            await foreach (
+                var message in _converter
+                    .ConvertMessageAsync(dataCloudEvent, token)
+                    .ConfigureAwait(false)
+                    .WithCancellation(token)
+            )
             {
                 if (message?.Data is not null)
                 {
-                    await _publisher.PublishMessageAsync(message, token)
-                        .ConfigureAwait(false);
+                    await _publisher.PublishMessageAsync(message, token).ConfigureAwait(false);
                 }
             }
 

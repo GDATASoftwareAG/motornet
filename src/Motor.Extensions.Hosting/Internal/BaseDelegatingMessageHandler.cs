@@ -7,9 +7,11 @@ public class BaseDelegatingMessageHandler<TInput> : DelegatingMessageHandler<TIn
     where TInput : class
 {
     // ReSharper disable once SuggestBaseTypeForParameter
-    public BaseDelegatingMessageHandler(PrepareDelegatingMessageHandler<TInput> prepare,
+    public BaseDelegatingMessageHandler(
+        PrepareDelegatingMessageHandler<TInput> prepare,
         INoOutputService<TInput> service,
-        IEnumerable<DelegatingMessageHandler<TInput>> delegatingMessageHandlers)
+        IEnumerable<DelegatingMessageHandler<TInput>> delegatingMessageHandlers
+    )
     {
         DelegatingMessageHandler<TInput> currentDelegatingMessageHandler = this;
         foreach (var delegatingMessageHandler in delegatingMessageHandlers)

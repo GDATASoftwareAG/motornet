@@ -5,13 +5,10 @@ using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.Hosting.Abstractions;
 
-public interface IMessageConsumer<TInput> where TInput : notnull
+public interface IMessageConsumer<TInput>
+    where TInput : notnull
 {
-    Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync { get; set; }
 
     Task StartAsync(CancellationToken token = default);
 

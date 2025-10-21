@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Motor.Extensions.TestUtilities;
 using AspNetExample;
 using AspNetExample.Models;
+using Motor.Extensions.TestUtilities;
 using NSubstitute;
 using Xunit;
 using Assert = Xunit.Assert;
@@ -39,9 +39,11 @@ public class CustomerControllerTests
     public async Task CreateCustomer_DenyAllValidator_BadRequest(long age)
     {
         var customer = new Customer { Age = age };
-        await using var server = MotorTestHost.BasedOn<Startup>()
+        await using var server = MotorTestHost
+            .BasedOn<Startup>()
             .SubstituteSingleton<ICustomerValidator>(validator =>
-                validator.Validate(Arg.Any<Customer>()).Returns(false))
+                validator.Validate(Arg.Any<Customer>()).Returns(false)
+            )
             .Build();
         var httpClient = server.CreateClient();
 
@@ -60,9 +62,9 @@ public class CustomerControllerTests
     public async Task CreateCustomer_AllowAllValidator_Created(long age)
     {
         var customer = new Customer { Age = age };
-        var server = MotorTestHost.BasedOn<Startup>()
-            .SubstituteSingleton<ICustomerValidator>(validator =>
-                validator.Validate(Arg.Any<Customer>()).Returns(true))
+        var server = MotorTestHost
+            .BasedOn<Startup>()
+            .SubstituteSingleton<ICustomerValidator>(validator => validator.Validate(Arg.Any<Customer>()).Returns(true))
             .Build();
         var httpClient = server.CreateClient();
 

@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="Prometheus.Client" Version="6.1.0" />
-    </ItemGroup>
-
-    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
-
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Prometheus.Client" Version="6.1.0" />
+  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>

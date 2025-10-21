@@ -19,9 +19,11 @@ public class Timer : IHostedService
     private IScheduler? _scheduler;
     private bool _started;
 
-    public Timer(IOptions<TimerOptions> config,
+    public Timer(
+        IOptions<TimerOptions> config,
         IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue,
-        IApplicationNameService applicationNameService)
+        IApplicationNameService applicationNameService
+    )
     {
         _queue = queue;
         _applicationNameService = applicationNameService;
@@ -47,25 +49,13 @@ public class Timer : IHostedService
 
     private async Task ConfigureTimer()
     {
-        var props = new NameValueCollection
-            {
-                {"quartz.serializer.type", "binary"}
-            };
+        var props = new NameValueCollection { { "quartz.serializer.type", "binary" } };
         var factory = new StdSchedulerFactory(props);
-        var data = new JobDataMap
-            {
-                {"Queue", _queue},
-                {"ApplicationNameService", _applicationNameService}
-            };
+        var data = new JobDataMap { { "Queue", _queue }, { "ApplicationNameService", _applicationNameService } };
         _scheduler = await factory.GetScheduler().ConfigureAwait(false);
-        var job = JobBuilder.Create<TimerJob>()
-            .SetJobData(data)
-            .Build();
+        var job = JobBuilder.Create<TimerJob>().SetJobData(data).Build();
 
-        var trigger = TriggerBuilder.Create()
-            .StartNow()
-            .WithCronSchedule(_options.GetCronString())
-            .Build();
+        var trigger = TriggerBuilder.Create().StartNow().WithCronSchedule(_options.GetCronString()).Build();
 
         await _scheduler.ScheduleJob(job, trigger).ConfigureAwait(false);
     }

@@ -7,7 +7,8 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Hosting.Abstractions;
 
-public interface IPublisherBuilder<TOutput> : IServiceCollection where TOutput : notnull
+public interface IPublisherBuilder<TOutput> : IServiceCollection
+    where TOutput : notnull
 {
     HostBuilderContext Context { get; }
 

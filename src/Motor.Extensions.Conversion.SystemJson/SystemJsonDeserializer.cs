@@ -4,7 +4,8 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.SystemJson;
 
-public class SystemJsonDeserializer<T> : IMessageDeserializer<T> where T : notnull
+public class SystemJsonDeserializer<T> : IMessageDeserializer<T>
+    where T : notnull
 {
     public T Deserialize(byte[] message)
     {

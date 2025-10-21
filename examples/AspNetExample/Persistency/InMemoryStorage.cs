@@ -4,7 +4,8 @@ using System.Linq;
 
 namespace AspNetExample.Persistency;
 
-public class InMemoryStorage<T> : IStorage<T> where T : IEntity
+public class InMemoryStorage<T> : IStorage<T>
+    where T : IEntity
 {
     private readonly List<T> _contents = [];
     private long _nextId;

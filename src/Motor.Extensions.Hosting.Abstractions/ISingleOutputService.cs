@@ -8,6 +8,8 @@ public interface ISingleOutputService<TInput, TOutput>
     where TInput : class
     where TOutput : class
 {
-    Task<MotorCloudEvent<TOutput>?> ConvertMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default);
+    Task<MotorCloudEvent<TOutput>?> ConvertMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    );
 }

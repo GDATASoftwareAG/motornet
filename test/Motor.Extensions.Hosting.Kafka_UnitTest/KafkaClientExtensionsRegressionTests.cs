@@ -19,11 +19,9 @@ public class KafkaClientExtensionsRegressionTests
         var actualContent = "{\"key\":\"value\"}";
         var message = new Message<string, byte[]>
         {
-            Headers = new Headers
-            {
-                { "content-type", "application/cloudevents+json"u8.ToArray() }
-            },
-            Value = Encoding.UTF8.GetBytes($@"
+            Headers = new Headers { { "content-type", "application/cloudevents+json"u8.ToArray() } },
+            Value = Encoding.UTF8.GetBytes(
+                $@"
             {{
                 ""specversion"": ""1.0"",
                 ""type"": ""imaginary.type"",
@@ -32,7 +30,8 @@ public class KafkaClientExtensionsRegressionTests
                 ""time"": ""{DateTimeOffset.UnixEpoch.ToString("o", CultureInfo.InvariantCulture)}"",
                 ""datacontenttype"": ""application/json"",
                 ""data"": {actualContent}
-            }}")
+            }}"
+            ),
         };
         var cloudEvent = message.ToMotorCloudEvent(applicationNameServiceMock, new JsonEventFormatter());
         Assert.Equal(Encoding.UTF8.GetBytes(actualContent), cloudEvent.Data);

@@ -10,8 +10,10 @@ public abstract class DelegatingMessageHandler<TInput> : INoOutputService<TInput
 {
     public INoOutputService<TInput>? InnerService { get; set; }
 
-    public virtual Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default)
+    public virtual Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         if (InnerService is null)
         {

@@ -12,8 +12,7 @@ public class DefaultApplicationNameServiceTests
     [InlineData("test", "IpFeatureExtraction.Service", "test/ip-feature-extraction")]
     [InlineData("test", "IpFeatureExtractionConsole", "test/ip-feature-extraction")]
     [InlineData("test", "IpFeatureExtractionService", "test/ip-feature-extraction")]
-    public void ExtractServiceName_ProductAndName_UnifiedServiceName(string product, string assembly,
-        string expected)
+    public void ExtractServiceName_ProductAndName_UnifiedServiceName(string product, string assembly, string expected)
     {
         var application = CreateDefaultApplicationNameService();
 
@@ -25,10 +24,7 @@ public class DefaultApplicationNameServiceTests
     [Fact]
     public void GetFullName_FullNameWithOverride_SameFullName()
     {
-        var options = new DefaultApplicationNameOptions
-        {
-            FullName = "test",
-        };
+        var options = new DefaultApplicationNameOptions { FullName = "test" };
         var application = CreateDefaultApplicationNameService(options);
 
         var actualFullName = application.GetFullName();
@@ -39,10 +35,7 @@ public class DefaultApplicationNameServiceTests
     [Fact]
     public void GetFullName_FullNameWithoutOverride_DifferentFullName()
     {
-        var options = new DefaultApplicationNameOptions
-        {
-            FullName = "",
-        };
+        var options = new DefaultApplicationNameOptions { FullName = "" };
         var application = CreateDefaultApplicationNameService(options);
 
         var actualFullName = application.GetFullName();
@@ -53,10 +46,7 @@ public class DefaultApplicationNameServiceTests
     [Fact]
     public void GetSource_SourceWithOverride_SameSource()
     {
-        var options = new DefaultApplicationNameOptions
-        {
-            Source = "motor://test/",
-        };
+        var options = new DefaultApplicationNameOptions { Source = "motor://test/" };
         var application = CreateDefaultApplicationNameService(options);
 
         var actualSource = application.GetSource();
@@ -67,10 +57,7 @@ public class DefaultApplicationNameServiceTests
     [Fact]
     public void GetSource_SourceWithoutOverride_DifferentSource()
     {
-        var options = new DefaultApplicationNameOptions
-        {
-            Source = "",
-        };
+        var options = new DefaultApplicationNameOptions { Source = "" };
         var application = CreateDefaultApplicationNameService(options);
 
         var actualSource = application.GetSource();
@@ -78,8 +65,13 @@ public class DefaultApplicationNameServiceTests
         Assert.NotEqual(options.Source, actualSource.ToString());
     }
 
-    private static DefaultApplicationNameService CreateDefaultApplicationNameService(DefaultApplicationNameOptions? fullName = null)
+    private static DefaultApplicationNameService CreateDefaultApplicationNameService(
+        DefaultApplicationNameOptions? fullName = null
+    )
     {
-        return new(Assembly.GetAssembly(typeof(DefaultApplicationNameServiceTests))!, Options.Create(fullName ?? new DefaultApplicationNameOptions()));
+        return new(
+            Assembly.GetAssembly(typeof(DefaultApplicationNameServiceTests))!,
+            Options.Create(fullName ?? new DefaultApplicationNameOptions())
+        );
     }
 }

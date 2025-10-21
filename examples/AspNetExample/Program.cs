@@ -1,7 +1,5 @@
-using Motor.Extensions.Utilities;
-using Microsoft.Extensions.Hosting;
 using AspNetExample;
+using Microsoft.Extensions.Hosting;
+using Motor.Extensions.Utilities;
 
-await MotorHost.CreateDefaultBuilder()
-    .UseStartup<Startup>()
-    .RunConsoleAsync();
+await MotorHost.CreateDefaultBuilder().UseStartup<Startup>().RunConsoleAsync();

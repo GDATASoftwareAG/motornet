@@ -13,7 +13,8 @@ public sealed class NATSBuilder(NATSConfiguration resourceConfiguration)
 
     protected override NATSConfiguration DockerResourceConfiguration { get; } = resourceConfiguration;
 
-    public NATSBuilder() : this(new NATSConfiguration())
+    public NATSBuilder()
+        : this(new NATSConfiguration())
     {
         DockerResourceConfiguration = Init().DockerResourceConfiguration;
     }

@@ -9,11 +9,13 @@ namespace Motor.Extensions.Utilities.Abstractions;
 public interface IMotorHostBuilder : IHostBuilder
 {
     new IMotorHostBuilder ConfigureServices(Action<HostBuilderContext, IServiceCollection> configureDelegate);
-    IMotorHostBuilder UseStartup<T>() where T : IMotorStartup;
+    IMotorHostBuilder UseStartup<T>()
+        where T : IMotorStartup;
 
     IMotorHostBuilder AddHealthCheck<T>(
         string name,
         HealthStatus? failureStatus = null,
         IEnumerable<string>? tags = null,
-        TimeSpan? timeout = null);
+        TimeSpan? timeout = null
+    );
 }

@@ -14,7 +14,9 @@ public static class MotorVersionExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { MotorVersionAttribute }.ToList().AsReadOnly();
 
-    private static readonly string? CurrentVersion = typeof(MotorVersionExtension).Assembly.GetName().Version?.ToString();
+    private static readonly string? CurrentVersion = typeof(MotorVersionExtension)
+        .Assembly.GetName()
+        .Version?.ToString();
 
     public static MotorCloudEvent<TData> SetMotorVersion<TData>(this MotorCloudEvent<TData> cloudEvent)
         where TData : class
@@ -25,10 +27,12 @@ public static class MotorVersionExtension
         return cloudEvent;
     }
 
-    public static Version? GetMotorVersion<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
+    public static Version? GetMotorVersion<TData>(this MotorCloudEvent<TData> cloudEvent)
+        where TData : class
     {
-        return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[MotorVersionAttribute]
-            is not string versionString
+        return
+            CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[MotorVersionAttribute]
+                is not string versionString
             ? null
             : System.Version.Parse(versionString);
     }

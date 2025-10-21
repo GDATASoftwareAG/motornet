@@ -40,7 +40,8 @@ public class QueuedGenericServiceTests
 
         service.Verify(
             t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
+            Times.AtLeastOnce
+        );
     }
 
     [Theory]
@@ -49,7 +50,8 @@ public class QueuedGenericServiceTests
     [InlineData(8)]
     [InlineData(null)]
     public async Task ExecuteAsync_MultipleMessage_ParallelProcessingBasedOnConfig(
-        int? parallelProcessesOrProcessorCount)
+        int? parallelProcessesOrProcessorCount
+    )
     {
         parallelProcessesOrProcessorCount ??= Environment.ProcessorCount;
         var waitTimeInMs = 200;
@@ -62,33 +64,37 @@ public class QueuedGenericServiceTests
             setupSequentialResult = setupSequentialResult.ReturnsAsync(() =>
                 new QueueItem<MotorCloudEvent<string>>(
                     MotorCloudEvent.CreateTestCloudEvent(string.Empty, new Uri("test://non")),
-                    source));
+                    source
+                )
+            );
             taskCompletionSources.Add(source);
         }
 
         var service = new Mock<INoOutputService<string>>();
-        service.Setup(t =>
-                t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        service
+            .Setup(t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
                 await Task.Delay(waitTimeInMs).ConfigureAwait(false);
                 return ProcessedMessageStatus.Success;
             });
-        var queuedGenericService = CreateQueuedGenericService(service.Object, queue.Object,
-            config: new QueuedGenericServiceOptions
-            {
-                ParallelProcesses = parallelProcessesOrProcessorCount
-            });
+        var queuedGenericService = CreateQueuedGenericService(
+            service.Object,
+            queue.Object,
+            config: new QueuedGenericServiceOptions { ParallelProcesses = parallelProcessesOrProcessorCount }
+        );
 
         await queuedGenericService.StartAsync(CancellationToken.None);
         await Task.Delay(Convert.ToInt32(Math.Floor(waitTimeInMs * 0.5)));
         await queuedGenericService.StopAsync(CancellationToken.None);
 
-        service.Verify(t => t
-                .HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(parallelProcessesOrProcessorCount.Value));
-        var done = taskCompletionSources
-            .Count(completionSource => completionSource.Task.Status == TaskStatus.RanToCompletion);
+        service.Verify(
+            t => t.HandleMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(parallelProcessesOrProcessorCount.Value)
+        );
+        var done = taskCompletionSources.Count(completionSource =>
+            completionSource.Task.Status == TaskStatus.RanToCompletion
+        );
         Assert.Equal(parallelProcessesOrProcessorCount, done);
     }
 
@@ -98,7 +104,8 @@ public class QueuedGenericServiceTests
     [InlineData(ProcessedMessageStatus.TemporaryFailure)]
     [InlineData(ProcessedMessageStatus.CriticalFailure)]
     public async Task ExecuteAsync_MessagesProcessingStatus_TaskCompletionSourceIsCompleted(
-        ProcessedMessageStatus expectedStatus)
+        ProcessedMessageStatus expectedStatus
+    )
     {
         var taskCompletionSource = new TaskCompletionSource<ProcessedMessageStatus>();
         var queue = CreateQueue(status: taskCompletionSource);
@@ -128,8 +135,10 @@ public class QueuedGenericServiceTests
             .ReturnsAsync(ProcessedMessageStatus.Success);
         var hostApplicationLifetime = new Mock<IHostApplicationLifetime>();
 
-        var queuedGenericService = CreateQueuedGenericService(service.Object,
-            hostApplicationLifetime: hostApplicationLifetime.Object);
+        var queuedGenericService = CreateQueuedGenericService(
+            service.Object,
+            hostApplicationLifetime: hostApplicationLifetime.Object
+        );
 
         await queuedGenericService.StartAsync(CancellationToken.None);
         await Task.Delay(100);
@@ -147,8 +156,10 @@ public class QueuedGenericServiceTests
             .ReturnsAsync(ProcessedMessageStatus.CriticalFailure);
         var hostApplicationLifetime = new Mock<IHostApplicationLifetime>();
 
-        var queuedGenericService = CreateQueuedGenericService(service.Object,
-            hostApplicationLifetime: hostApplicationLifetime.Object);
+        var queuedGenericService = CreateQueuedGenericService(
+            service.Object,
+            hostApplicationLifetime: hostApplicationLifetime.Object
+        );
 
         await queuedGenericService.StartAsync(CancellationToken.None);
         await Task.Delay(100);
@@ -158,14 +169,19 @@ public class QueuedGenericServiceTests
     }
 
     private static IBackgroundTaskQueue<MotorCloudEvent<string>> CreateQueue(
-        MotorCloudEvent<string>? dataCloudEvent = null, TaskCompletionSource<ProcessedMessageStatus>? status = null)
+        MotorCloudEvent<string>? dataCloudEvent = null,
+        TaskCompletionSource<ProcessedMessageStatus>? status = null
+    )
     {
         var queue = new Mock<IBackgroundTaskQueue<MotorCloudEvent<string>>>();
-        queue.Setup(t => t.DequeueAsync(It.IsAny<CancellationToken>()))
+        queue
+            .Setup(t => t.DequeueAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
                 new QueueItem<MotorCloudEvent<string>>(
                     dataCloudEvent ?? MotorCloudEvent.CreateTestCloudEvent(string.Empty, new Uri("test://non")),
-                    status ?? new TaskCompletionSource<ProcessedMessageStatus>()));
+                    status ?? new TaskCompletionSource<ProcessedMessageStatus>()
+                )
+            );
         return queue.Object;
     }
 
@@ -173,7 +189,8 @@ public class QueuedGenericServiceTests
         INoOutputService<string>? service = null,
         IBackgroundTaskQueue<MotorCloudEvent<string>>? backgroundTaskQueue = null,
         IHostApplicationLifetime? hostApplicationLifetime = null,
-        QueuedGenericServiceOptions? config = null)
+        QueuedGenericServiceOptions? config = null
+    )
     {
         var logger = new Mock<ILogger<QueuedGenericService<string>>>();
         hostApplicationLifetime ??= new Mock<IHostApplicationLifetime>().Object;
@@ -187,17 +204,20 @@ public class QueuedGenericServiceTests
             options,
             hostApplicationLifetime,
             backgroundTaskQueue,
-            baseDelegatingMessageHandler);
+            baseDelegatingMessageHandler
+        );
     }
 
     private static BaseDelegatingMessageHandler<string> CreateBaseDelegatingMessageHandler(
-        INoOutputService<string>? service = null)
+        INoOutputService<string>? service = null
+    )
     {
         var loggerPrepare = new Mock<ILogger<PrepareDelegatingMessageHandler<string>>>();
         service ??= new Mock<INoOutputService<string>>().Object;
         return new BaseDelegatingMessageHandler<string>(
             new PrepareDelegatingMessageHandler<string>(loggerPrepare.Object),
             service,
-            new List<DelegatingMessageHandler<string>>());
+            new List<DelegatingMessageHandler<string>>()
+        );
     }
 }

@@ -1,25 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-	<PropertyGroup>
-		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <ProjectReference Include="..\Motor.Extensions.Diagnostics.HealthChecks\Motor.Extensions.Diagnostics.HealthChecks.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Logging\Motor.Extensions.Diagnostics.Logging.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Diagnostics.Tracing\Motor.Extensions.Diagnostics.Tracing.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Hosting.Consumer\Motor.Extensions.Hosting.Consumer.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Hosting.Publisher\Motor.Extensions.Hosting.Publisher.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Hosting\Motor.Extensions.Hosting.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Http\Motor.Extensions.Http.csproj" />
-        <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
-    </ItemGroup>
-
-    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
-
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Motor.Extensions.Diagnostics.HealthChecks\Motor.Extensions.Diagnostics.HealthChecks.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Diagnostics.Logging\Motor.Extensions.Diagnostics.Logging.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Diagnostics.Tracing\Motor.Extensions.Diagnostics.Tracing.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Hosting.Consumer\Motor.Extensions.Hosting.Consumer.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Hosting.Publisher\Motor.Extensions.Hosting.Publisher.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Hosting\Motor.Extensions.Hosting.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Http\Motor.Extensions.Http.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
+  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>

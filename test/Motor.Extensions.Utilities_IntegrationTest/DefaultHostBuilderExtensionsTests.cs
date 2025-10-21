@@ -17,18 +17,22 @@ public class DefaultHostBuilderExtensionsTests
 #endif
     [InlineData("Production", "appsettings.Production.json")]
     [InlineData("Development", "appsettings.Development.json")]
-    public void ConfigureDefaultSettingsBehaviour_SetEnv_EnvConfigLoadedAndDefaultValueReplaced(string env,
-        string expected)
+    public void ConfigureDefaultSettingsBehaviour_SetEnv_EnvConfigLoadedAndDefaultValueReplaced(
+        string env,
+        string expected
+    )
     {
         var toOverwriteValue = "";
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
         Environment.SetEnvironmentVariable("TestConfig", null);
         Host.CreateDefaultBuilder()
-            .ConfigureServices((hostContext, _) =>
-            {
-                toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
-            })
+            .ConfigureServices(
+                (hostContext, _) =>
+                {
+                    toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
+                }
+            )
             .Build();
 
         Assert.Equal(expected, toOverwriteValue);
@@ -46,10 +50,12 @@ public class DefaultHostBuilderExtensionsTests
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
         Environment.SetEnvironmentVariable("TestConfig", null);
         Host.CreateDefaultBuilder()
-            .ConfigureServices((hostContext, _) =>
-            {
-                unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
-            })
+            .ConfigureServices(
+                (hostContext, _) =>
+                {
+                    unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
+                }
+            )
             .Build();
 
         Assert.Equal("http://localhost:4317", unchangedValue);
@@ -68,10 +74,12 @@ public class DefaultHostBuilderExtensionsTests
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
         Environment.SetEnvironmentVariable("TestConfig", expectedValue);
         Host.CreateDefaultBuilder()
-            .ConfigureServices((hostContext, _) =>
-            {
-                toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
-            })
+            .ConfigureServices(
+                (hostContext, _) =>
+                {
+                    toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
+                }
+            )
             .Build();
 
         Assert.Equal(expectedValue, toOverwriteValue);
@@ -89,10 +97,12 @@ public class DefaultHostBuilderExtensionsTests
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", env);
         Environment.SetEnvironmentVariable("TestConfig", null);
         Host.CreateDefaultBuilder()
-            .ConfigureServices((hostContext, _) =>
-            {
-                unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
-            })
+            .ConfigureServices(
+                (hostContext, _) =>
+                {
+                    unchangedValue = hostContext.Configuration.GetSection("OltpExporter").GetValue<string>("Endpoint");
+                }
+            )
             .Build();
 
         Assert.Equal("http://localhost:4317", unchangedValue);
@@ -111,10 +121,12 @@ public class DefaultHostBuilderExtensionsTests
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", env);
         Environment.SetEnvironmentVariable("TestConfig", expectedValue);
         Host.CreateDefaultBuilder()
-            .ConfigureServices((hostContext, _) =>
-            {
-                toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
-            })
+            .ConfigureServices(
+                (hostContext, _) =>
+                {
+                    toOverwriteValue = hostContext.Configuration.GetValue<string>("TestConfig");
+                }
+            )
             .Build();
 
         Assert.Equal(expectedValue, toOverwriteValue);

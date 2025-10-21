@@ -14,7 +14,8 @@ using RabbitMQ.Client.Events;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;
 
-public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
+public class RabbitMQMessageConsumer<T> : IMessageConsumer<T>
+    where T : notnull
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IApplicationNameService _applicationNameService;
@@ -26,11 +27,13 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
 
     internal IRabbitMQConnectionFactory<T> ConnectionFactory { get; }
 
-    public RabbitMQMessageConsumer(ILogger<RabbitMQMessageConsumer<T>> logger,
+    public RabbitMQMessageConsumer(
+        ILogger<RabbitMQMessageConsumer<T>> logger,
         IRabbitMQConnectionFactory<T> connectionFactory,
         IOptions<RabbitMQConsumerOptions<T>> config,
         IHostApplicationLifetime applicationLifetime,
-        IApplicationNameService applicationNameService)
+        IApplicationNameService applicationNameService
+    )
     {
         _logger = logger;
         ConnectionFactory = connectionFactory;
@@ -39,11 +42,11 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         _applicationNameService = applicationNameService;
     }
 
-    public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    public Func<
+        MotorCloudEvent<byte[]>,
+        CancellationToken,
+        Task<ProcessedMessageStatus>
+    >? ConsumeCallbackAsync { get; set; }
 
     public async Task ExecuteAsync(CancellationToken token = default)
     {
@@ -78,7 +81,8 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         if (ConsumeCallbackAsync is null)
         {
             throw new InvalidOperationException(
-                $"Cannot start consuming as no {nameof(ConsumeCallbackAsync)} was configured!");
+                $"Cannot start consuming as no {nameof(ConsumeCallbackAsync)} was configured!"
+            );
         }
     }
 
@@ -113,8 +117,7 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
     {
         if (_channel is null)
         {
-            _logger.LogError(LogEvents.ConsumerNotStarted,
-                "Message consumer could not start because channel is null");
+            _logger.LogError(LogEvents.ConsumerNotStarted, "Message consumer could not start because channel is null");
             _applicationLifetime.StopApplication();
             return;
         }
@@ -133,8 +136,12 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             return Task.CompletedTask;
         };
         _started = true;
-        await _channel.BasicConsumeAsync(_options.Queue.Name, false, consumer,
-            cancellationToken: _stoppingTokenSource.Token);
+        await _channel.BasicConsumeAsync(
+            _options.Queue.Name,
+            false,
+            consumer,
+            cancellationToken: _stoppingTokenSource.Token
+        );
     }
 
     private async Task ConsumerCallback(BasicDeliverEventArgs args)
@@ -148,7 +155,8 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
         {
             var cloudEvent = args.ExtractCloudEvent(_applicationNameService, args.Body, _options.ExtractBindingKey);
 
-            var processedMessageStatus = await ConsumeCallbackAsync.Invoke(cloudEvent, _stoppingTokenSource.Token)
+            var processedMessageStatus = await ConsumeCallbackAsync
+                .Invoke(cloudEvent, _stoppingTokenSource.Token)
                 .ConfigureAwait(false);
 
             if (_stoppingTokenSource.IsCancellationRequested)
@@ -158,8 +166,10 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
 
             if (_channel is null)
             {
-                _logger.LogWarning(LogEvents.ChannelNullAfterProcessingComplete,
-                    "Message processing status could not be returned to the channel because the channel is null");
+                _logger.LogWarning(
+                    LogEvents.ChannelNullAfterProcessingComplete,
+                    "Message processing status could not be returned to the channel because the channel is null"
+                );
                 return;
             }
 
@@ -175,8 +185,10 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
                     await _channel.BasicRejectAsync(args.DeliveryTag, false, _stoppingTokenSource.Token);
                     break;
                 case ProcessedMessageStatus.InvalidInput:
-                    if (_options.Queue.DeadLetterExchange is null || _options.Queue.DeadLetterExchange
-                            .RepublishInvalidInputToDeadLetterExchange)
+                    if (
+                        _options.Queue.DeadLetterExchange is null
+                        || _options.Queue.DeadLetterExchange.RepublishInvalidInputToDeadLetterExchange
+                    )
                     {
                         await _channel.BasicRejectAsync(args.DeliveryTag, false, _stoppingTokenSource.Token);
                     }
@@ -187,13 +199,17 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
 
                     break;
                 case ProcessedMessageStatus.CriticalFailure:
-                    _logger.LogWarning(LogEvents.CriticalFailureOnConsume,
-                        "Message consume fails with critical failure");
+                    _logger.LogWarning(
+                        LogEvents.CriticalFailureOnConsume,
+                        "Message consume fails with critical failure"
+                    );
                     _applicationLifetime.StopApplication();
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(processedMessageStatus),
-                        processedMessageStatus.ToString());
+                    throw new ArgumentOutOfRangeException(
+                        nameof(processedMessageStatus),
+                        processedMessageStatus.ToString()
+                    );
             }
         }
         catch (Exception e)
@@ -201,10 +217,12 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             _logger.LogCritical(LogEvents.UnexpectedErrorOnConsume, e, "Unexpected error on consume");
             _applicationLifetime.StopApplication();
         }
-
     }
 
-    private Dictionary<string, object?> BuildQueueDeclareArguments(RabbitMQQueueLimitOptions rabbitMqQueueLimitOptions, bool includeDeadLetterExchangeArguments = true)
+    private Dictionary<string, object?> BuildQueueDeclareArguments(
+        RabbitMQQueueLimitOptions rabbitMqQueueLimitOptions,
+        bool includeDeadLetterExchangeArguments = true
+    )
     {
         var arguments = _options.Queue.Arguments.ToDictionary(t => t.Key, t => t.Value);
         if (rabbitMqQueueLimitOptions.MaxPriority is not null)
@@ -260,14 +278,18 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             _options.Queue.Durable,
             false,
             _options.Queue.AutoDelete,
-            arguments, cancellationToken: _stoppingTokenSource.Token);
+            arguments,
+            cancellationToken: _stoppingTokenSource.Token
+        );
         foreach (var routingKeyConfig in _options.Queue.Bindings)
         {
             await _channel.QueueBindAsync(
                 _options.Queue.Name,
                 routingKeyConfig.Exchange,
                 routingKeyConfig.RoutingKey,
-                routingKeyConfig.Arguments, cancellationToken: _stoppingTokenSource.Token);
+                routingKeyConfig.Arguments,
+                cancellationToken: _stoppingTokenSource.Token
+            );
         }
     }
 
@@ -294,11 +316,15 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T> where T : notnull
             _options.Queue.Durable,
             false,
             _options.Queue.AutoDelete,
-            argumentsWithoutDeadLetterExchange, cancellationToken: _stoppingTokenSource.Token);
+            argumentsWithoutDeadLetterExchange,
+            cancellationToken: _stoppingTokenSource.Token
+        );
         await _channel.QueueBindAsync(
             deadLetterExchangeQueueName,
             _options.Queue.DeadLetterExchange.Binding.Exchange,
             _options.Queue.DeadLetterExchange.Binding.RoutingKey,
-            _options.Queue.DeadLetterExchange.Binding.Arguments, cancellationToken: _stoppingTokenSource.Token);
+            _options.Queue.DeadLetterExchange.Binding.Arguments,
+            cancellationToken: _stoppingTokenSource.Token
+        );
     }
 }
