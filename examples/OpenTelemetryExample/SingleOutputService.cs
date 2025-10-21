@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Motor.Extensions.Diagnostics.Telemetry;
-using OpenTelemetryExample.Model;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
+using OpenTelemetryExample.Model;
 
 namespace OpenTelemetryExample;
 
@@ -17,7 +17,8 @@ public class SingleOutputService : ISingleOutputService<InputMessage, OutputMess
     // Handle incoming messages
     public Task<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
         MotorCloudEvent<InputMessage> inputEvent,
-        CancellationToken token = default)
+        CancellationToken token = default
+    )
     {
         // Get the input message from the cloud event
         var input = inputEvent.TypedData;
@@ -32,8 +33,7 @@ public class SingleOutputService : ISingleOutputService<InputMessage, OutputMess
         var parentContext = inputEvent.GetActivityContext();
 
         // Create new Activity with extracted ActivityContext as parent
-        using var activity =
-            ActivitySource.StartActivity(nameof(MagicFunc), ActivityKind.Consumer, parentContext);
+        using var activity = ActivitySource.StartActivity(nameof(MagicFunc), ActivityKind.Consumer, parentContext);
         activity?.SetTag("fancyText", input.FancyText);
 
         // Add Trace for MagicFunc with a tag

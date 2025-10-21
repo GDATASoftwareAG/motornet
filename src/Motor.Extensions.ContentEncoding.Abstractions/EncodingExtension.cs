@@ -22,7 +22,8 @@ public static class EncodingExtension
         return cloudEvent;
     }
 
-    public static string GetEncoding<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class =>
-        Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[EncodingAttribute] as string ??
-        NoOpMessageEncoder.NoEncoding;
+    public static string GetEncoding<TData>(this MotorCloudEvent<TData> cloudEvent)
+        where TData : class =>
+        Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[EncodingAttribute] as string
+        ?? NoOpMessageEncoder.NoEncoding;
 }

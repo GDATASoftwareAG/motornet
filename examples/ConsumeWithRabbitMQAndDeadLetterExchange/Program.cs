@@ -9,32 +9,38 @@ using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Utilities;
 
-await MotorHost.CreateDefaultBuilder()
+await MotorHost
+    .CreateDefaultBuilder()
     // Configure input message type
     .ConfigureNoOutputService<SomeMessage>()
-    .ConfigureServices((_, services) =>
-    {
-        // Add a handler for the input message
-        // This handler is called for every new incoming message
-        services.AddTransient<INoOutputService<SomeMessage>, SomeNoOutputService>();
-    })
-    // Add the incoming communication module. 
-    .ConfigureConsumer<SomeMessage>((_, builder) =>
-    {
-        // In this case the messages are received from RabbitMQ
-        builder.AddRabbitMQ();
-        // The encoding of the incoming message, such that the handler is able to deserialize the message
-        builder.AddSystemJson();
-    })
+    .ConfigureServices(
+        (_, services) =>
+        {
+            // Add a handler for the input message
+            // This handler is called for every new incoming message
+            services.AddTransient<INoOutputService<SomeMessage>, SomeNoOutputService>();
+        }
+    )
+    // Add the incoming communication module.
+    .ConfigureConsumer<SomeMessage>(
+        (_, builder) =>
+        {
+            // In this case the messages are received from RabbitMQ
+            builder.AddRabbitMQ();
+            // The encoding of the incoming message, such that the handler is able to deserialize the message
+            builder.AddSystemJson();
+        }
+    )
     .RunConsoleAsync();
-
 
 // This is the message handler, we added above
 public class SomeNoOutputService : INoOutputService<SomeMessage>
 {
     // Handle incoming messages
-    public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<SomeMessage> inputEvent,
-        CancellationToken token = default)
+    public Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<SomeMessage> inputEvent,
+        CancellationToken token = default
+    )
     {
         // Get the input message from the cloud event
         var input = inputEvent.TypedData;
@@ -60,7 +66,7 @@ public class SomeNoOutputService : INoOutputService<SomeMessage>
             1 => throw new FailureException("i failed"),
 
             // Return ProcessedMessageStatus.Success when message processing succeeds
-            _ => Task.FromResult(ProcessedMessageStatus.Success)
+            _ => Task.FromResult(ProcessedMessageStatus.Success),
         };
     }
 

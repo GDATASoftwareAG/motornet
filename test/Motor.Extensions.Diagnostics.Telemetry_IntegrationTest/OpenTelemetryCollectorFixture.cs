@@ -14,7 +14,8 @@ public class OpenTelemetryCollectorFixture : IAsyncLifetime
     public Uri Endpoint => new($"http://{Container!.Hostname}:{Container!.GetMappedPublicPort(OtlpPort)}");
 
     public async Task<bool> ReceivedSpanAsync(string spanId) =>
-        await Policy.HandleResult(false)
+        await Policy
+            .HandleResult(false)
             .WaitAndRetryAsync(10, _ => TimeSpan.FromSeconds(1))
             .ExecuteAsync(async () =>
             {
@@ -24,15 +25,15 @@ public class OpenTelemetryCollectorFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var dockerImage = new ImageFromDockerfileBuilder()
-            .WithDockerfile("OpenTelemetryCollector.Dockerfile")
-            .Build();
+        var dockerImage = new ImageFromDockerfileBuilder().WithDockerfile("OpenTelemetryCollector.Dockerfile").Build();
         await dockerImage.CreateAsync();
         Container = new ContainerBuilder()
             .WithImage(dockerImage)
             .WithPortBinding(OtlpPort, true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged(
-                @"Everything is ready\. Begin running and processing data\."))
+            .WithWaitStrategy(
+                Wait.ForUnixContainer()
+                    .UntilMessageIsLogged(@"Everything is ready\. Begin running and processing data\.")
+            )
             .Build();
         await Container.StartAsync();
     }

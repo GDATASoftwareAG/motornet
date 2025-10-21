@@ -29,8 +29,10 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     private const string Message = "message";
     private readonly byte[] _expectedMessage = Encoding.UTF8.GetBytes(Message);
     private readonly Channel<byte[]> _consumedChannel = Channel.CreateUnbounded<byte[]>();
-    private readonly IRandomizerString _topicRandomizer =
-        RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = "^[A-Z]{10}" });
+    private readonly IRandomizerString _topicRandomizer = RandomizerFactory.GetRandomizer(
+        new FieldOptionsTextRegex { Pattern = "^[A-Z]{10}" }
+    );
+
     private string NewTopic() => _topicRandomizer.Generate();
 
     [Fact(Timeout = 50000)]
@@ -86,8 +88,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var publisher = GetPublisher<byte[]>(topic);
-        var motorCloudEvent =
-            MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
+        var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
         var consumer = GetConsumer<byte[]>(topic);
         string id = null;
@@ -112,8 +113,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var publisher = GetPublisher<byte[]>("wrong_topic");
-        var motorCloudEvent =
-            MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
+        var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
         motorCloudEvent.SetKafkaTopic(topic);
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
         var consumer = GetConsumer<byte[]>(topic);
@@ -177,7 +177,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     [InlineData(ProcessedMessageStatus.TemporaryFailure)]
     [InlineData(ProcessedMessageStatus.CriticalFailure)]
     public async Task Consume_SynchronousMessageHandlingWhereProcessingFailed_DoesNotProcessSecondMessage(
-        ProcessedMessageStatus returnStatus)
+        ProcessedMessageStatus returnStatus
+    )
     {
         var topic = NewTopic();
         var taskCompletionSource = new TaskCompletionSource();
@@ -211,7 +212,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     [InlineData(ProcessedMessageStatus.Failure)]
     [InlineData(ProcessedMessageStatus.InvalidInput)]
     public async Task Consume_SynchronousMessageHandlingWithMultipleMessages_AllMessagesProcessed(
-        ProcessedMessageStatus processedMessageStatus)
+        ProcessedMessageStatus processedMessageStatus
+    )
     {
         var topic = NewTopic();
         const int numMessages = 10;
@@ -261,7 +263,10 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
         var config = GetConsumerConfig<string>(
-            topic, retriesOnTemporaryFailure: expectedNumberOfRetries, retryBasePeriod: retryBasePeriod);
+            topic,
+            retriesOnTemporaryFailure: expectedNumberOfRetries,
+            retryBasePeriod: retryBasePeriod
+        );
         var consumer = GetConsumer(topic, config);
         var actualNumberOfTries = 0;
         consumer.ConsumeCallbackAsync = async (_, _) =>
@@ -292,7 +297,10 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var retryBasePeriod = TimeSpan.FromMilliseconds(10);
         await PublishMessage(topic, "someKey", Message);
         var config = GetConsumerConfig<string>(
-            topic, retriesOnTemporaryFailure: numberOfRetries, retryBasePeriod: retryBasePeriod);
+            topic,
+            retriesOnTemporaryFailure: numberOfRetries,
+            retryBasePeriod: retryBasePeriod
+        );
         var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
 
@@ -455,40 +463,56 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     }
 
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateConsumeCallback(
-        ProcessedMessageStatus statusToReturn, Channel<byte[]> channel) => async (data, _) =>
-    {
-        output.WriteLine($"Processed message with status {statusToReturn.ToString()}");
-        await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
-        return await Task.FromResult(statusToReturn);
-    };
+        ProcessedMessageStatus statusToReturn,
+        Channel<byte[]> channel
+    ) =>
+        async (data, _) =>
+        {
+            output.WriteLine($"Processed message with status {statusToReturn.ToString()}");
+            await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
+            return await Task.FromResult(statusToReturn);
+        };
 
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateBlockingCallback(
-        Channel<byte[]> channel) => async (data, cancellationToken) =>
-    {
-        output.WriteLine("Blocking message");
-        await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
-        await Task.Delay(-1, cancellationToken);
-        return ProcessedMessageStatus.Success;
-    };
+        Channel<byte[]> channel
+    ) =>
+        async (data, cancellationToken) =>
+        {
+            output.WriteLine("Blocking message");
+            await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
+            await Task.Delay(-1, cancellationToken);
+            return ProcessedMessageStatus.Success;
+        };
 
     private static void WaitUntil(Action action) => Policy.Handle<Exception>().RetryForever().Execute(action);
 
     private async Task PublishMessage(string topic, string key, string value)
     {
         using var producer = new ProducerBuilder<string, byte[]>(GetPublisherConfig<string>(topic)).Build();
-        await producer.ProduceAsync(topic,
-            new Message<string, byte[]> { Key = key, Value = Encoding.UTF8.GetBytes(value) });
+        await producer.ProduceAsync(
+            topic,
+            new Message<string, byte[]> { Key = key, Value = Encoding.UTF8.GetBytes(value) }
+        );
         producer.Flush();
     }
 
-    private KafkaMessageConsumer<T> GetConsumer<T>(string topic, KafkaConsumerOptions<T> config = null,
-        IHostApplicationLifetime fakeLifetimeMock = null)
+    private KafkaMessageConsumer<T> GetConsumer<T>(
+        string topic,
+        KafkaConsumerOptions<T> config = null,
+        IHostApplicationLifetime fakeLifetimeMock = null
+    )
     {
         var options = Options.Create(config ?? GetConsumerConfig<T>(topic));
         var logger = output.BuildLoggerFor<KafkaMessageConsumer<T>>();
         fakeLifetimeMock ??= Mock.Of<IHostApplicationLifetime>();
-        return new KafkaMessageConsumer<T>(logger, options, fakeLifetimeMock, null, GetApplicationNameService(),
-            new JsonEventFormatter());
+        return new KafkaMessageConsumer<T>(
+            logger,
+            options,
+            fakeLifetimeMock,
+            null,
+            GetApplicationNameService(),
+            new JsonEventFormatter()
+        );
     }
 
     private KafkaMessagePublisher<T> GetPublisher<T>(string topic)
@@ -500,11 +524,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
 
     private KafkaPublisherOptions<T> GetPublisherConfig<T>(string topic)
     {
-        return new KafkaPublisherOptions<T>
-        {
-            Topic = topic,
-            BootstrapServers = fixture.BootstrapServers,
-        };
+        return new KafkaPublisherOptions<T> { Topic = topic, BootstrapServers = fixture.BootstrapServers };
     }
 
     private static IApplicationNameService GetApplicationNameService(string source = "test://non")
@@ -514,8 +534,13 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         return mock.Object;
     }
 
-    private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, int maxConcurrentMessages = 1000,
-        string groupId = "group_id", int retriesOnTemporaryFailure = 10, TimeSpan? retryBasePeriod = null)
+    private KafkaConsumerOptions<T> GetConsumerConfig<T>(
+        string topic,
+        int maxConcurrentMessages = 1000,
+        string groupId = "group_id",
+        int retriesOnTemporaryFailure = 10,
+        TimeSpan? retryBasePeriod = null
+    )
     {
         return new KafkaConsumerOptions<T>
         {
@@ -529,7 +554,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             AutoOffsetReset = AutoOffsetReset.Earliest,
             MaxConcurrentMessages = maxConcurrentMessages,
             RetriesOnTemporaryFailure = retriesOnTemporaryFailure,
-            RetryBasePeriod = retryBasePeriod ?? TimeSpan.FromSeconds(1)
+            RetryBasePeriod = retryBasePeriod ?? TimeSpan.FromSeconds(1),
         };
     }
 }

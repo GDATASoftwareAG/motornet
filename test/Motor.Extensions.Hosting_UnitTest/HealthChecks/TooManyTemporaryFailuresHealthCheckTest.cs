@@ -11,11 +11,13 @@ public class TooManyTemporaryFailuresHealthCheckTest
     [Fact]
     public async System.Threading.Tasks.Task CheckHealthAsync_NoTemporaryFailure_ServiceHealthy()
     {
-        var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
-        {
-            LastHandledMessageAt = DateTimeOffset.UtcNow,
-            TemporaryFailureCountSinceLastHandledMessage = 0
-        });
+        var healthCheck = CreateHealthCheck(
+            new TooManyTemporaryFailuresStatistics<string>
+            {
+                LastHandledMessageAt = DateTimeOffset.UtcNow,
+                TemporaryFailureCountSinceLastHandledMessage = 0,
+            }
+        );
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -25,11 +27,13 @@ public class TooManyTemporaryFailuresHealthCheckTest
     [Fact]
     public async System.Threading.Tasks.Task CheckHealthAsync_ManyTemporaryFailuresAfterLastHandledMessage_ServiceIsUnhealthy()
     {
-        var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
-        {
-            LastHandledMessageAt = DateTimeOffset.MinValue,
-            TemporaryFailureCountSinceLastHandledMessage = 1001
-        });
+        var healthCheck = CreateHealthCheck(
+            new TooManyTemporaryFailuresStatistics<string>
+            {
+                LastHandledMessageAt = DateTimeOffset.MinValue,
+                TemporaryFailureCountSinceLastHandledMessage = 1001,
+            }
+        );
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -39,11 +43,13 @@ public class TooManyTemporaryFailuresHealthCheckTest
     [Fact]
     public async System.Threading.Tasks.Task CheckHealthAsync_SingleTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
-        {
-            LastHandledMessageAt = DateTimeOffset.UtcNow,
-            TemporaryFailureCountSinceLastHandledMessage = 1
-        });
+        var healthCheck = CreateHealthCheck(
+            new TooManyTemporaryFailuresStatistics<string>
+            {
+                LastHandledMessageAt = DateTimeOffset.UtcNow,
+                TemporaryFailureCountSinceLastHandledMessage = 1,
+            }
+        );
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -53,11 +59,13 @@ public class TooManyTemporaryFailuresHealthCheckTest
     [Fact]
     public async System.Threading.Tasks.Task CheckHealthAsync_SingleTemporaryFailureAfterLastHandledMessage_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
-        {
-            LastHandledMessageAt = DateTimeOffset.MinValue,
-            TemporaryFailureCountSinceLastHandledMessage = 1
-        });
+        var healthCheck = CreateHealthCheck(
+            new TooManyTemporaryFailuresStatistics<string>
+            {
+                LastHandledMessageAt = DateTimeOffset.MinValue,
+                TemporaryFailureCountSinceLastHandledMessage = 1,
+            }
+        );
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -67,11 +75,13 @@ public class TooManyTemporaryFailuresHealthCheckTest
     [Fact]
     public async System.Threading.Tasks.Task CheckHealthAsync_ManyTemporaryFailureAfterRecentLastHandledMessage_ServiceIsHealthy()
     {
-        var healthCheck = CreateHealthCheck(new TooManyTemporaryFailuresStatistics<string>
-        {
-            LastHandledMessageAt = DateTimeOffset.UtcNow,
-            TemporaryFailureCountSinceLastHandledMessage = 1001
-        });
+        var healthCheck = CreateHealthCheck(
+            new TooManyTemporaryFailuresStatistics<string>
+            {
+                LastHandledMessageAt = DateTimeOffset.UtcNow,
+                TemporaryFailureCountSinceLastHandledMessage = 1001,
+            }
+        );
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -79,10 +89,10 @@ public class TooManyTemporaryFailuresHealthCheckTest
     }
 
     private static TooManyTemporaryFailuresHealthCheck<string> CreateHealthCheck(
-        TooManyTemporaryFailuresStatistics<string> temporaryFailuresStatistics)
+        TooManyTemporaryFailuresStatistics<string> temporaryFailuresStatistics
+    )
     {
         var options = new TooManyTemporaryFailuresOptions();
-        return new TooManyTemporaryFailuresHealthCheck<string>(
-            Options.Create(options), temporaryFailuresStatistics);
+        return new TooManyTemporaryFailuresHealthCheck<string>(Options.Create(options), temporaryFailuresStatistics);
     }
 }

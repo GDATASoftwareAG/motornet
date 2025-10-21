@@ -18,19 +18,24 @@ public class PrepareDelegatingMessageHandler<TInput> : DelegatingMessageHandler<
         _logger = logger;
     }
 
-    public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default)
+    public override async Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         ProcessedMessageStatus processedMessageStatus;
         try
         {
-            processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token)
-                .ConfigureAwait(false);
+            processedMessageStatus = await base.HandleMessageAsync(dataCloudEvent, token).ConfigureAwait(false);
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(LogEvents.InvalidInput, ex, "Invalid input (first 100 chars): {message}",
-                dataCloudEvent.Data?.ToString()?.Take(100));
+            _logger.LogWarning(
+                LogEvents.InvalidInput,
+                ex,
+                "Invalid input (first 100 chars): {message}",
+                dataCloudEvent.Data?.ToString()?.Take(100)
+            );
             processedMessageStatus = ProcessedMessageStatus.InvalidInput;
         }
         catch (TemporaryFailureException ex)
@@ -55,8 +60,11 @@ public class PrepareDelegatingMessageHandler<TInput> : DelegatingMessageHandler<
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
-                "Unexpected error on message processing.");
+            _logger.LogCritical(
+                LogEvents.UnexpectedErrorOnMessageProcessing,
+                ex,
+                "Unexpected error on message processing."
+            );
 
             processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
         }

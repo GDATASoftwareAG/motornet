@@ -5,7 +5,8 @@ using Newtonsoft.Json;
 
 namespace Motor.Extensions.Conversion.JsonNet;
 
-public class JsonNetDeserializer<T> : IMessageDeserializer<T> where T : notnull
+public class JsonNetDeserializer<T> : IMessageDeserializer<T>
+    where T : notnull
 {
     public T Deserialize(byte[] message)
     {

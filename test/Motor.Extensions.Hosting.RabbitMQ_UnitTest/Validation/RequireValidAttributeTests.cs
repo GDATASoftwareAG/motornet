@@ -45,59 +45,95 @@ public class RequireValidAttributeTests
         public ICollection<Nested?> NestedCollection { get; init; } = new List<Nested?>();
     }
 
-    public static IEnumerable<object[]> InvalidObjects => new[]
-    {
+    public static IEnumerable<object[]> InvalidObjects =>
+        new[]
+        {
             new[] { new Wrapper() },
-            new[] { new Wrapper { Nested = new Nested { Greeting = "Hello" }, NestedArray = null } },
-            new[] { new Wrapper { Nested = new Nested { Greeting = "Hello" }, NestedList = null } },
-            new[] { new Wrapper { Nested = new Nested { Greeting = "Hello" }, NestedCollection = null } },
-            new[] { new Wrapper { Nested = new Nested { Greeting = "Hello" }, NestedArray = new[] { new Nested() } } },
             new[]
             {
-                new Wrapper { Nested = new Nested { Greeting = "Hello" }, NestedList = new List<Nested?> { new() } }
+                new Wrapper
+                {
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedArray = null,
+                },
             },
             new[]
             {
                 new Wrapper
                 {
-                    Nested = new Nested { Greeting = "Hello" }, NestedCollection = new List<Nested?> { new() }
-                }
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedList = null,
+                },
             },
             new[]
             {
                 new Wrapper
                 {
-                    Nested = new Nested { Greeting = "Hello" }, NestedCollection = new List<Nested?> { new(), null }
-                }
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedCollection = null,
+                },
+            },
+            new[]
+            {
+                new Wrapper
+                {
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedArray = new[] { new Nested() },
+                },
+            },
+            new[]
+            {
+                new Wrapper
+                {
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedList = new List<Nested?> { new() },
+                },
+            },
+            new[]
+            {
+                new Wrapper
+                {
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedCollection = new List<Nested?> { new() },
+                },
+            },
+            new[]
+            {
+                new Wrapper
+                {
+                    Nested = new Nested { Greeting = "Hello" },
+                    NestedCollection = new List<Nested?> { new(), null },
+                },
             },
         };
 
-    public static IEnumerable<object[]> ValidObjects => new[]
-    {
+    public static IEnumerable<object[]> ValidObjects =>
+        new[]
+        {
             new[] { new Wrapper { Nested = new Nested { Greeting = "Hello" } } },
             new[]
             {
                 new Wrapper
                 {
                     Nested = new Nested { Greeting = "Hello" },
-                    NestedArray = new[] { new Nested { Greeting = "Hello" } }
-                }
+                    NestedArray = new[] { new Nested { Greeting = "Hello" } },
+                },
             },
             new[]
             {
                 new Wrapper
                 {
                     Nested = new Nested { Greeting = "Hello" },
-                    NestedList = new List<Nested?> { new() { Greeting = "Hello" } }
-                }
+                    NestedList = new List<Nested?> { new() { Greeting = "Hello" } },
+                },
             },
             new[]
             {
                 new Wrapper
                 {
                     Nested = new Nested { Greeting = "Hello" },
-                    NestedCollection = new List<Nested?> { new() { Greeting = "Hello" } }
-                }
+                    NestedCollection = new List<Nested?> { new() { Greeting = "Hello" } },
+                },
             },
         };
 }

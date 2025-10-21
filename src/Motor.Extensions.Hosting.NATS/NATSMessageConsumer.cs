@@ -10,7 +10,8 @@ using NATS.Client;
 
 namespace Motor.Extensions.Hosting.NATS;
 
-public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
+public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable
+    where TData : notnull
 {
     private readonly NATSConsumerOptions _options;
     private readonly ILogger<NATSMessageConsumer<TData>> _logger;
@@ -18,8 +19,12 @@ public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable w
     private readonly IConnection _client;
     private ISyncSubscription? _subscription;
 
-    public NATSMessageConsumer(IOptions<NATSConsumerOptions> options, ILogger<NATSMessageConsumer<TData>> logger,
-        IApplicationNameService applicationNameService, INATSClientFactory natsClientFactory)
+    public NATSMessageConsumer(
+        IOptions<NATSConsumerOptions> options,
+        ILogger<NATSMessageConsumer<TData>> logger,
+        IApplicationNameService applicationNameService,
+        INATSClientFactory natsClientFactory
+    )
     {
         _options = options.Value;
         _logger = logger;
@@ -34,26 +39,29 @@ public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable w
             _logger.LogError("Consumer not started yet. Please call StartAsync before ExecuteAsync.");
             return;
         }
-        await Task.Run(async () =>
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
+        await Task.Run(
+                async () =>
                 {
-                    await SingleMessageHandling(_subscription.NextMessage(), token)
-                        .ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogInformation("Terminating Nats Consumer.");
-                    break;
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to receive message.", e);
-                }
-            }
-        }, token).ConfigureAwait(false);
+                    while (!token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            await SingleMessageHandling(_subscription.NextMessage(), token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            _logger.LogInformation("Terminating Nats Consumer.");
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(e, "Failed to receive message.", e);
+                        }
+                    }
+                },
+                token
+            )
+            .ConfigureAwait(false);
     }
 
     private async Task SingleMessageHandling(Msg message, CancellationToken token)
@@ -62,11 +70,11 @@ public class NATSMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable w
         await ConsumeCallbackAsync?.Invoke(dataCloudEvent, token)!;
     }
 
-    public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    public Func<
+        MotorCloudEvent<byte[]>,
+        CancellationToken,
+        Task<ProcessedMessageStatus>
+    >? ConsumeCallbackAsync { get; set; }
 
     public Task StartAsync(CancellationToken token = default)
     {

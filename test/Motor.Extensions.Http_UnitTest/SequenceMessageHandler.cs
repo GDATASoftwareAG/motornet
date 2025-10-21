@@ -13,8 +13,7 @@ public class SequenceMessageHandler : DelegatingHandler
     public List<Func<HttpRequestMessage, HttpResponseMessage>> Responses { get; } =
         new List<Func<HttpRequestMessage, HttpResponseMessage>>();
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-        CancellationToken token)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
         var func = Responses[CallCount++ % Responses.Count];
         return Task.FromResult(func(request));

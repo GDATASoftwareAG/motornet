@@ -9,7 +9,8 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Consumer;
 
-public class ConsumerBuilder<T> : IConsumerBuilder<T> where T : notnull
+public class ConsumerBuilder<T> : IConsumerBuilder<T>
+    where T : notnull
 {
     private readonly IServiceCollection _serviceCollection;
 
@@ -21,23 +22,27 @@ public class ConsumerBuilder<T> : IConsumerBuilder<T> where T : notnull
 
     public HostBuilderContext Context { get; }
 
-    public void AddConsumer<TConsumer>() where TConsumer : IMessageConsumer<T>
+    public void AddConsumer<TConsumer>()
+        where TConsumer : IMessageConsumer<T>
     {
         _serviceCollection.AddTransient(typeof(IMessageConsumer<T>), typeof(TConsumer));
         _serviceCollection.AddTransient<IMessageDecoder, NoOpMessageDecoder>();
     }
 
-    public void AddDecoder<TDecoder>() where TDecoder : IMessageDecoder
+    public void AddDecoder<TDecoder>()
+        where TDecoder : IMessageDecoder
     {
         _serviceCollection.AddTransient(typeof(IMessageDecoder), typeof(TDecoder));
     }
 
-    public void AddDeserializer<TDeserializer>() where TDeserializer : IMessageDeserializer<T>
+    public void AddDeserializer<TDeserializer>()
+        where TDeserializer : IMessageDeserializer<T>
     {
         _serviceCollection.AddTransient(typeof(IMessageDeserializer<T>), typeof(TDeserializer));
     }
 
-    public void AddConsumer<TConsumer>(Func<IServiceProvider, TConsumer> implementationFactory) where TConsumer : IMessageConsumer<T>
+    public void AddConsumer<TConsumer>(Func<IServiceProvider, TConsumer> implementationFactory)
+        where TConsumer : IMessageConsumer<T>
     {
         _serviceCollection.AddTransient<IMessageConsumer<T>>(provider => implementationFactory(provider));
         _serviceCollection.AddTransient<IMessageDecoder, NoOpMessageDecoder>();

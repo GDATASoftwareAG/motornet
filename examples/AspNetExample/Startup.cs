@@ -10,9 +10,11 @@ using Prometheus.Client.HttpRequestDurations;
 using Scalar.AspNetCore;
 
 namespace AspNetExample;
+
 public class Startup : IMotorStartup
 {
     private const string CorsPolicy = nameof(AspNetExample);
+
     public void ConfigureServices(WebHostBuilderContext context, IServiceCollection services)
     {
         // Register custom services for this application
@@ -30,13 +32,18 @@ public class Startup : IMotorStartup
 #endif
 
         // Add example cross-origin policy
-        services.AddCors(options => options.AddPolicy(
-            CorsPolicy, builder => builder
-                .WithOrigins("http://localhost:4200")
-                .AllowAnyHeader()
-                .SetIsOriginAllowedToAllowWildcardSubdomains())
+        services.AddCors(options =>
+            options.AddPolicy(
+                CorsPolicy,
+                builder =>
+                    builder
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyHeader()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+            )
         );
     }
+
     public void Configure(WebHostBuilderContext context, IApplicationBuilder app)
     {
         app.UseEndpoints(endpoints =>

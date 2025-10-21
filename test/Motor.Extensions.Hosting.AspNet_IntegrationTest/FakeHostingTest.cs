@@ -12,9 +12,7 @@ public class FakeHostingTest
     [Fact]
     public async Task Get_ActualRandom_SuccessStatusCode()
     {
-        var httpClient = MotorTestHost.BasedOn<ActualStartup>()
-            .Build()
-            .CreateClient();
+        var httpClient = MotorTestHost.BasedOn<ActualStartup>().Build().CreateClient();
 
         var response = await httpClient.GetAsync(Endpoint);
 
@@ -24,7 +22,8 @@ public class FakeHostingTest
     [Fact]
     public async Task Get_FakeRandom_SuccessStatusCode()
     {
-        var httpClient = MotorTestHost.BasedOn<ActualStartup>()
+        var httpClient = MotorTestHost
+            .BasedOn<ActualStartup>()
             .SubstituteTransient<IRandomNumberGenerator>(generator => generator.Next().Returns(0))
             .Build()
             .CreateClient();
@@ -37,9 +36,7 @@ public class FakeHostingTest
     [Fact]
     public async Task Get_ActualRandom_NumberResponse()
     {
-        var httpClient = MotorTestHost.BasedOn<ActualStartup>()
-            .Build()
-            .CreateClient();
+        var httpClient = MotorTestHost.BasedOn<ActualStartup>().Build().CreateClient();
 
         var response = await httpClient.GetAsync(Endpoint);
 
@@ -52,7 +49,8 @@ public class FakeHostingTest
     [InlineData(42)]
     public async Task Get_FakeRandom_FakedResponse(int expectedResponse)
     {
-        var httpClient = MotorTestHost.BasedOn<ActualStartup>()
+        var httpClient = MotorTestHost
+            .BasedOn<ActualStartup>()
             .SubstituteTransient<IRandomNumberGenerator>(generator => generator.Next().Returns(expectedResponse))
             .Build()
             .CreateClient();

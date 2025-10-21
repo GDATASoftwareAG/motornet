@@ -4,7 +4,8 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.Protobuf;
 
-public class ProtobufDeserializer<T> : IMessageDeserializer<T> where T : IMessage<T>, new()
+public class ProtobufDeserializer<T> : IMessageDeserializer<T>
+    where T : IMessage<T>, new()
 {
     private readonly MessageParser<T> _messageParser = new(() => new T());
 

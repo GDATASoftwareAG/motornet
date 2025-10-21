@@ -8,9 +8,10 @@ public class SingleOutputServiceAdapter<TInput, TOutput> : MultiOutputServiceAda
     where TInput : class
     where TOutput : class
 {
-    public SingleOutputServiceAdapter(ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
-        ISingleOutputService<TInput, TOutput> service, ITypedMessagePublisher<TOutput> publisher) :
-        base(logger, new SingleToMultiOutputAdapter<TInput, TOutput>(service), publisher)
-    {
-    }
+    public SingleOutputServiceAdapter(
+        ILogger<SingleOutputServiceAdapter<TInput, TOutput>> logger,
+        ISingleOutputService<TInput, TOutput> service,
+        ITypedMessagePublisher<TOutput> publisher
+    )
+        : base(logger, new SingleToMultiOutputAdapter<TInput, TOutput>(service), publisher) { }
 }

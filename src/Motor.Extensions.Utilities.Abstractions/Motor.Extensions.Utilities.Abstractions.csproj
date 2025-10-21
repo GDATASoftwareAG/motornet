@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-    
-    <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
-
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>

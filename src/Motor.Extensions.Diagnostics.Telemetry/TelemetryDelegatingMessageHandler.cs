@@ -19,19 +19,24 @@ public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandle
         _logger = logger;
     }
 
-    public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default)
+    public override async Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         var parentContext = dataCloudEvent.GetActivityContext();
-        using var activity = OpenTelemetryOptions.ActivitySource.StartActivity(nameof(HandleMessageAsync), ActivityKind.Server, parentContext);
+        using var activity = OpenTelemetryOptions.ActivitySource.StartActivity(
+            nameof(HandleMessageAsync),
+            ActivityKind.Server,
+            parentContext
+        );
         if (activity is null)
         {
             return await base.HandleMessageAsync(dataCloudEvent, token);
         }
 
         using (activity.Start())
-        using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",
-            activity.TraceId, activity.SpanId))
+        using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}", activity.TraceId, activity.SpanId))
         {
             var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
             try
@@ -48,13 +53,17 @@ public class TelemetryDelegatingMessageHandler<TInput> : DelegatingMessageHandle
                         activity.SetStatus(Status.Ok);
                         break;
                     case ProcessedMessageStatus.TemporaryFailure:
-                        activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.TemporaryFailure)));
+                        activity.SetStatus(
+                            Status.Error.WithDescription(nameof(ProcessedMessageStatus.TemporaryFailure))
+                        );
                         break;
                     case ProcessedMessageStatus.InvalidInput:
                         activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.InvalidInput)));
                         break;
                     case ProcessedMessageStatus.CriticalFailure:
-                        activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.CriticalFailure)));
+                        activity.SetStatus(
+                            Status.Error.WithDescription(nameof(ProcessedMessageStatus.CriticalFailure))
+                        );
                         break;
                     case ProcessedMessageStatus.Failure:
                         activity.SetStatus(Status.Error.WithDescription(nameof(ProcessedMessageStatus.Failure)));

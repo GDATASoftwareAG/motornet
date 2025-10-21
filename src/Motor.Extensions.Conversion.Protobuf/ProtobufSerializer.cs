@@ -3,7 +3,8 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.Protobuf;
 
-public class ProtobufSerializer<T> : IMessageSerializer<T> where T : IMessage
+public class ProtobufSerializer<T> : IMessageSerializer<T>
+    where T : IMessage
 {
     public byte[] Serialize(T message)
     {

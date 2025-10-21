@@ -26,13 +26,10 @@ namespace Motor.Extensions.Utilities_IntegrationTest;
 public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQFixture>
 {
     public DemonstrationTests(RabbitMQFixture fixture)
-        : base(fixture)
-    {
-    }
+        : base(fixture) { }
 
     [Fact(Timeout = 60000)]
-    public async Task
-        StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
+    public async Task StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
     {
         PrepareQueues();
 
@@ -51,22 +48,29 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
 
     private static IHost GetReverseStringService()
     {
-        var host = MotorHost.CreateDefaultBuilder()
+        var host = MotorHost
+            .CreateDefaultBuilder()
             .ConfigureSingleOutputService<string, string>()
-            .ConfigureServices((_, services) =>
-            {
-                services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
-            })
-            .ConfigureConsumer<string>((_, builder) =>
-            {
-                builder.AddRabbitMQ();
-                builder.AddDeserializer<StringDeserializer>();
-            })
-            .ConfigurePublisher<string>((_, builder) =>
-            {
-                builder.AddRabbitMQ();
-                builder.AddSerializer<StringSerializer>();
-            })
+            .ConfigureServices(
+                (_, services) =>
+                {
+                    services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
+                }
+            )
+            .ConfigureConsumer<string>(
+                (_, builder) =>
+                {
+                    builder.AddRabbitMQ();
+                    builder.AddDeserializer<StringDeserializer>();
+                }
+            )
+            .ConfigurePublisher<string>(
+                (_, builder) =>
+                {
+                    builder.AddRabbitMQ();
+                    builder.AddSerializer<StringSerializer>();
+                }
+            )
             .Build();
 
         return host;
@@ -96,15 +100,19 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         private readonly ILogger<ReverseStringConverter> _logger;
         private readonly IMetricFamily<ISummary> _summary;
 
-        public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
-            IMetricsFactory<ReverseStringConverter> metricsFactory)
+        public ReverseStringConverter(
+            ILogger<ReverseStringConverter> logger,
+            IMetricsFactory<ReverseStringConverter> metricsFactory
+        )
         {
             _logger = logger;
             _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
         }
 
-        public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
-            CancellationToken token = default)
+        public Task<MotorCloudEvent<string>?> ConvertMessageAsync(
+            MotorCloudEvent<string> dataCloudEvent,
+            CancellationToken token = default
+        )
         {
             var parentContext = dataCloudEvent.GetActivityContext();
             Assert.NotEqual(default, parentContext);

@@ -12,8 +12,11 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_UseFromOld_IdAndDateAreNewCreated()
     {
-        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ",
-            new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(
+            GetApplicationNameService("test://non2"),
+            " ",
+            new Uri("test://non")
+        );
         var expectedData = new List<string>();
 
         var newEvent = oldEvent.CreateNew(expectedData);
@@ -27,8 +30,7 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_UseOldIdentifierFromOld_IdAndDateAreNewCreated()
     {
-        var oldEvent =
-            new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
         var expectedData = new List<string>();
 
         var newEvent = oldEvent.CreateNew(expectedData, true);
@@ -41,8 +43,7 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_UseOldIdentifierFromOld_TypeMatchesOldDataType()
     {
-        var oldEvent =
-            new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
         var expectedData = new List<string>();
 
         var newEvent = oldEvent.CreateNew(expectedData, true);
@@ -54,8 +55,7 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_OldEventHasContentEncoding_NewEventHasSameContentEncoding()
     {
-        var oldEvent =
-            new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
         oldEvent.SetEncoding("some-encoding");
         var expectedData = new List<string>();
 
@@ -67,8 +67,7 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_DoNotUseOldIdentifierFromOld_TypeMatchesNewDataType()
     {
-        var oldEvent =
-            new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService(), " ", new Uri("test://non"));
         var expectedData = new List<string>();
 
         var newEvent = oldEvent.CreateNew(expectedData, false);
@@ -80,8 +79,11 @@ public class MotorCloudEventTests
     [Fact]
     public void CreateNew_UseFromOld_DataIsUpdated()
     {
-        var oldEvent = new MotorCloudEvent<string>(GetApplicationNameService("test://non2"), " ",
-            new Uri("test://non"));
+        var oldEvent = new MotorCloudEvent<string>(
+            GetApplicationNameService("test://non2"),
+            " ",
+            new Uri("test://non")
+        );
         var expectedData = new List<string>();
 
         var newEvent = oldEvent.CreateNew(expectedData);

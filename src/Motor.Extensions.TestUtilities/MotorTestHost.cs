@@ -39,7 +39,9 @@ public class MotorTestHost<TStartup>
         where TInterface : class => SubstituteService(ServiceDescriptor.Singleton, setup);
 
     private MotorTestHost<TStartup> SubstituteService<TInterface>(
-        Func<Func<IServiceProvider, TInterface>, ServiceDescriptor> sd, Action<TInterface>? setup = null)
+        Func<Func<IServiceProvider, TInterface>, ServiceDescriptor> sd,
+        Action<TInterface>? setup = null
+    )
         where TInterface : class
     {
         var substitute = Substitute.For<TInterface>();
@@ -53,7 +55,8 @@ public class MotorTestHost<TStartup>
         return this;
     }
 
-    public MotorTestHost<TStartup> Configure<TOptions>(Action<TOptions> configuration) where TOptions : class
+    public MotorTestHost<TStartup> Configure<TOptions>(Action<TOptions> configuration)
+        where TOptions : class
     {
         _serviceConfiguration.Add(services => services.Configure(configuration));
         return this;

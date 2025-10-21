@@ -13,7 +13,8 @@ public class SingleOutputService : ISingleOutputService<InputMessage, OutputMess
     // Handle incoming messages
     public Task<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
         MotorCloudEvent<InputMessage> inputEvent,
-        CancellationToken token = default)
+        CancellationToken token = default
+    )
     {
         // Get the input message from the cloud event
         var input = inputEvent.TypedData;

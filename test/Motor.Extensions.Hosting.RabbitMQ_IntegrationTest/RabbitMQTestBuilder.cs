@@ -59,7 +59,7 @@ public class RabbitMQTestBuilder
             QueueName = queueName,
             DlxQueueName = $"{queueName}Dlx",
             RoutingKey = randomizerString.Generate(),
-            Fixture = fixture
+            Fixture = fixture,
         };
     }
 
@@ -82,7 +82,10 @@ public class RabbitMQTestBuilder
         return this;
     }
 
-    public RabbitMQTestBuilder WithConsumerCallback(Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback, bool create = true)
+    public RabbitMQTestBuilder WithConsumerCallback(
+        Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> callback,
+        bool create = true
+    )
     {
         Callback = callback;
         createQueue = create;
@@ -128,9 +131,7 @@ public class RabbitMQTestBuilder
 
             await Policy
                 .Handle<Exception>()
-                .WaitAndRetryAsync(retries, retryAttempt =>
-                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
-                )
+                .WaitAndRetryAsync(retries, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
                 .ExecuteAsync(async () =>
                 {
                     var messageInConsumerQueue = await MessagesInQueueAsync(QueueName);
@@ -142,8 +143,11 @@ public class RabbitMQTestBuilder
         return this;
     }
 
-    private async Task PublishSingleMessageAsync<T>(IChannel channel, Message message,
-        RabbitMQConsumerOptions<T> options)
+    private async Task PublishSingleMessageAsync<T>(
+        IChannel channel,
+        Message message,
+        RabbitMQConsumerOptions<T> options
+    )
     {
         var properties = new BasicProperties();
         properties.DeliveryMode = DeliveryModes.Persistent;
@@ -179,7 +183,8 @@ public class RabbitMQTestBuilder
                 options.Queue.Name,
                 routingKeyConfig.Exchange,
                 routingKeyConfig.RoutingKey,
-                routingKeyConfig.Arguments);
+                routingKeyConfig.Arguments
+            );
         }
     }
 
@@ -189,11 +194,7 @@ public class RabbitMQTestBuilder
             ? new RabbitMQDeadLetterExchangeOptions
             {
                 RepublishInvalidInputToDeadLetterExchange = withRepublishToDeadLetterExchangeOnInvalidInput,
-                Binding = new RabbitMQBindingOptions
-                {
-                    Exchange = "amq.topic",
-                    RoutingKey = $"dlx.{RoutingKey}"
-                }
+                Binding = new RabbitMQBindingOptions { Exchange = "amq.topic", RoutingKey = $"dlx.{RoutingKey}" },
             }
             : null;
         return new()
@@ -207,15 +208,11 @@ public class RabbitMQTestBuilder
                 Name = QueueName,
                 Bindings = new[]
                 {
-                        new RabbitMQBindingOptions
-                        {
-                            Exchange = "amq.topic",
-                            RoutingKey = RoutingKey
-                        }
+                    new RabbitMQBindingOptions { Exchange = "amq.topic", RoutingKey = RoutingKey },
                 },
-                DeadLetterExchange = deadLetterExchange
+                DeadLetterExchange = deadLetterExchange,
             },
-            PrefetchCount = PrefetchCount
+            PrefetchCount = PrefetchCount,
         };
     }
 
@@ -236,9 +233,7 @@ public class RabbitMQTestBuilder
             .Setup(f => f.CurrentConnectionAsync())
             .ReturnsAsync(await Fixture.ConnectionAsync());
 
-        rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentChannelAsync())
-            .ReturnsAsync(channel);
+        rabbitConnectionFactoryMock.Setup(f => f.CurrentChannelAsync()).ReturnsAsync(channel);
 
         rabbitConnectionFactoryMock
             .Setup(f => f.Dispose())
@@ -257,7 +252,7 @@ public class RabbitMQTestBuilder
             null
         )
         {
-            ConsumeCallbackAsync = Callback
+            ConsumeCallbackAsync = Callback,
         };
         return consumer;
     }
@@ -302,14 +297,16 @@ public class RabbitMQTestBuilder
             .Setup(f => f.CurrentConnectionAsync())
             .ReturnsAsync(await Fixture.ConnectionAsync());
 
-        rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentChannelAsync())
-            .ReturnsAsync(channel);
+        rabbitConnectionFactoryMock.Setup(f => f.CurrentChannelAsync()).ReturnsAsync(channel);
 
         var options = MSOptions.Create(GetPublisherConfig<T>());
         var publisherOptions = MSOptions.Create(new PublisherOptions());
-        return new RabbitMQMessagePublisher<T>(rabbitConnectionFactoryMock.Object, options, publisherOptions,
-            new JsonEventFormatter());
+        return new RabbitMQMessagePublisher<T>(
+            rabbitConnectionFactoryMock.Object,
+            options,
+            publisherOptions,
+            new JsonEventFormatter()
+        );
     }
 
     private RabbitMQPublisherOptions<T> GetPublisherConfig<T>()
@@ -320,11 +317,7 @@ public class RabbitMQTestBuilder
             User = "guest",
             Password = "guest",
             VirtualHost = "/",
-            PublishingTarget = new RabbitMQBindingOptions
-            {
-                Exchange = "amq.topic",
-                RoutingKey = RoutingKey
-            }
+            PublishingTarget = new RabbitMQBindingOptions { Exchange = "amq.topic", RoutingKey = RoutingKey },
         };
     }
 

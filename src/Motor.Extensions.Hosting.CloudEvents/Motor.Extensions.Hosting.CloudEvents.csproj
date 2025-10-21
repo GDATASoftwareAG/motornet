@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-<PropertyGroup>
+  <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-</PropertyGroup>
-
-<ItemGroup>
+  </PropertyGroup>
+  <ItemGroup>
     <PackageReference Include="CloudNative.CloudEvents" Version="2.8.0" />
-</ItemGroup>
-
-<Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
-
+  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>

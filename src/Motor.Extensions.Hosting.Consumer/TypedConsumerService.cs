@@ -34,7 +34,8 @@ public class TypedConsumerService<TInput> : BackgroundService
         IMessageDeserializer<TInput> deserializer,
         IOptions<ContentEncodingOptions> encodingOptions,
         IEnumerable<IMessageDecoder> decoders,
-        IMessageConsumer<TInput> consumer)
+        IMessageConsumer<TInput> consumer
+    )
     {
         _logger = logger;
         _queue = queue;
@@ -43,10 +44,11 @@ public class TypedConsumerService<TInput> : BackgroundService
         _consumer.ConsumeCallbackAsync = SingleMessageConsumeAsync;
         _encodingOptions = encodingOptions.Value;
 
-        _messageDeserialization =
-            metrics?.CreateSummary("message_deserialization", "Message deserialization duration in ms");
-        _messageDecoding =
-            metrics?.CreateSummary("message_decoding", "Message decoding duration in ms");
+        _messageDeserialization = metrics?.CreateSummary(
+            "message_deserialization",
+            "Message deserialization duration in ms"
+        );
+        _messageDecoding = metrics?.CreateSummary("message_decoding", "Message decoding duration in ms");
 
         _decoderByEncoding = new Dictionary<string, IMessageDecoder>();
         foreach (var decoder in decoders)
@@ -67,16 +69,17 @@ public class TypedConsumerService<TInput> : BackgroundService
         await _consumer.StopAsync(token);
     }
 
-    private async Task<ProcessedMessageStatus> SingleMessageConsumeAsync(MotorCloudEvent<byte[]> dataCloudEvent,
-        CancellationToken token)
+    private async Task<ProcessedMessageStatus> SingleMessageConsumeAsync(
+        MotorCloudEvent<byte[]> dataCloudEvent,
+        CancellationToken token
+    )
     {
         try
         {
             byte[] decoded;
             using (new AutoObserveStopwatch(() => _messageDecoding))
             {
-                decoded = await DecodeMessageAsync(
-                    dataCloudEvent.GetEncoding(), dataCloudEvent.TypedData, token);
+                decoded = await DecodeMessageAsync(dataCloudEvent.GetEncoding(), dataCloudEvent.TypedData, token);
             }
 
             TInput deserialized;
@@ -106,11 +109,18 @@ public class TypedConsumerService<TInput> : BackgroundService
         }
     }
 
-    private async Task<byte[]> DecodeMessageAsync(string encoding, byte[] encodedMsg,
-        CancellationToken cancellationToken)
+    private async Task<byte[]> DecodeMessageAsync(
+        string encoding,
+        byte[] encodedMsg,
+        CancellationToken cancellationToken
+    )
     {
-        if (!_decoderByEncoding.TryGetValue(
-            _encodingOptions.IgnoreEncoding ? NoOpMessageEncoder.NoEncoding : encoding, out var decoder))
+        if (
+            !_decoderByEncoding.TryGetValue(
+                _encodingOptions.IgnoreEncoding ? NoOpMessageEncoder.NoEncoding : encoding,
+                out var decoder
+            )
+        )
         {
             throw new ArgumentException($"Unsupported encoding {encoding}");
         }

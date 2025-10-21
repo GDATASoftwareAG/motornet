@@ -12,7 +12,8 @@ using Motor.Extensions.Hosting.Kafka.Options;
 
 namespace Motor.Extensions.Hosting.Kafka;
 
-public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDisposable where TOutput : notnull
+public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDisposable
+    where TOutput : notnull
 {
     private readonly CloudEventFormatter _cloudEventFormatter;
     private readonly IProducer<string?, byte[]> _producer;
@@ -22,7 +23,8 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
     public KafkaMessagePublisher(
         IOptions<KafkaPublisherOptions<TOutput>> options,
         CloudEventFormatter cloudEventFormatter,
-        IOptions<PublisherOptions> publisherOptions)
+        IOptions<PublisherOptions> publisherOptions
+    )
     {
         _cloudEventFormatter = cloudEventFormatter;
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
@@ -47,11 +49,7 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
             case CloudEventFormat.Json:
                 var value = _cloudEventFormatter.EncodeStructuredModeMessage(cloudEvent, out _);
                 var key = cloudEvent[Partitioning.PartitionKeyAttribute] as string;
-                return new Message<string?, byte[]>
-                {
-                    Value = value.ToArray(),
-                    Key = key
-                };
+                return new Message<string?, byte[]> { Value = value.ToArray(), Key = key };
             default:
                 throw new UnhandledCloudEventFormatException(_publisherOptions.CloudEventFormat);
         }

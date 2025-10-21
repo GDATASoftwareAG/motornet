@@ -1,26 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <Product>Motor.NET</Product>
-    </PropertyGroup>
-    
-    <PropertyGroup>
-        <OpenApiDocumentsDirectory>./openapi/</OpenApiDocumentsDirectory>
-        <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="Prometheus.Client.HttpRequestDurations" Version="4.0.0" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' != '' and $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFramework.Replace(`net`,``))','9.0'))">
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <Product>Motor.NET</Product>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OpenApiDocumentsDirectory>./openapi/</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Prometheus.Client.HttpRequestDurations" Version="4.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != '' and $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFramework.Replace(`net`,``))','9.0'))">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
+  </ItemGroup>
 </Project>

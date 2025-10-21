@@ -40,16 +40,17 @@ public class GenericHostingTests : IDisposable
         _listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == OpenTelemetryOptions.DefaultActivitySourceName,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStarted = _ => { outputHelper.WriteLine("test"); },
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStarted = _ =>
+            {
+                outputHelper.WriteLine("test");
+            },
         };
         ActivitySource.AddActivityListener(_listener);
     }
 
     [Fact]
-    public async Task
-        StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
+    public async Task StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
     {
         var consumer = new InMemoryConsumer<string>();
         var publisher = new InMemoryPublisher<string>();
@@ -128,7 +129,10 @@ public class GenericHostingTests : IDisposable
         var consumer = new InMemoryConsumer<string>();
         var publisher = new InMemoryPublisher<string>();
         var traceIsPublished = false;
-        _listener.ActivityStarted = _ => { traceIsPublished = true; };
+        _listener.ActivityStarted = _ =>
+        {
+            traceIsPublished = true;
+        };
 
         using var host = GetReverseStringService(consumer, publisher);
 
@@ -153,47 +157,57 @@ public class GenericHostingTests : IDisposable
             .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
             .ConfigureSerilog()
             .ConfigurePrometheus()
-            .ConfigureServices((_, services) =>
-            {
-                services.AddTransient(_ =>
+            .ConfigureServices(
+                (_, services) =>
                 {
-                    var mock = new Mock<IApplicationNameService>();
-                    mock.Setup(t => t.GetVersion()).Returns("test");
-                    mock.Setup(t => t.GetLibVersion()).Returns("test");
-                    mock.Setup(t => t.GetSource()).Returns(new Uri("motor://test"));
-                    return mock.Object;
-                });
-                services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
-                services.AddTransient<IMessageSerializer<string>, StringSerializer>();
-                services.AddTransient<IMessageDeserializer<string>, StringDeserializer>();
-                services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
-                services.AddTransient<DelegatingMessageHandler<string>, TelemetryDelegatingMessageHandler<string>>();
-                services.AddQueuedGenericService<string>();
-                //services.AddSingleton(provider => tracer);
-                services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
-            })
-            .ConfigureConsumer<string>((_, builder) =>
-            {
-                builder.AddInMemory(consumer);
-                builder.AddDeserializer<StringDeserializer>();
-            })
-            .ConfigurePublisher<string>((_, builder) =>
-            {
-                builder.AddInMemory(publisher);
-                builder.AddSerializer<StringSerializer>();
-            })
-            .ConfigureAppConfiguration((_, config) =>
-            {
-                config.AddJsonFile("appsettings.json", true, false);
-                config.AddEnvironmentVariables();
-            })
+                    services.AddTransient(_ =>
+                    {
+                        var mock = new Mock<IApplicationNameService>();
+                        mock.Setup(t => t.GetVersion()).Returns("test");
+                        mock.Setup(t => t.GetLibVersion()).Returns("test");
+                        mock.Setup(t => t.GetSource()).Returns(new Uri("motor://test"));
+                        return mock.Object;
+                    });
+                    services.AddTransient<ISingleOutputService<string, string>, ReverseStringConverter>();
+                    services.AddTransient<IMessageSerializer<string>, StringSerializer>();
+                    services.AddTransient<IMessageDeserializer<string>, StringDeserializer>();
+                    services.AddTransient<INoOutputService<string>, SingleOutputServiceAdapter<string, string>>();
+                    services.AddTransient<
+                        DelegatingMessageHandler<string>,
+                        TelemetryDelegatingMessageHandler<string>
+                    >();
+                    services.AddQueuedGenericService<string>();
+                    //services.AddSingleton(provider => tracer);
+                    services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+                }
+            )
+            .ConfigureConsumer<string>(
+                (_, builder) =>
+                {
+                    builder.AddInMemory(consumer);
+                    builder.AddDeserializer<StringDeserializer>();
+                }
+            )
+            .ConfigurePublisher<string>(
+                (_, builder) =>
+                {
+                    builder.AddInMemory(publisher);
+                    builder.AddSerializer<StringSerializer>();
+                }
+            )
+            .ConfigureAppConfiguration(
+                (_, config) =>
+                {
+                    config.AddJsonFile("appsettings.json", true, false);
+                    config.AddEnvironmentVariables();
+                }
+            )
             .Build();
 
         return host;
     }
 
-    private Task<ProcessedMessageStatus> ConsumeMessage(InMemoryConsumer<string> consumer,
-        string messageToPublish)
+    private Task<ProcessedMessageStatus> ConsumeMessage(InMemoryConsumer<string> consumer, string messageToPublish)
     {
         return consumer.AddMessage(MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(messageToPublish)));
     }
@@ -204,15 +218,19 @@ public class GenericHostingTests : IDisposable
         private readonly IMetricFamily<ISummary> _summary;
         private static readonly ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName);
 
-        public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
-            IMetricsFactory<ReverseStringConverter> metricsFactory)
+        public ReverseStringConverter(
+            ILogger<ReverseStringConverter> logger,
+            IMetricsFactory<ReverseStringConverter> metricsFactory
+        )
         {
             _logger = logger;
             _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
         }
 
-        public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
-            CancellationToken token = default)
+        public Task<MotorCloudEvent<string>?> ConvertMessageAsync(
+            MotorCloudEvent<string> dataCloudEvent,
+            CancellationToken token = default
+        )
         {
             _logger.LogInformation("log your request");
             var tmpChar = dataCloudEvent.TypedData.ToCharArray();
@@ -257,8 +275,11 @@ public static class SomeCustomExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { SomeCustomExtensionAttribute }.ToList().AsReadOnly();
 
-    public static MotorCloudEvent<TData> SetSomeCustomExtension<TData>(this MotorCloudEvent<TData> cloudEvent,
-        DateTimeOffset? value) where TData : class
+    public static MotorCloudEvent<TData> SetSomeCustomExtension<TData>(
+        this MotorCloudEvent<TData> cloudEvent,
+        DateTimeOffset? value
+    )
+        where TData : class
     {
         Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
         cloudEvent[SomeCustomExtensionAttribute] = value;
@@ -267,6 +288,6 @@ public static class SomeCustomExtension
 
     public static DateTimeOffset GetSomeCustomExtension<TData>(this MotorCloudEvent<TData> cloudEvent)
         where TData : class =>
-        (DateTimeOffset?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[SomeCustomExtensionAttribute] ??
-        DateTimeOffset.MinValue;
+        (DateTimeOffset?)Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[SomeCustomExtensionAttribute]
+        ?? DateTimeOffset.MinValue;
 }

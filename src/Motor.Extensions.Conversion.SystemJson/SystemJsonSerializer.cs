@@ -4,7 +4,8 @@ using Motor.Extensions.Conversion.Abstractions;
 
 namespace Motor.Extensions.Conversion.SystemJson;
 
-public class SystemJsonSerializer<T> : IMessageSerializer<T> where T : notnull
+public class SystemJsonSerializer<T> : IMessageSerializer<T>
+    where T : notnull
 {
     public byte[] Serialize(T message)
     {

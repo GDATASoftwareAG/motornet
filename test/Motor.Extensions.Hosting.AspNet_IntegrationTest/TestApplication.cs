@@ -8,9 +8,7 @@ using Motor.Extensions.Hosting.AspNet_IntegrationTest;
 using Motor.Extensions.Utilities;
 using Motor.Extensions.Utilities.Abstractions;
 
-await MotorHost.CreateDefaultBuilder()
-    .UseStartup<ActualStartup>()
-    .RunConsoleAsync();
+await MotorHost.CreateDefaultBuilder().UseStartup<ActualStartup>().RunConsoleAsync();
 
 namespace Motor.Extensions.Hosting.AspNet_IntegrationTest
 {

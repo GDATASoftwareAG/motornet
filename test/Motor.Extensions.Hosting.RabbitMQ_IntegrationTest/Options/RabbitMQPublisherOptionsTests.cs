@@ -8,9 +8,7 @@ public class RabbitMQPublisherConfigTests
 {
     private IConfiguration GetJsonOptions(string configName)
     {
-        return new ConfigurationBuilder()
-            .AddJsonFile($"configs/{configName}.json")
-            .Build();
+        return new ConfigurationBuilder().AddJsonFile($"configs/{configName}.json").Build();
     }
 
     [Fact]

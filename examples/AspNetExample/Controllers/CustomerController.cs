@@ -33,12 +33,15 @@ public class CustomerController(ICustomerValidator customerValidator, IStorage<C
     [HttpPut("{id:int}")]
     public IActionResult Update(long id, [FromBody] Customer updatedCustomer)
     {
-        var numAffected = db.Update(customer => customer.Id == id, customer =>
-        {
-            customer.FirstName = updatedCustomer.FirstName;
-            customer.LastName = updatedCustomer.LastName;
-            customer.Age = updatedCustomer.Age;
-        });
+        var numAffected = db.Update(
+            customer => customer.Id == id,
+            customer =>
+            {
+                customer.FirstName = updatedCustomer.FirstName;
+                customer.LastName = updatedCustomer.LastName;
+                customer.Age = updatedCustomer.Age;
+            }
+        );
 
         return numAffected == 0 ? NotFound() : NoContent();
     }

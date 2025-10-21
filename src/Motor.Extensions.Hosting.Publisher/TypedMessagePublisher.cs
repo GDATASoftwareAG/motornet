@@ -26,20 +26,22 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     private readonly ContentEncodingOptions _encodingOptions;
     private readonly IMessageEncoder _messageEncoder;
 
-    public TypedMessagePublisher(ILogger<TypedMessagePublisher<TOutput, TPublisher>> logger,
+    public TypedMessagePublisher(
+        ILogger<TypedMessagePublisher<TOutput, TPublisher>> logger,
         IMetricsFactory<TypedMessagePublisher<TOutput, TPublisher>>? metrics,
-        TPublisher rawMessagePublisher, IMessageSerializer<TOutput> messageSerializer,
-        IOptions<ContentEncodingOptions> encodingOptions, IMessageEncoder messageEncoder)
+        TPublisher rawMessagePublisher,
+        IMessageSerializer<TOutput> messageSerializer,
+        IOptions<ContentEncodingOptions> encodingOptions,
+        IMessageEncoder messageEncoder
+    )
     {
         _logger = logger;
         _rawMessagePublisher = rawMessagePublisher;
         _messageSerializer = messageSerializer;
         _encodingOptions = encodingOptions.Value;
         _messageEncoder = messageEncoder;
-        _messageSerialization =
-            metrics?.CreateSummary("message_serialization", "Message serialization duration in ms");
-        _messageEncoding =
-            metrics?.CreateSummary("message_encoding", "Message encoding duration in ms");
+        _messageSerialization = metrics?.CreateSummary("message_serialization", "Message serialization duration in ms");
+        _messageEncoding = metrics?.CreateSummary("message_encoding", "Message encoding duration in ms");
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -55,16 +57,20 @@ public class TypedMessagePublisher<TOutput, TPublisher> : ITypedMessagePublisher
     public async Task PublishMessageAsync(MotorCloudEvent<TOutput> motorCloudEvent, CancellationToken token = default)
     {
         var parentContext = motorCloudEvent.GetActivityContext();
-        using var activity = TypedMessagePublisherUtils.ActivitySource.StartActivity(nameof(PublishMessageAsync), ActivityKind.Client, parentContext);
+        using var activity = TypedMessagePublisherUtils.ActivitySource.StartActivity(
+            nameof(PublishMessageAsync),
+            ActivityKind.Client,
+            parentContext
+        );
         using (activity?.Start())
-        using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}",
-                   activity?.TraceId, activity?.SpanId))
+        using (_logger.BeginScope("TraceId: {traceid}, SpanId: {spanid}", activity?.TraceId, activity?.SpanId))
         {
             if (activity is not null)
             {
                 motorCloudEvent.SetActivity(activity);
             }
-            byte[] bytes, encodedBytes;
+            byte[] bytes,
+                encodedBytes;
             using (new AutoObserveStopwatch(() => _messageSerialization))
             {
                 bytes = _messageSerializer.Serialize(motorCloudEvent.TypedData);

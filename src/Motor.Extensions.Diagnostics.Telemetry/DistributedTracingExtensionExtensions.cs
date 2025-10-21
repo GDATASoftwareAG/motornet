@@ -18,7 +18,8 @@ public static class DistributedTracingExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { TraceParentAttribute, TraceStateAttribute }.ToList().AsReadOnly();
 
-    public static void SetActivity<TData>(this MotorCloudEvent<TData> cloudEvent, Activity activity) where TData : class
+    public static void SetActivity<TData>(this MotorCloudEvent<TData> cloudEvent, Activity activity)
+        where TData : class
     {
         Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
         cloudEvent[TraceParentAttribute] = activity.Id;

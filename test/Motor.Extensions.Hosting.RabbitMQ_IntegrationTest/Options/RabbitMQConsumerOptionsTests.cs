@@ -10,9 +10,7 @@ public class RabbitMQConsumerOptionsTests
 {
     private IConfiguration GetJsonConfig(string configName)
     {
-        return new ConfigurationBuilder()
-            .AddJsonFile($"configs/{configName}.json")
-            .Build();
+        return new ConfigurationBuilder().AddJsonFile($"configs/{configName}.json").Build();
     }
 
     [Fact]
