@@ -14,30 +14,34 @@ public class TooManyTemporaryFailuresStatisticsTest
     [InlineData(ProcessedMessageStatus.Success)]
     [InlineData(ProcessedMessageStatus.InvalidInput)]
     public async Task RegisterMessageStatusAsync_StatusHandledCorrectly_SetLastHandledMessage(
-        ProcessedMessageStatus status)
+        ProcessedMessageStatus status
+    )
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
         var beforeRegister = DateTimeOffset.UtcNow;
 
         await tooManyTemporaryFailuresStatistics.RegisterMessageStatusAsync(status);
 
-        Assert.InRange(tooManyTemporaryFailuresStatistics.LastHandledMessageAt, beforeRegister,
-            DateTimeOffset.UtcNow);
+        Assert.InRange(tooManyTemporaryFailuresStatistics.LastHandledMessageAt, beforeRegister, DateTimeOffset.UtcNow);
     }
 
     [Theory]
     [InlineData(ProcessedMessageStatus.CriticalFailure)]
     [InlineData(ProcessedMessageStatus.TemporaryFailure)]
     public async Task RegisterMessageStatusAsync_StatusNotHandledCorrectly_DoesNotSetLastHandledMessage(
-        ProcessedMessageStatus status)
+        ProcessedMessageStatus status
+    )
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
         var beforeRegister = DateTimeOffset.UtcNow;
 
         await tooManyTemporaryFailuresStatistics.RegisterMessageStatusAsync(status);
 
-        Assert.NotInRange(tooManyTemporaryFailuresStatistics.LastHandledMessageAt, beforeRegister,
-            DateTimeOffset.UtcNow);
+        Assert.NotInRange(
+            tooManyTemporaryFailuresStatistics.LastHandledMessageAt,
+            beforeRegister,
+            DateTimeOffset.UtcNow
+        );
     }
 
     [Theory]
@@ -46,7 +50,9 @@ public class TooManyTemporaryFailuresStatisticsTest
     [InlineData(1, ProcessedMessageStatus.CriticalFailure)]
     [InlineData(4, ProcessedMessageStatus.CriticalFailure)]
     public async Task RegisterMessageStatusAsync_StatusNotHandledCorrectly_IncreasesTemporaryFailureCount(
-        uint count, ProcessedMessageStatus status)
+        uint count,
+        ProcessedMessageStatus status
+    )
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>();
 
@@ -62,11 +68,12 @@ public class TooManyTemporaryFailuresStatisticsTest
     [InlineData(ProcessedMessageStatus.Success)]
     [InlineData(ProcessedMessageStatus.InvalidInput)]
     public async Task RegisterMessageStatusAsync_StatusHandledCorrectly_ResetTemporaryFailureCount(
-        ProcessedMessageStatus status)
+        ProcessedMessageStatus status
+    )
     {
         var tooManyTemporaryFailuresStatistics = new TooManyTemporaryFailuresStatistics<string>
         {
-            TemporaryFailureCountSinceLastHandledMessage = 100
+            TemporaryFailureCountSinceLastHandledMessage = 100,
         };
 
         await tooManyTemporaryFailuresStatistics.RegisterMessageStatusAsync(status);
@@ -82,8 +89,9 @@ public class TooManyTemporaryFailuresStatisticsTest
         var startSignal = new SemaphoreSlim(0, 100);
         for (var i = 0; i < 100; i++)
         {
-            notHandledCorrectlyTasks.Add(IncreaseTemporaryFailureCount(startSignal,
-                tooManyTemporaryFailuresStatistics));
+            notHandledCorrectlyTasks.Add(
+                IncreaseTemporaryFailureCount(startSignal, tooManyTemporaryFailuresStatistics)
+            );
         }
         startSignal.Release(100);
 
@@ -92,12 +100,13 @@ public class TooManyTemporaryFailuresStatisticsTest
         Assert.Equal((uint)100, tooManyTemporaryFailuresStatistics.TemporaryFailureCountSinceLastHandledMessage);
     }
 
-    private static async Task IncreaseTemporaryFailureCount(SemaphoreSlim startSignal,
-        TooManyTemporaryFailuresStatistics<string> tooManyTemporaryFailuresStatistics)
+    private static async Task IncreaseTemporaryFailureCount(
+        SemaphoreSlim startSignal,
+        TooManyTemporaryFailuresStatistics<string> tooManyTemporaryFailuresStatistics
+    )
     {
         await startSignal.WaitAsync();
 
-        await tooManyTemporaryFailuresStatistics.RegisterMessageStatusAsync(ProcessedMessageStatus
-            .TemporaryFailure);
+        await tooManyTemporaryFailuresStatistics.RegisterMessageStatusAsync(ProcessedMessageStatus.TemporaryFailure);
     }
 }

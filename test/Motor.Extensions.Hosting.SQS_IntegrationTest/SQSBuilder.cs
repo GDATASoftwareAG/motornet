@@ -14,7 +14,8 @@ public sealed class SQSBuilder(SQSConfiguration resourceConfiguration)
 
     protected override SQSConfiguration DockerResourceConfiguration { get; } = resourceConfiguration;
 
-    public SQSBuilder() : this(new SQSConfiguration())
+    public SQSBuilder()
+        : this(new SQSConfiguration())
     {
         DockerResourceConfiguration = Init().DockerResourceConfiguration;
     }
@@ -27,7 +28,12 @@ public sealed class SQSBuilder(SQSConfiguration resourceConfiguration)
 
     protected override SQSBuilder Init()
     {
-        var ulimit = new Ulimit { Name = "nofile", Soft = 1024, Hard = 1024 };
+        var ulimit = new Ulimit
+        {
+            Name = "nofile",
+            Soft = 1024,
+            Hard = 1024,
+        };
         return base.Init()
             .WithImage(DefaultImage)
             .WithLogger(ConsoleLogger.Instance)

@@ -12,14 +12,22 @@ public class PrometheusDelegatingMessageHandler<TInput> : DelegatingMessageHandl
 {
     private readonly IMetricFamily<ISummary> _messageProcessing;
 
-    public PrometheusDelegatingMessageHandler(IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory)
+    public PrometheusDelegatingMessageHandler(
+        IMetricsFactory<PrometheusDelegatingMessageHandler<TInput>> metricsFactory
+    )
     {
-        _messageProcessing =
-            metricsFactory.CreateSummary("message_processing", "Message processing duration in ms", false, "status");
+        _messageProcessing = metricsFactory.CreateSummary(
+            "message_processing",
+            "Message processing duration in ms",
+            false,
+            "status"
+        );
     }
 
-    public override async Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default)
+    public override async Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         var processedMessageStatus = ProcessedMessageStatus.CriticalFailure;
         using (new AutoObserveStopwatch(() => _messageProcessing.WithLabels(processedMessageStatus.ToString())))

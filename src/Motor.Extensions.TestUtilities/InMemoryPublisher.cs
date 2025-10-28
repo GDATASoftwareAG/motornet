@@ -7,7 +7,8 @@ using Motor.Extensions.Hosting.CloudEvents;
 
 namespace Motor.Extensions.TestUtilities;
 
-public class InMemoryPublisher<TOutput> : IRawMessagePublisher<TOutput> where TOutput : notnull
+public class InMemoryPublisher<TOutput> : IRawMessagePublisher<TOutput>
+    where TOutput : notnull
 {
     private readonly ConcurrentQueue<MotorCloudEvent<byte[]>> _events = new();
 

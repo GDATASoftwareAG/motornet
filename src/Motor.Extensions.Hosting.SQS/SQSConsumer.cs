@@ -13,15 +13,20 @@ using Motor.Extensions.Hosting.SQS.Options;
 
 namespace Motor.Extensions.Hosting.SQS;
 
-public class SQSConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
+public class SQSConsumer<TData> : IMessageConsumer<TData>, IDisposable
+    where TData : notnull
 {
     private readonly SQSClientOptions _options;
     private readonly ILogger<SQSConsumer<TData>> _logger;
     private readonly IApplicationNameService _applicationNameService;
     private readonly IAmazonSQS _amazonSqsClient;
 
-    public SQSConsumer(IOptions<SQSClientOptions> options, ILogger<SQSConsumer<TData>> logger,
-        IApplicationNameService applicationNameService, ISQSClientFactory sqsClientFactory)
+    public SQSConsumer(
+        IOptions<SQSClientOptions> options,
+        ILogger<SQSConsumer<TData>> logger,
+        IApplicationNameService applicationNameService,
+        ISQSClientFactory sqsClientFactory
+    )
     {
         _options = options.Value;
         _logger = logger;
@@ -38,7 +43,7 @@ public class SQSConsumer<TData> : IMessageConsumer<TData>, IDisposable where TDa
                 var request = new ReceiveMessageRequest
                 {
                     QueueUrl = _options.QueueUrl,
-                    WaitTimeSeconds = _options.WaitTimeSeconds
+                    WaitTimeSeconds = _options.WaitTimeSeconds,
                 };
 
                 var result = await _amazonSqsClient.ReceiveMessageAsync(request, token);
@@ -88,28 +93,28 @@ public class SQSConsumer<TData> : IMessageConsumer<TData>, IDisposable where TDa
                 case ProcessedMessageStatus.Failure:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(processedMessageStatus),
-                        processedMessageStatus.ToString());
+                    throw new ArgumentOutOfRangeException(
+                        nameof(processedMessageStatus),
+                        processedMessageStatus.ToString()
+                    );
             }
-
         });
     }
 
     private async Task DeleteMessageAsync(Message message, CancellationToken token)
     {
-        var deleteResult =
-            await _amazonSqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, token);
+        var deleteResult = await _amazonSqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, token);
         if (deleteResult.HttpStatusCode != HttpStatusCode.OK)
         {
             _logger.LogDebug("Could not delete message");
         }
     }
 
-    public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    public Func<
+        MotorCloudEvent<byte[]>,
+        CancellationToken,
+        Task<ProcessedMessageStatus>
+    >? ConsumeCallbackAsync { get; set; }
 
     public Task StartAsync(CancellationToken token = default)
     {

@@ -16,8 +16,10 @@ public class PassThoughService : ISingleOutputService<ByteData, ByteData>
         summary = metricsFactory.CreateSummary("message_pass_tough_bytes", "");
     }
 
-    public Task<MotorCloudEvent<ByteData>?> ConvertMessageAsync(MotorCloudEvent<ByteData> dataCloudEvent,
-        CancellationToken token = default)
+    public Task<MotorCloudEvent<ByteData>?> ConvertMessageAsync(
+        MotorCloudEvent<ByteData> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         summary.Observe(dataCloudEvent.TypedData?.data.Length ?? 0);
         return Task.FromResult<MotorCloudEvent<ByteData>?>(dataCloudEvent.CreateNew(dataCloudEvent.TypedData, true));

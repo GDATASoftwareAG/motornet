@@ -5,15 +5,15 @@ using Motor.Extensions.Utilities;
 
 await MotorHost
     .CreateDefaultBuilder()
-    .ConfigureServices((_, services) =>
-    {
-        services.AddSingleton<ISharedService, SharedService>();
-    })
+    .ConfigureServices(
+        (_, services) =>
+        {
+            services.AddSingleton<ISharedService, SharedService>();
+        }
+    )
     .RunConsoleAsync();
 
 public class ExampleProgram
 {
-    protected ExampleProgram()
-    {
-    }
+    protected ExampleProgram() { }
 }

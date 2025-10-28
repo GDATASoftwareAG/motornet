@@ -7,12 +7,13 @@ namespace Motor.Extensions.Hosting.RabbitMQ.Validation;
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public class RequireValidAttribute : RequiredAttribute
 {
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext) => value switch
-    {
-        null => new ValidationResult($"Value of {validationContext.DisplayName} must not be null"),
-        IEnumerable e => ValidateCollection(e, validationContext),
-        { } => ValidateObject(value, validationContext),
-    };
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext) =>
+        value switch
+        {
+            null => new ValidationResult($"Value of {validationContext.DisplayName} must not be null"),
+            IEnumerable e => ValidateCollection(e, validationContext),
+            { } => ValidateObject(value, validationContext),
+        };
 
     private ValidationResult? ValidateCollection(IEnumerable e, ValidationContext validationContext)
     {

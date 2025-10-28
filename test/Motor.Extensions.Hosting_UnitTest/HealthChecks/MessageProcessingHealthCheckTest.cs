@@ -110,10 +110,7 @@ public class MessageProcessingHealthCheckTest
 
     private MessageProcessingHealthCheck<string> CreateHealthCheck(IBackgroundTaskQueue<MotorCloudEvent<string>> queue)
     {
-        var config = new MessageProcessingOptions
-        {
-            MaxTimeSinceLastProcessedMessage = _timeout
-        };
+        var config = new MessageProcessingOptions { MaxTimeSinceLastProcessedMessage = _timeout };
         return new MessageProcessingHealthCheck<string>(Options.Create(config), queue);
     }
 

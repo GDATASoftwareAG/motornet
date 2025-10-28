@@ -20,7 +20,6 @@ public class RabbitMQMessageConsumerTests
 {
     private const int DefaultPrefetchCount = 777;
 
-
     private ILogger<RabbitMQMessageConsumer<string>> FakeLogger =>
         new Mock<ILogger<RabbitMQMessageConsumer<string>>>().Object;
 
@@ -96,12 +95,31 @@ public class RabbitMQMessageConsumerTests
         await consumer.StartAsync();
 
         channelMock.Verify(
-            x => x.QueueDeclareAsync(cfg.Queue.Name, cfg.Queue.Durable, false, cfg.Queue.AutoDelete, expectedArguments,
-                false, false, It.IsAny<CancellationToken>()), Times.Exactly(1));
+            x =>
+                x.QueueDeclareAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Durable,
+                    false,
+                    cfg.Queue.AutoDelete,
+                    expectedArguments,
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
         channelMock.Verify(
-            x => x.QueueBindAsync(cfg.Queue.Name, cfg.Queue.Bindings.First().Exchange,
-                cfg.Queue.Bindings.First().RoutingKey, cfg.Queue.Bindings.First().Arguments, false,
-                It.IsAny<CancellationToken>()), Times.Exactly(1));
+            x =>
+                x.QueueBindAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Bindings.First().Exchange,
+                    cfg.Queue.Bindings.First().RoutingKey,
+                    cfg.Queue.Bindings.First().Arguments,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -116,13 +134,29 @@ public class RabbitMQMessageConsumerTests
         await consumer.StartAsync();
 
         channelMock.Verify(
-            x => x.QueueBindAsync(cfg.Queue.Name, cfg.Queue.Bindings.First().Exchange,
-                cfg.Queue.Bindings.First().RoutingKey, cfg.Queue.Bindings.First().Arguments, false,
-                It.IsAny<CancellationToken>()), Times.Exactly(1));
+            x =>
+                x.QueueBindAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Bindings.First().Exchange,
+                    cfg.Queue.Bindings.First().RoutingKey,
+                    cfg.Queue.Bindings.First().Arguments,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
         channelMock.Verify(
-            x => x.QueueBindAsync(cfg.Queue.Name, cfg.Queue.Bindings.Last().Exchange,
-                cfg.Queue.Bindings.Last().RoutingKey, cfg.Queue.Bindings.Last().Arguments, false,
-                It.IsAny<CancellationToken>()), Times.Exactly(1));
+            x =>
+                x.QueueBindAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Bindings.Last().Exchange,
+                    cfg.Queue.Bindings.Last().RoutingKey,
+                    cfg.Queue.Bindings.Last().Arguments,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -136,8 +170,20 @@ public class RabbitMQMessageConsumerTests
 
         await consumer.StartAsync();
 
-        channelMock.Verify(x => x.BasicConsumeAsync(cfg.Queue.Name, false, string.Empty,
-            false, false, null, It.IsAny<IAsyncBasicConsumer>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+        channelMock.Verify(
+            x =>
+                x.BasicConsumeAsync(
+                    cfg.Queue.Name,
+                    false,
+                    string.Empty,
+                    false,
+                    false,
+                    null,
+                    It.IsAny<IAsyncBasicConsumer>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -154,9 +200,20 @@ public class RabbitMQMessageConsumerTests
 
         await consumer.StartAsync();
 
-        channelMock.Verify(x =>
-            x.QueueDeclareAsync(cfg.Queue.Name, cfg.Queue.Durable, false, cfg.Queue.AutoDelete, expectedArguments,
-                false, false, It.IsAny<CancellationToken>()), Times.Exactly(1));
+        channelMock.Verify(
+            x =>
+                x.QueueDeclareAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Durable,
+                    false,
+                    cfg.Queue.AutoDelete,
+                    expectedArguments,
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -173,9 +230,20 @@ public class RabbitMQMessageConsumerTests
 
         await consumer.StartAsync();
 
-        channelMock.Verify(x =>
-            x.QueueDeclareAsync(cfg.Queue.Name, cfg.Queue.Durable, false, cfg.Queue.AutoDelete, expectedArguments,
-                false, false, It.IsAny<CancellationToken>()), Times.Exactly(1));
+        channelMock.Verify(
+            x =>
+                x.QueueDeclareAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Durable,
+                    false,
+                    cfg.Queue.AutoDelete,
+                    expectedArguments,
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -192,9 +260,20 @@ public class RabbitMQMessageConsumerTests
 
         await consumer.StartAsync();
 
-        channelMock.Verify(x =>
-            x.QueueDeclareAsync(cfg.Queue.Name, cfg.Queue.Durable, false, cfg.Queue.AutoDelete, expectedArguments,
-                false, false, It.IsAny<CancellationToken>()), Times.Exactly(1));
+        channelMock.Verify(
+            x =>
+                x.QueueDeclareAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Durable,
+                    false,
+                    cfg.Queue.AutoDelete,
+                    expectedArguments,
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     [Fact]
@@ -209,10 +288,20 @@ public class RabbitMQMessageConsumerTests
 
         await consumer.StartAsync();
 
-        channelMock.Verify(x =>
-            x.QueueDeclareAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(),
-                It.IsAny<IDictionary<string, object?>?>(), It.IsAny<bool>(), It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()), Times.Never);
+        channelMock.Verify(
+            x =>
+                x.QueueDeclareAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IDictionary<string, object?>?>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
     }
 
     [Theory]
@@ -231,9 +320,19 @@ public class RabbitMQMessageConsumerTests
         await consumer.StartAsync();
 
         channelMock.Verify(
-            x => x.QueueDeclareAsync(cfg.Queue.Name, cfg.Queue.Durable, false, cfg.Queue.AutoDelete,
-                It.Is<IDictionary<string, object?>>(dict => (long?)dict["x-max-length-bytes"] == maxLengthBytes),
-                false, false, It.IsAny<CancellationToken>()), Times.Exactly(1));
+            x =>
+                x.QueueDeclareAsync(
+                    cfg.Queue.Name,
+                    cfg.Queue.Durable,
+                    false,
+                    cfg.Queue.AutoDelete,
+                    It.Is<IDictionary<string, object?>>(dict => (long?)dict["x-max-length-bytes"] == maxLengthBytes),
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(1)
+        );
     }
 
     private static IDictionary<string, object?> GetExpectedArgumentsFromConfig(RabbitMQQueueOptions options)
@@ -249,14 +348,20 @@ public class RabbitMQMessageConsumerTests
     private IMessageConsumer<string> GetRabbitMQMessageConsumer(
         IRabbitMQConnectionFactory<string>? rabbitMqConnectionFactory = null,
         RabbitMQConsumerOptions<string>? options = null,
-        IHostApplicationLifetime? applicationLifetime = null)
+        IHostApplicationLifetime? applicationLifetime = null
+    )
     {
         rabbitMqConnectionFactory ??= GetDefaultConnectionFactoryMock<string>().Object;
         applicationLifetime ??= FakeApplicationLifetime;
         var optionsWrapper = Options.Create(options ?? GetConfig());
 
-        return new RabbitMQMessageConsumer<string>(FakeLogger, rabbitMqConnectionFactory, optionsWrapper,
-            applicationLifetime, GetApplicationNameService());
+        return new RabbitMQMessageConsumer<string>(
+            FakeLogger,
+            rabbitMqConnectionFactory,
+            optionsWrapper,
+            applicationLifetime,
+            GetApplicationNameService()
+        );
     }
 
     private IApplicationNameService GetApplicationNameService(string source = "test://non")
@@ -268,19 +373,16 @@ public class RabbitMQMessageConsumerTests
 
     private static Mock<IRabbitMQConnectionFactory<T>> GetDefaultConnectionFactoryMock<T>(
         Mock<IConnection>? connectionMock = null,
-        Mock<IChannel>? channelMock = null)
+        Mock<IChannel>? channelMock = null
+    )
     {
         var rabbitConnectionFactoryMock = new Mock<IRabbitMQConnectionFactory<T>>();
         connectionMock ??= new Mock<IConnection>();
         channelMock ??= new Mock<IChannel>();
 
-        rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentConnectionAsync())
-            .ReturnsAsync(connectionMock.Object);
+        rabbitConnectionFactoryMock.Setup(f => f.CurrentConnectionAsync()).ReturnsAsync(connectionMock.Object);
 
-        rabbitConnectionFactoryMock
-            .Setup(f => f.CurrentChannelAsync())
-            .ReturnsAsync(channelMock.Object);
+        rabbitConnectionFactoryMock.Setup(f => f.CurrentChannelAsync()).ReturnsAsync(channelMock.Object);
 
         rabbitConnectionFactoryMock
             .Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
@@ -320,16 +422,16 @@ public class RabbitMQMessageConsumerTests
                     {
                         Exchange = "someExchange",
                         RoutingKey = "routingKey",
-                        Arguments = new Dictionary<string, object?>()
+                        Arguments = new Dictionary<string, object?>(),
                     },
                     new RabbitMQBindingOptions
                     {
                         Exchange = "someOtherExchange",
                         RoutingKey = "someOtherRoutingKey",
-                        Arguments = new Dictionary<string, object?>()
-                    }
-                }
-            }
+                        Arguments = new Dictionary<string, object?>(),
+                    },
+                },
+            },
         };
     }
 

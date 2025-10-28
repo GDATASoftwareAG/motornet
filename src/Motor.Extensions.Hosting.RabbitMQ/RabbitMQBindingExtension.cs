@@ -17,8 +17,12 @@ public static class RabbitMQBindingExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { RabbitMQExchangeAttribute, RabbitMQRoutingKeyAttribute }.ToList().AsReadOnly();
 
-    public static MotorCloudEvent<TData> SetRabbitMQBinding<TData>(this MotorCloudEvent<TData> cloudEvent,
-        string? exchange, string? routingKey) where TData : class
+    public static MotorCloudEvent<TData> SetRabbitMQBinding<TData>(
+        this MotorCloudEvent<TData> cloudEvent,
+        string? exchange,
+        string? routingKey
+    )
+        where TData : class
     {
         CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent));
         cloudEvent[RabbitMQExchangeAttribute] = exchange;
@@ -26,15 +30,15 @@ public static class RabbitMQBindingExtension
         return cloudEvent;
     }
 
-    public static string? GetRabbitMQExchange<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
+    public static string? GetRabbitMQExchange<TData>(this MotorCloudEvent<TData> cloudEvent)
+        where TData : class
     {
-        return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as
-            string;
+        return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQExchangeAttribute] as string;
     }
 
-    public static string? GetRabbitMQRoutingKey<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class
+    public static string? GetRabbitMQRoutingKey<TData>(this MotorCloudEvent<TData> cloudEvent)
+        where TData : class
     {
-        return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as
-            string;
+        return CloudEventValidation.CheckNotNull(cloudEvent, nameof(cloudEvent))[RabbitMQRoutingKeyAttribute] as string;
     }
 }

@@ -24,17 +24,21 @@ public class TypedMessagePublisherTests
         var serializedBytes = new byte[] { 1, 2, 3, 4 };
         var encodedBytes = new byte[] { 4, 3, 2, 1 };
         serializer.Setup(t => t.Serialize(It.IsAny<string>())).Returns(serializedBytes);
-        encoder.Setup(t => t.EncodeAsync(serializedBytes, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(encodedBytes);
+        encoder.Setup(t => t.EncodeAsync(serializedBytes, It.IsAny<CancellationToken>())).ReturnsAsync(encodedBytes);
         encoder.SetupGet(c => c.Encoding).Returns("someEncoding");
         var typedMessagePublisher = CreateTypedMessagePublisher(publisher.Object, serializer.Object, encoder.Object);
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
 
         await typedMessagePublisher.PublishMessageAsync(motorEvent);
 
-        publisher.Verify(t => t.PublishMessageAsync(
-            It.Is<MotorCloudEvent<byte[]>>(it => it.Data == encodedBytes),
-            It.IsAny<CancellationToken>()), Times.Once);
+        publisher.Verify(
+            t =>
+                t.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<byte[]>>(it => it.Data == encodedBytes),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -46,9 +50,14 @@ public class TypedMessagePublisherTests
 
         await typedMessagePublisher.PublishMessageAsync(motorEvent);
 
-        publisher.Verify(t => t.PublishMessageAsync(
-            It.Is<MotorCloudEvent<byte[]>>(it => it.Id == motorEvent.Id),
-            It.IsAny<CancellationToken>()), Times.Once);
+        publisher.Verify(
+            t =>
+                t.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<byte[]>>(it => it.Id == motorEvent.Id),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -60,45 +69,69 @@ public class TypedMessagePublisherTests
 
         await typedMessagePublisher.PublishMessageAsync(motorEvent);
 
-        bytesPublisher.Verify(t => t.PublishMessageAsync(
-            It.Is<MotorCloudEvent<byte[]>>(it => it.Type == motorEvent.Type),
-            It.IsAny<CancellationToken>()), Times.Once);
+        bytesPublisher.Verify(
+            t =>
+                t.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<byte[]>>(it => it.Type == motorEvent.Type),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task PublishMessageAsync_CloudEventWithContentEncoding_PublishedCloudEventHasDefaultEncoding()
     {
         var bytesPublisher = new Mock<IRawMessagePublisher<string>>();
-        var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object, encoder: new NoOpMessageEncoder());
+        var typedMessagePublisher = CreateTypedMessagePublisher(
+            bytesPublisher.Object,
+            encoder: new NoOpMessageEncoder()
+        );
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
         motorEvent.SetEncoding("some-encoding");
 
         await typedMessagePublisher.PublishMessageAsync(motorEvent);
 
-        bytesPublisher.Verify(t => t.PublishMessageAsync(
-            It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == NoOpMessageEncoder.NoEncoding),
-            It.IsAny<CancellationToken>()), Times.Once);
+        bytesPublisher.Verify(
+            t =>
+                t.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == NoOpMessageEncoder.NoEncoding),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task PublishMessageAsync_CloudEventWithContentEncodingIgnored_PublishedCloudEventHasSameEncoding()
     {
         var bytesPublisher = new Mock<IRawMessagePublisher<string>>();
-        var typedMessagePublisher = CreateTypedMessagePublisher(bytesPublisher.Object,
-            encoder: new NoOpMessageEncoder(), ignoreEncoding: true);
+        var typedMessagePublisher = CreateTypedMessagePublisher(
+            bytesPublisher.Object,
+            encoder: new NoOpMessageEncoder(),
+            ignoreEncoding: true
+        );
         var motorEvent = MotorCloudEvent.CreateTestCloudEvent("test");
         motorEvent.SetEncoding("some-encoding");
 
         await typedMessagePublisher.PublishMessageAsync(motorEvent);
 
-        bytesPublisher.Verify(t => t.PublishMessageAsync(
-            It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == motorEvent.GetEncoding()),
-            It.IsAny<CancellationToken>()), Times.Once);
+        bytesPublisher.Verify(
+            t =>
+                t.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<byte[]>>(it => it.GetEncoding() == motorEvent.GetEncoding()),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     private static TypedMessagePublisher<string, IRawMessagePublisher<string>> CreateTypedMessagePublisher(
-        IRawMessagePublisher<string>? publisher = null, IMessageSerializer<string>? serializer = null,
-        IMessageEncoder? encoder = null, bool ignoreEncoding = false)
+        IRawMessagePublisher<string>? publisher = null,
+        IMessageSerializer<string>? serializer = null,
+        IMessageEncoder? encoder = null,
+        bool ignoreEncoding = false
+    )
     {
         publisher ??= Mock.Of<IRawMessagePublisher<string>>();
         serializer ??= Mock.Of<IMessageSerializer<string>>();
@@ -112,7 +145,11 @@ public class TypedMessagePublisherTests
         var encodingOptions = new ContentEncodingOptions { IgnoreEncoding = ignoreEncoding };
         return new TypedMessagePublisher<string, IRawMessagePublisher<string>>(
             Mock.Of<ILogger<TypedMessagePublisher<string, IRawMessagePublisher<string>>>>(),
-            null, publisher, serializer,
-            Options.Create(encodingOptions), encoder);
+            null,
+            publisher,
+            serializer,
+            Options.Create(encodingOptions),
+            encoder
+        );
     }
 }

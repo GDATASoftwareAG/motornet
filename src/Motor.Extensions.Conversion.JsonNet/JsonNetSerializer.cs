@@ -5,7 +5,8 @@ using Newtonsoft.Json;
 
 namespace Motor.Extensions.Conversion.JsonNet;
 
-public class JsonNetSerializer<T> : IMessageSerializer<T> where T : notnull
+public class JsonNetSerializer<T> : IMessageSerializer<T>
+    where T : notnull
 {
     public byte[] Serialize(T message)
     {

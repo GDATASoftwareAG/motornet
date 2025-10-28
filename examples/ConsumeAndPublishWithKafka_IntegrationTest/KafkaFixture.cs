@@ -21,7 +21,7 @@ public class KafkaFixture : IAsyncLifetime
         {
             BootstrapServers = _container.GetBootstrapAddress(),
             GroupId = "test",
-            AutoOffsetReset = AutoOffsetReset.Earliest
+            AutoOffsetReset = AutoOffsetReset.Earliest,
         };
     }
 
@@ -53,7 +53,6 @@ public class KafkaFixture : IAsyncLifetime
 
     public Task DisposeAsync()
     {
-
         return _container.DisposeAsync().AsTask();
     }
 }

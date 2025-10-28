@@ -19,10 +19,13 @@ using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Kafka;
 
-public record ConsumeResultAndProcessedMessageStatus(ConsumeResult<string?, byte[]> ConsumeResult,
-    ProcessedMessageStatus ProcessedMessageStatus);
+public record ConsumeResultAndProcessedMessageStatus(
+    ConsumeResult<string?, byte[]> ConsumeResult,
+    ProcessedMessageStatus ProcessedMessageStatus
+);
 
-public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable where TData : notnull
+public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisposable
+    where TData : notnull
 {
     private readonly IApplicationNameService _applicationNameService;
     private readonly CloudEventFormatter _cloudEventFormatter;
@@ -34,32 +37,45 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
-    public KafkaMessageConsumer(ILogger<KafkaMessageConsumer<TData>> logger,
+    public KafkaMessageConsumer(
+        ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
         IHostApplicationLifetime applicationLifetime,
         IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
         IApplicationNameService applicationNameService,
-        CloudEventFormatter cloudEventFormatter)
+        CloudEventFormatter cloudEventFormatter
+    )
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _applicationLifetime = applicationLifetime;
-        _applicationNameService = applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
+        _applicationNameService =
+            applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
         _cloudEventFormatter = cloudEventFormatter;
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
-        _consumerLagSummary = metricsFactory?.CreateSummary("consumer_lag_distribution",
-            "Contains a summary of current consumer lag of each partition", new[] { "topic", "partition" });
-        _consumerLagGauge = metricsFactory?.CreateGauge("consumer_lag",
-            "Contains current number consumer lag of each partition", false, "topic", "partition");
+        _consumerLagSummary = metricsFactory?.CreateSummary(
+            "consumer_lag_distribution",
+            "Contains a summary of current consumer lag of each partition",
+            new[] { "topic", "partition" }
+        );
+        _consumerLagGauge = metricsFactory?.CreateGauge(
+            "consumer_lag",
+            "Contains current number consumer lag of each partition",
+            false,
+            "topic",
+            "partition"
+        );
 
-        _processedMessages = Channel.CreateBounded<Task<ConsumeResultAndProcessedMessageStatus>>(_options.MaxConcurrentMessages);
+        _processedMessages = Channel.CreateBounded<Task<ConsumeResultAndProcessedMessageStatus>>(
+            _options.MaxConcurrentMessages
+        );
         _timer = new Timer(HandleCommitTimer);
     }
 
-    public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    public Func<
+        MotorCloudEvent<byte[]>,
+        CancellationToken,
+        Task<ProcessedMessageStatus>
+    >? ConsumeCallbackAsync { get; set; }
 
     public Task StartAsync(CancellationToken token = default)
     {
@@ -80,47 +96,54 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     public async Task ExecuteAsync(CancellationToken token = default)
     {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(_internalCts.Token, token);
-        await Task.Run(async () =>
-        {
-            var committer = ExecuteCommitLoopAsync(cts.Token);
-
-            try
-            {
-                while (!cts.Token.IsCancellationRequested)
+        await Task.Run(
+                async () =>
                 {
+                    var committer = ExecuteCommitLoopAsync(cts.Token);
+
                     try
                     {
-                        if (!await _processedMessages.Writer.WaitToWriteAsync(cts.Token))
+                        while (!cts.Token.IsCancellationRequested)
                         {
-                            break;
+                            try
+                            {
+                                if (!await _processedMessages.Writer.WaitToWriteAsync(cts.Token))
+                                {
+                                    break;
+                                }
+
+                                var msg = _consumer?.Consume(cts.Token);
+                                if (msg is { IsPartitionEOF: false })
+                                {
+                                    await _processedMessages.Writer.WriteAsync(
+                                        SingleMessageHandlingAsync(msg, cts.Token),
+                                        cts.Token
+                                    );
+                                }
+                                else
+                                {
+                                    _logger.LogDebug(LogEvents.NoMessageReceived, "No messages received");
+                                }
+                            }
+                            catch (Exception e) when (e is not OperationCanceledException or ChannelClosedException)
+                            {
+                                _logger.LogError(LogEvents.MessageReceivedFailure, e, "Failed to receive message.");
+                            }
                         }
 
-                        var msg = _consumer?.Consume(cts.Token);
-                        if (msg is { IsPartitionEOF: false })
-                        {
-                            await _processedMessages.Writer.WriteAsync(SingleMessageHandlingAsync(msg, cts.Token), cts.Token);
-                        }
-                        else
-                        {
-                            _logger.LogDebug(LogEvents.NoMessageReceived, "No messages received");
-                        }
+                        await committer;
                     }
-                    catch (Exception e) when (e is not OperationCanceledException or ChannelClosedException)
+                    catch (Exception e) when (e is OperationCanceledException or ChannelClosedException)
                     {
-                        _logger.LogError(LogEvents.MessageReceivedFailure, e, "Failed to receive message.");
+                        // Execution was cancelled
                     }
-                }
 
-                await committer;
-            }
-            catch (Exception e) when (e is OperationCanceledException or ChannelClosedException)
-            {
-                // Execution was cancelled
-            }
-
-            Commit();
-            _logger.LogInformation(LogEvents.TerminatingKafkaListener, "Terminating Kafka listener...");
-        }, cts.Token).ConfigureAwait(false);
+                    Commit();
+                    _logger.LogInformation(LogEvents.TerminatingKafkaListener, "Terminating Kafka listener...");
+                },
+                cts.Token
+            )
+            .ConfigureAwait(false);
     }
 
     public Task StopAsync(CancellationToken token = default)
@@ -136,25 +159,40 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case SyslogLevel.Emergency:
             case SyslogLevel.Alert:
             case SyslogLevel.Critical:
-                _logger.LogCritical($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
-                    logMessage.Facility, logMessage.Name);
+                _logger.LogCritical(
+                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    logMessage.Facility,
+                    logMessage.Name
+                );
                 break;
             case SyslogLevel.Error:
-                _logger.LogError($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
-                    logMessage.Facility, logMessage.Name);
+                _logger.LogError(
+                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    logMessage.Facility,
+                    logMessage.Name
+                );
                 break;
             case SyslogLevel.Warning:
-                _logger.LogWarning($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
-                    logMessage.Facility, logMessage.Name);
+                _logger.LogWarning(
+                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    logMessage.Facility,
+                    logMessage.Name
+                );
                 break;
             case SyslogLevel.Notice:
             case SyslogLevel.Info:
-                _logger.LogInformation($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
-                    logMessage.Facility, logMessage.Name);
+                _logger.LogInformation(
+                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    logMessage.Facility,
+                    logMessage.Name
+                );
                 break;
             case SyslogLevel.Debug:
-                _logger.LogDebug($"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
-                    logMessage.Facility, logMessage.Name);
+                _logger.LogDebug(
+                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    logMessage.Facility,
+                    logMessage.Name
+                );
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(logMessage.Level));
@@ -164,9 +202,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private void WriteStatistics(string json)
     {
         var partitionConsumerLags = JsonSerializer
-            .Deserialize<KafkaStatistics>(json)?
-            .Topics?
-            .Select(t => t.Value)
+            .Deserialize<KafkaStatistics>(json)
+            ?.Topics?.Select(t => t.Value)
             .SelectMany(t => t.Partitions ?? new Dictionary<string, KafkaStatisticsPartition>())
             .Select(t => (Parition: t.Key.ToString(), t.Value.ConsumerLag));
         if (partitionConsumerLags is null)
@@ -187,27 +224,42 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         }
     }
 
-    private async Task<ConsumeResultAndProcessedMessageStatus> SingleMessageHandlingAsync(ConsumeResult<string?, byte[]> msg, CancellationToken token)
+    private async Task<ConsumeResultAndProcessedMessageStatus> SingleMessageHandlingAsync(
+        ConsumeResult<string?, byte[]> msg,
+        CancellationToken token
+    )
     {
         try
         {
-            _logger.LogDebug(LogEvents.ReceivedMessage,
+            _logger.LogDebug(
+                LogEvents.ReceivedMessage,
                 "Received message from topic '{Topic}:{Partition}' with offset: '{Offset}[{TopicPartitionOffset}]'",
-                msg.Topic, msg.Partition, msg.Offset, msg.TopicPartitionOffset);
+                msg.Topic,
+                msg.Partition,
+                msg.Offset,
+                msg.TopicPartitionOffset
+            );
             var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
 
             var retryPolicy = Policy
                 .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
-                .WaitAndRetryAsync(_options.RetriesOnTemporaryFailure,
-                    retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt));
+                .WaitAndRetryAsync(
+                    _options.RetriesOnTemporaryFailure,
+                    retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt)
+                );
             var status = await retryPolicy.ExecuteAsync(
-                (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken), token);
+                (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken),
+                token
+            );
             return new ConsumeResultAndProcessedMessageStatus(msg, status);
         }
         catch (Exception e)
         {
-            _logger.LogCritical(LogEvents.MessageHandlingUnexpectedException, e,
-                "Unexpected exception in message handling");
+            _logger.LogCritical(
+                LogEvents.MessageHandlingUnexpectedException,
+                e,
+                "Unexpected exception in message handling"
+            );
             _applicationLifetime.StopApplication();
         }
 
@@ -262,7 +314,9 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         StopCommitTimer();
     }
 
-    private async Task<ConsumeResultAndProcessedMessageStatus> PeekAndAwaitProcessedMessages(CancellationToken cancellationToken)
+    private async Task<ConsumeResultAndProcessedMessageStatus> PeekAndAwaitProcessedMessages(
+        CancellationToken cancellationToken
+    )
     {
         await _processedMessages.Reader.WaitToReadAsync(cancellationToken);
 
@@ -309,7 +363,6 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
-
     private void HandleCommitTimer(object? state)
     {
         Commit();
@@ -325,15 +378,17 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case ProcessedMessageStatus.Failure:
                 return false;
             case ProcessedMessageStatus.TemporaryFailure:
-                _logger.LogCritical(LogEvents.FailureDespiteRetrying,
-                    "Message consume fails despite retrying");
+                _logger.LogCritical(LogEvents.FailureDespiteRetrying, "Message consume fails despite retrying");
                 return true;
             case ProcessedMessageStatus.CriticalFailure:
-                _logger.LogCritical(LogEvents.CriticalFailureOnConsume,
-                    "Message consume fails with critical failure");
+                _logger.LogCritical(LogEvents.CriticalFailureOnConsume, "Message consume fails with critical failure");
                 return true;
             default:
-                _logger.LogCritical(LogEvents.UnknownProcessedMessageStatus, "Unknown processed message status {status}", status);
+                _logger.LogCritical(
+                    LogEvents.UnknownProcessedMessageStatus,
+                    "Unknown processed message status {status}",
+                    status
+                );
                 return true;
         }
     }

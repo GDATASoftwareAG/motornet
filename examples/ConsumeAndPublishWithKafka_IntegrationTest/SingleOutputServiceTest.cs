@@ -17,12 +17,14 @@ public class SingleOutputServiceTest(KafkaFixture fixture) : IClassFixture<Kafka
         await fixture.CreateTopicAsync(ConsumedTopic);
         await fixture.CreateTopicAsync(PublishedTopic);
         using var consumer = fixture.ConsumerFor(PublishedTopic);
-        await using var testHost = MotorTestHost.BasedOn<Program>()
+        await using var testHost = MotorTestHost
+            .BasedOn<Program>()
             .Configure<KafkaConsumerOptions<InputMessage>>(o =>
             {
                 o.BootstrapServers = fixture.BootstrapServers;
                 o.AutoOffsetReset = AutoOffsetReset.Earliest;
-            }).Configure<KafkaPublisherOptions<OutputMessage>>(o =>
+            })
+            .Configure<KafkaPublisherOptions<OutputMessage>>(o =>
             {
                 o.BootstrapServers = fixture.BootstrapServers;
             })

@@ -23,9 +23,10 @@ public class TimerTests
 
         await Task.Delay(TimeSpan.FromSeconds(3));
 
-        queue.Verify(messageHandler =>
-                messageHandler.QueueBackgroundWorkItem(It.IsAny<MotorCloudEvent<IJobExecutionContext>>()),
-            Times.AtLeastOnce);
+        queue.Verify(
+            messageHandler => messageHandler.QueueBackgroundWorkItem(It.IsAny<MotorCloudEvent<IJobExecutionContext>>()),
+            Times.AtLeastOnce
+        );
     }
 
     [Fact]
@@ -38,13 +39,16 @@ public class TimerTests
 
         await Task.Delay(TimeSpan.FromSeconds(5));
 
-        queue.Verify(messageHandler =>
-                messageHandler.QueueBackgroundWorkItem(It.IsAny<MotorCloudEvent<IJobExecutionContext>>()),
-            Times.Never);
+        queue.Verify(
+            messageHandler => messageHandler.QueueBackgroundWorkItem(It.IsAny<MotorCloudEvent<IJobExecutionContext>>()),
+            Times.Never
+        );
     }
 
-    private Timer.Timer CreateTimerService(IOptions<TimerOptions> config,
-        IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue)
+    private Timer.Timer CreateTimerService(
+        IOptions<TimerOptions> config,
+        IBackgroundTaskQueue<MotorCloudEvent<IJobExecutionContext>> queue
+    )
     {
         var timer = new Timer.Timer(config, queue, GetApplicationNameService());
         return timer;
@@ -59,13 +63,15 @@ public class TimerTests
 
     private IOptions<TimerOptions> GetTimerConfig(string days, string hours, string minutes, string seconds)
     {
-        var timerConfig = Options.Create(new TimerOptions
-        {
-            Days = days,
-            Hours = hours,
-            Minutes = minutes,
-            Seconds = seconds
-        });
+        var timerConfig = Options.Create(
+            new TimerOptions
+            {
+                Days = days,
+                Hours = hours,
+                Minutes = minutes,
+                Seconds = seconds,
+            }
+        );
         return timerConfig;
     }
 }

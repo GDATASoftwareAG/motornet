@@ -77,8 +77,10 @@ public class BasicPropertiesExtensionsTest
 
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
         {
@@ -97,14 +99,20 @@ public class BasicPropertiesExtensionsTest
 
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
-        var rabbitSpecificAttributes =
-            RabbitMQBindingExtension.AllAttributes.Concat(RabbitMQPriorityExtension.AllAttributes);
+        var rabbitSpecificAttributes = RabbitMQBindingExtension.AllAttributes.Concat(
+            RabbitMQPriorityExtension.AllAttributes
+        );
         foreach (var rabbitSpecificAttribute in rabbitSpecificAttributes)
         {
-            Assert.DoesNotContain(rabbitSpecificAttribute, outputCloudEvent.GetPopulatedAttributes().Select(a => a.Key));
+            Assert.DoesNotContain(
+                rabbitSpecificAttribute,
+                outputCloudEvent.GetPopulatedAttributes().Select(a => a.Key)
+            );
         }
     }
 
@@ -121,8 +129,10 @@ public class BasicPropertiesExtensionsTest
 
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
         Assert.Equal(priority, outputCloudEvent.GetRabbitMQPriority());
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
@@ -140,8 +150,10 @@ public class BasicPropertiesExtensionsTest
         basicProperties.ContentEncoding = encoding;
         var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
 
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
         Assert.Equal(encoding, outputCloudEvent.GetEncoding());
     }
@@ -162,11 +174,14 @@ public class BasicPropertiesExtensionsTest
         basicProperties.SetPriority(inputCloudEvent, publisherOptions);
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
-        basicProperties.Headers!.Remove($"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}");
+        basicProperties.Headers!.Remove(
+            $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"
+        );
         basicProperties.ContentEncoding = null;
         basicProperties.Headers.Add(
             $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
-            Encoding.UTF8.GetBytes($"{basicProperties.ContentType}"));
+            Encoding.UTF8.GetBytes($"{basicProperties.ContentType}")
+        );
         foreach (var (key, value) in basicProperties.Headers)
         {
             if (value is byte[] byteValue)
@@ -175,11 +190,15 @@ public class BasicPropertiesExtensionsTest
             }
         }
 
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
-        Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count(),
-            outputCloudEvent.GetPopulatedAttributes().Count());
+        Assert.Equal(
+            MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count(),
+            outputCloudEvent.GetPopulatedAttributes().Count()
+        );
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")))
         {
             Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
@@ -199,12 +218,13 @@ public class BasicPropertiesExtensionsTest
         basicProperties.WriteCloudEventIntoHeader(inputCloudEvent);
         // manipulate basic properties to simulate outdated version
         basicProperties.Headers![
-                $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"] =
-            Encoding.UTF8.GetBytes("\"0.7.1.0\"");
+            $"{BasicPropertiesExtensions.CloudEventPrefix}{MotorVersionExtension.MotorVersionAttribute.Name}"
+        ] = Encoding.UTF8.GetBytes("\"0.7.1.0\"");
         basicProperties.ContentEncoding = null;
         basicProperties.Headers.Add(
             $"{BasicPropertiesExtensions.CloudEventPrefix}{CloudEventsSpecVersion.V1_0.DataContentTypeAttribute.Name}",
-            Encoding.UTF8.GetBytes($"{basicProperties.ContentType}"));
+            Encoding.UTF8.GetBytes($"{basicProperties.ContentType}")
+        );
         foreach (var (key, value) in basicProperties.Headers)
         {
             if (value is byte[] byteValue)
@@ -213,12 +233,16 @@ public class BasicPropertiesExtensionsTest
             }
         }
 
-        var outputCloudEvent = basicProperties.ExtractCloudEvent(mockedApplicationNameService,
-            new ReadOnlyMemory<byte>(content));
+        var outputCloudEvent = basicProperties.ExtractCloudEvent(
+            mockedApplicationNameService,
+            new ReadOnlyMemory<byte>(content)
+        );
 
         // expecting all required attributes plus the (incorrect) version attribute
-        Assert.Equal(MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count() + 1,
-            outputCloudEvent.GetPopulatedAttributes().Count());
+        Assert.Equal(
+            MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")).Count() + 1,
+            outputCloudEvent.GetPopulatedAttributes().Count()
+        );
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(Version.Parse("0.6.0.0")))
         {
             Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
@@ -233,9 +257,12 @@ public class BasicPropertiesExtensionsTest
         return Encoding.UTF8.GetBytes($"\"{stringValue}\"");
     }
 
-    private static void VerifyPresenceOfRequiredAttributes<TData>(IBasicProperties basicProperties,
+    private static void VerifyPresenceOfRequiredAttributes<TData>(
+        IBasicProperties basicProperties,
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        MotorCloudEvent<TData> cloudEvent) where TData : class
+        MotorCloudEvent<TData> cloudEvent
+    )
+        where TData : class
     {
         Assert.Equal(cloudEvent.ContentType, basicProperties.ContentType);
         // ContentType is required but not saved in the header. Instead, the native

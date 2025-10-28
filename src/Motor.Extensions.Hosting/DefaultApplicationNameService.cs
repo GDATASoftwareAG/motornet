@@ -20,16 +20,13 @@ public class DefaultApplicationNameService : IApplicationNameService
 
     private IEnumerable<string> ToRemoveEndings { get; set; } = new List<string> { "Service", "Console" };
 
-    private IDictionary<string, string> ToReplace { get; set; } = new Dictionary<string, string>
-        {
-            {".", ""},
-            {"_", ""}
-        };
+    private IDictionary<string, string> ToReplace { get; set; } =
+        new Dictionary<string, string> { { ".", "" }, { "_", "" } };
 
     private string GetProduct()
     {
-        var assemblyProductAttribute =
-            (AssemblyProductAttribute?)Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
+        var assemblyProductAttribute = (AssemblyProductAttribute?)
+            Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
         if (assemblyProductAttribute?.Product == GetAssemblyName())
         {
             throw new InvalidProgramException("Product is not set.");
@@ -80,8 +77,10 @@ public class DefaultApplicationNameService : IApplicationNameService
 
     public string ExtractServiceName(string product, string assembly)
     {
-        var project = ToReplace
-            .Aggregate(assembly, (current, replaces) => current.Replace(replaces.Key, replaces.Value));
+        var project = ToReplace.Aggregate(
+            assembly,
+            (current, replaces) => current.Replace(replaces.Key, replaces.Value)
+        );
 
         foreach (var service in ToRemoveEndings.Where(t => project.EndsWith(t)))
         {

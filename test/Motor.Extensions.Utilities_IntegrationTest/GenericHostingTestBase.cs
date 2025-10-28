@@ -13,6 +13,7 @@ namespace Motor.Extensions.Utilities_IntegrationTest;
 public abstract class GenericHostingTestBase
 {
     protected RabbitMQFixture Fixture { get; }
+
     protected GenericHostingTestBase(RabbitMQFixture fixture)
     {
         Fixture = fixture;
@@ -25,8 +26,10 @@ public abstract class GenericHostingTestBase
         Environment.SetEnvironmentVariable("RabbitMQConsumer__Host", Fixture.Hostname);
         Environment.SetEnvironmentVariable("RabbitMQConsumer__Queue__Name", randomizerString.Generate());
         Environment.SetEnvironmentVariable("RabbitMQConsumer__PrefetchCount", prefetchCount.ToString());
-        Environment.SetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey",
-            randomizerString.Generate());
+        Environment.SetEnvironmentVariable(
+            "RabbitMQPublisher__PublishingTarget__RoutingKey",
+            randomizerString.Generate()
+        );
         Environment.SetEnvironmentVariable("RabbitMQPublisher__Port", Fixture.Port.ToString());
         Environment.SetEnvironmentVariable("RabbitMQPublisher__Host", Fixture.Hostname);
         Environment.SetEnvironmentVariable("DestinationQueueName", randomizerString.Generate());
@@ -37,16 +40,19 @@ public abstract class GenericHostingTestBase
         var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName") ?? "DefaultQueueName";
         const string destinationExchange = "amq.topic";
         var destinationRoutingKey =
-            Environment.GetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey") ??
-            "DefaultRoutingKey";
+            Environment.GetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey")
+            ?? "DefaultRoutingKey";
         var emptyArguments = new Dictionary<string, object?>();
         await channel.QueueDeclareAsync(destinationQueueName, true, false, false, emptyArguments);
         await channel.QueueBindAsync(destinationQueueName, destinationExchange, destinationRoutingKey, emptyArguments);
         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
     }
 
-    protected static async Task PublishMessageIntoQueueOfServiceAsync(IChannel channel, string messageToPublish,
-        IDictionary<string, object?>? rabbitMqHeaders = null)
+    protected static async Task PublishMessageIntoQueueOfServiceAsync(
+        IChannel channel,
+        string messageToPublish,
+        IDictionary<string, object?>? rabbitMqHeaders = null
+    )
     {
         var basicProperties = new BasicProperties();
 
@@ -55,8 +61,13 @@ public abstract class GenericHostingTestBase
             basicProperties.Headers = rabbitMqHeaders;
         }
 
-        await channel.BasicPublishAsync("amq.topic", "serviceQueue", true, basicProperties,
-            Encoding.UTF8.GetBytes(messageToPublish));
+        await channel.BasicPublishAsync(
+            "amq.topic",
+            "serviceQueue",
+            true,
+            basicProperties,
+            Encoding.UTF8.GetBytes(messageToPublish)
+        );
     }
 }
 

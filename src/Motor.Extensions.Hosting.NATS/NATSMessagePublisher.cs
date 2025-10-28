@@ -10,7 +10,8 @@ using NATS.Client;
 
 namespace Motor.Extensions.Hosting.NATS;
 
-public class NATSMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDisposable where TOutput : notnull
+public class NATSMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDisposable
+    where TOutput : notnull
 {
     private readonly CloudEventFormatter _cloudEventFormatter;
     private readonly NATSBaseOptions _options;
@@ -21,7 +22,8 @@ public class NATSMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDis
         IOptions<NATSBaseOptions> options,
         INATSClientFactory natsClientFactory,
         CloudEventFormatter cloudEventFormatter,
-        IOptions<PublisherOptions> publisherOptions)
+        IOptions<PublisherOptions> publisherOptions
+    )
     {
         _options = options.Value;
         _client = natsClientFactory.From(_options);
@@ -37,7 +39,10 @@ public class NATSMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDis
                 _client.Publish(_options.Topic, motorCloudEvent.TypedData);
                 break;
             case CloudEventFormat.Json:
-                var value = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(), out _);
+                var value = _cloudEventFormatter.EncodeStructuredModeMessage(
+                    motorCloudEvent.ConvertToCloudEvent(),
+                    out _
+                );
                 _client.Publish(_options.Topic, value.ToArray());
                 break;
             default:

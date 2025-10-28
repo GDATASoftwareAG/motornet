@@ -11,8 +11,11 @@ namespace Motor.Extensions.Hosting.Kafka;
 
 internal static class KafkaClientExtensions
 {
-    public static MotorCloudEvent<byte[]> ToMotorCloudEvent(this Message<string?, byte[]> message,
-        IApplicationNameService applicationNameService, CloudEventFormatter cloudEventFormatter)
+    public static MotorCloudEvent<byte[]> ToMotorCloudEvent(
+        this Message<string?, byte[]> message,
+        IApplicationNameService applicationNameService,
+        CloudEventFormatter cloudEventFormatter
+    )
     {
         if (!message.IsCloudEvent())
         {
@@ -33,8 +36,15 @@ internal static class KafkaClientExtensions
         {
             cloudEvent.Data = Encoding.UTF8.GetBytes(element.GetRawText());
         }
-        var motorCloudEvent = new MotorCloudEvent<byte[]>(applicationNameService, (byte[])cloudEvent.Data,
-            cloudEvent.Type, cloudEvent.Source, cloudEvent.Id, cloudEvent.Time, cloudEvent.DataContentType);
+        var motorCloudEvent = new MotorCloudEvent<byte[]>(
+            applicationNameService,
+            (byte[])cloudEvent.Data,
+            cloudEvent.Type,
+            cloudEvent.Source,
+            cloudEvent.Id,
+            cloudEvent.Time,
+            cloudEvent.DataContentType
+        );
         foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
         {
             if (motorCloudEvent.GetAttribute(key.Name) is null)

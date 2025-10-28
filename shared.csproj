@@ -1,35 +1,29 @@
 <Project>
-
-    <PropertyGroup>
-        <Version>0.15.0</Version>
-        <LangVersion>11</LangVersion>
-        <Nullable>enable</Nullable>
-        <WarningsAsErrors>CS8600;CS8602;CS8625;CS8618;CS8604;CS8601</WarningsAsErrors>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>Motor.NET is a microservice framework based on Microsoft.Extensions.Hosting.</Description>
-        <Copyright>Copyright (C) 2025 G DATA CyberDefense AG</Copyright>
-        <Company>G DATA CyberDefense AG</Company>
-        <RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
-        <PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
-        <PackageTags>microservice hosting rabbitmq kafka sqs http logging tracing</PackageTags>
-        <PackageIcon>Icon_Motor_NET_128.png</PackageIcon>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="../../rsc/Icon_Motor_NET_128.png" Pack="true" PackagePath="/" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    </ItemGroup>
-
+  <PropertyGroup>
+    <Version>0.15.0</Version>
+    <LangVersion>11</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8625;CS8618;CS8604;CS8601</WarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Motor.NET is a microservice framework based on Microsoft.Extensions.Hosting.</Description>
+    <Copyright>Copyright (C) 2025 G DATA CyberDefense AG</Copyright>
+    <Company>G DATA CyberDefense AG</Company>
+    <RepositoryUrl>https://github.com/GDATASoftwareAG/motornet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/GDATASoftwareAG/motornet</PackageProjectUrl>
+    <PackageTags>microservice hosting rabbitmq kafka sqs http logging tracing</PackageTags>
+    <PackageIcon>Icon_Motor_NET_128.png</PackageIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../rsc/Icon_Motor_NET_128.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

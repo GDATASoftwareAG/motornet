@@ -9,8 +9,11 @@ public class MotorCloudEvent
         where T : class
     {
         var applicationNameService = new TestApplicationNameService(source);
-        return new MotorCloudEvent<T>(applicationNameService, data, applicationNameService.GetSource())
-            .SetMotorVersion();
+        return new MotorCloudEvent<T>(
+            applicationNameService,
+            data,
+            applicationNameService.GetSource()
+        ).SetMotorVersion();
     }
 
     private class TestApplicationNameService : IApplicationNameService

@@ -17,8 +17,7 @@ public class MetricsFactoryTests
 
         factory.CreateCounter("some_counter_name", "some_help", "and_some_label");
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -28,8 +27,7 @@ public class MetricsFactoryTests
 
         factory.CreateCounter("some_counter_name", "some_help", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -39,8 +37,7 @@ public class MetricsFactoryTests
 
         factory.CreateCounter("some_counter_name", "some_help", "and_some_label", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -50,8 +47,7 @@ public class MetricsFactoryTests
 
         factory.CreateCounter("some_counter_name", "some_help", false, "and_some_label");
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -71,8 +67,7 @@ public class MetricsFactoryTests
 
         factory.CreateGauge("some_counter_name", "some_help", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -82,8 +77,7 @@ public class MetricsFactoryTests
 
         factory.CreateGauge("some_counter_name", "some_help", "and_some_label", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -93,8 +87,7 @@ public class MetricsFactoryTests
 
         factory.CreateGauge("some_counter_name", "some_help", false, "and_some_label");
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -114,8 +107,7 @@ public class MetricsFactoryTests
 
         factory.CreateHistogram("some_counter_name", "some_help", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -125,8 +117,7 @@ public class MetricsFactoryTests
 
         factory.CreateHistogram("some_counter_name", "some_help", "and_some_label", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -136,8 +127,7 @@ public class MetricsFactoryTests
 
         factory.CreateHistogram("some_counter_name", "some_help", false, "and_some_label");
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -157,8 +147,7 @@ public class MetricsFactoryTests
 
         factory.CreateSummary("some_counter_name", "some_help", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -168,8 +157,7 @@ public class MetricsFactoryTests
 
         factory.CreateSummary("some_counter_name", "some_help", "and_some_label", false);
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     [Fact]
@@ -179,8 +167,7 @@ public class MetricsFactoryTests
 
         factory.CreateSummary("some_counter_name", "some_help", false, "and_some_label");
 
-        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name",
-            factory.Names.FirstOrDefault());
+        Assert.Equal("motor_extensions_diagnostics_metrics_unittest_some_counter_name", factory.Names.FirstOrDefault());
     }
 
     private IMetricsFactory<MetricsFactoryTests> GetFactory()

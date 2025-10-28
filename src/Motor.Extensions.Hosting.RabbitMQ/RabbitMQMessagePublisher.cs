@@ -11,7 +11,8 @@ using RabbitMQ.Client.Exceptions;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;
 
-public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> where TOutput : notnull
+public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>
+    where TOutput : notnull
 {
     private readonly RabbitMQPublisherOptions<TOutput> _options;
     private readonly PublisherOptions _publisherOptions;
@@ -55,10 +56,7 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
                 throw new InvalidOperationException("Channel is not created.");
             }
 
-            var properties = new BasicProperties
-            {
-                DeliveryMode = DeliveryModes.Persistent
-            };
+            var properties = new BasicProperties { DeliveryMode = DeliveryModes.Persistent };
             properties.SetPriority(motorCloudEvent, _options);
 
             var exchange = motorCloudEvent.GetRabbitMQExchange() ?? _options.PublishingTarget.Exchange;
@@ -73,11 +71,20 @@ public class RabbitMQMessagePublisher<TOutput> : IRawMessagePublisher<TOutput> w
             {
                 case CloudEventFormat.Protocol:
                     properties.WriteCloudEventIntoHeader(motorCloudEvent);
-                    await _channel.BasicPublishAsync(exchange, routingKey, true, properties, motorCloudEvent.TypedData, token);
+                    await _channel.BasicPublishAsync(
+                        exchange,
+                        routingKey,
+                        true,
+                        properties,
+                        motorCloudEvent.TypedData,
+                        token
+                    );
                     break;
                 case CloudEventFormat.Json:
-                    var data = _cloudEventFormatter.EncodeStructuredModeMessage(motorCloudEvent.ConvertToCloudEvent(),
-                        out _);
+                    var data = _cloudEventFormatter.EncodeStructuredModeMessage(
+                        motorCloudEvent.ConvertToCloudEvent(),
+                        out _
+                    );
                     await _channel.BasicPublishAsync(exchange, routingKey, true, properties, data, token);
                     break;
                 default:

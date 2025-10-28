@@ -14,13 +14,14 @@ public static class KafkaTopicExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { KafkaTopicAttribute }.ToList().AsReadOnly();
 
-    public static MotorCloudEvent<TData> SetKafkaTopic<TData>(this MotorCloudEvent<TData> cloudEvent, string? value) where TData : class
+    public static MotorCloudEvent<TData> SetKafkaTopic<TData>(this MotorCloudEvent<TData> cloudEvent, string? value)
+        where TData : class
     {
         Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
         cloudEvent[KafkaTopicAttribute] = value;
         return cloudEvent;
     }
 
-    public static string? GetKafkaTopic<TData>(this MotorCloudEvent<TData> cloudEvent) where TData : class =>
-        Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[KafkaTopicAttribute] as string;
+    public static string? GetKafkaTopic<TData>(this MotorCloudEvent<TData> cloudEvent)
+        where TData : class => Validation.CheckNotNull(cloudEvent, nameof(cloudEvent))[KafkaTopicAttribute] as string;
 }

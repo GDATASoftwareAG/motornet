@@ -38,10 +38,8 @@ public class RabbitMQFixture : IAsyncLifetime
     public int Port => _container.GetMappedPublicPort(RabbitMqPort);
     public string Hostname => _container.Hostname;
 
-    private IConnectionFactory CreateConnectionFactory() => new ConnectionFactory
-    {
-        Uri = new Uri(_container.GetConnectionString())
-    };
+    private IConnectionFactory CreateConnectionFactory() =>
+        new ConnectionFactory { Uri = new Uri(_container.GetConnectionString()) };
 
     private async Task<IConnection> CreateConnectionAsync()
     {

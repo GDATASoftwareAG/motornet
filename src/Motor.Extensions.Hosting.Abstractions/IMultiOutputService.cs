@@ -8,6 +8,8 @@ public interface IMultiOutputService<TInput, TOutput>
     where TInput : class
     where TOutput : class
 {
-    IAsyncEnumerable<MotorCloudEvent<TOutput>> ConvertMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        CancellationToken token = default);
+    IAsyncEnumerable<MotorCloudEvent<TOutput>> ConvertMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        CancellationToken token = default
+    );
 }

@@ -7,7 +7,8 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.Publisher;
 
-public class TypedPublisherService<TOutput> : IHostedService where TOutput : class
+public class TypedPublisherService<TOutput> : IHostedService
+    where TOutput : class
 {
     private readonly List<ITypedMessagePublisher<TOutput>> _publishers;
 

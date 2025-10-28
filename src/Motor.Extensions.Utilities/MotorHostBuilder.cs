@@ -22,9 +22,7 @@ public class MotorHostBuilder : IMotorHostBuilder
         _builder = builder;
         _enableConfigureWebDefaults = enableConfigureWebDefaults;
 
-        _config = new ConfigurationBuilder()
-            .AddEnvironmentVariables(MotorHostDefaults.OptionsPrefix)
-            .Build();
+        _config = new ConfigurationBuilder().AddEnvironmentVariables(MotorHostDefaults.OptionsPrefix).Build();
     }
 
     public IHostBuilder ConfigureHostConfiguration(Action<IConfigurationBuilder> configureDelegate)
@@ -33,21 +31,22 @@ public class MotorHostBuilder : IMotorHostBuilder
         return this;
     }
 
-    public IHostBuilder ConfigureAppConfiguration(
-        Action<HostBuilderContext, IConfigurationBuilder> configureDelegate)
+    public IHostBuilder ConfigureAppConfiguration(Action<HostBuilderContext, IConfigurationBuilder> configureDelegate)
     {
         _builder.ConfigureAppConfiguration(configureDelegate);
         return this;
     }
 
     IMotorHostBuilder IMotorHostBuilder.ConfigureServices(
-        Action<HostBuilderContext, IServiceCollection> configureDelegate)
+        Action<HostBuilderContext, IServiceCollection> configureDelegate
+    )
     {
         _builder.ConfigureServices(configureDelegate);
         return this;
     }
 
-    public IMotorHostBuilder UseStartup<T>() where T : IMotorStartup
+    public IMotorHostBuilder UseStartup<T>()
+        where T : IMotorStartup
     {
         _type = typeof(T);
         return this;
@@ -57,7 +56,8 @@ public class MotorHostBuilder : IMotorHostBuilder
         string name,
         HealthStatus? failureStatus = null,
         IEnumerable<string>? tags = null,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null
+    )
     {
         _healthChecks.Add(new HealthCheckData(typeof(T), name, failureStatus, tags, timeout));
         return this;
@@ -69,22 +69,25 @@ public class MotorHostBuilder : IMotorHostBuilder
         return this;
     }
 
-    public IHostBuilder UseServiceProviderFactory<TContainerBuilder>(
-        IServiceProviderFactory<TContainerBuilder> factory) where TContainerBuilder : notnull
+    public IHostBuilder UseServiceProviderFactory<TContainerBuilder>(IServiceProviderFactory<TContainerBuilder> factory)
+        where TContainerBuilder : notnull
     {
         _builder.UseServiceProviderFactory(factory);
         return this;
     }
 
     public IHostBuilder UseServiceProviderFactory<TContainerBuilder>(
-        Func<HostBuilderContext, IServiceProviderFactory<TContainerBuilder>> factory) where TContainerBuilder : notnull
+        Func<HostBuilderContext, IServiceProviderFactory<TContainerBuilder>> factory
+    )
+        where TContainerBuilder : notnull
     {
         _builder.UseServiceProviderFactory(factory);
         return this;
     }
 
     public IHostBuilder ConfigureContainer<TContainerBuilder>(
-        Action<HostBuilderContext, TContainerBuilder> configureDelegate)
+        Action<HostBuilderContext, TContainerBuilder> configureDelegate
+    )
     {
         _builder.ConfigureContainer(configureDelegate);
         return this;
@@ -103,12 +106,14 @@ public class MotorHostBuilder : IMotorHostBuilder
                 {
                     foreach (var healthCheck in _healthChecks)
                     {
-                        builder.Add(new HealthCheckRegistration(
-                            healthCheck.Name,
-                            s => (IHealthCheck)ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
-                            healthCheck.FailureStatus,
-                            healthCheck.Tags,
-                            healthCheck.Timeout)
+                        builder.Add(
+                            new HealthCheckRegistration(
+                                healthCheck.Name,
+                                s => (IHealthCheck)ActivatorUtilities.GetServiceOrCreateInstance(s, healthCheck.Type),
+                                healthCheck.FailureStatus,
+                                healthCheck.Tags,
+                                healthCheck.Timeout
+                            )
                         );
                     }
                 });
@@ -116,7 +121,6 @@ public class MotorHostBuilder : IMotorHostBuilder
 
         return _builder.Build();
     }
-
 
     public IDictionary<object, object> Properties => _builder.Properties;
 
@@ -144,7 +148,8 @@ public class MotorHostBuilder : IMotorHostBuilder
             string name,
             HealthStatus? failureStatus = null,
             IEnumerable<string>? tags = null,
-            TimeSpan? timeout = null)
+            TimeSpan? timeout = null
+        )
         {
             Type = type;
             Name = name;
