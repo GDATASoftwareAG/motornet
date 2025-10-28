@@ -14,7 +14,9 @@ public class MultiOutputService : IMultiOutputService<InputMessage, OutputMessag
 {
     // Handle incoming messages
     public async IAsyncEnumerable<MotorCloudEvent<OutputMessage>> ConvertMessageAsync(
-        MotorCloudEvent<InputMessage> inputEvent, [EnumeratorCancellation] CancellationToken token = default)
+        MotorCloudEvent<InputMessage> inputEvent,
+        [EnumeratorCancellation] CancellationToken token = default
+    )
     {
         // Get the input message from the cloud event
         var input = inputEvent.TypedData;
@@ -45,10 +47,6 @@ public class MultiOutputService : IMultiOutputService<InputMessage, OutputMessag
             NotSoFancyText = input.FancyText.Reverse().ToString(),
             NotSoFancyNumber = input.FancyNumber * -1,
         };
-        yield return new()
-        {
-            NotSoFancyText = input.FancyText,
-            NotSoFancyNumber = input.FancyNumber * -2,
-        };
+        yield return new() { NotSoFancyText = input.FancyText, NotSoFancyNumber = input.FancyNumber * -2 };
     }
 }

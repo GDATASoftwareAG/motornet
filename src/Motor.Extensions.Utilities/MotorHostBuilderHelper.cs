@@ -27,26 +27,33 @@ public static class MotorHostBuilderHelper
             builder.UseUrls($"{urls};{defaultUrl}");
         }
 
-        builder.Configure((context, applicationBuilder) =>
-        {
-            applicationBuilder.UseRouting();
-            var enablePrometheusSetting = getSetting(MotorHostDefaults.EnablePrometheusEndpointKey);
-            if (string.IsNullOrEmpty(enablePrometheusSetting) || bool.Parse(enablePrometheusSetting))
+        builder.Configure(
+            (context, applicationBuilder) =>
             {
-                applicationBuilder.UsePrometheusServer();
-            }
+                applicationBuilder.UseRouting();
+                var enablePrometheusSetting = getSetting(MotorHostDefaults.EnablePrometheusEndpointKey);
+                if (string.IsNullOrEmpty(enablePrometheusSetting) || bool.Parse(enablePrometheusSetting))
+                {
+                    applicationBuilder.UsePrometheusServer();
+                }
 
-            startup?.Configure(context, applicationBuilder);
-            applicationBuilder.UseEndpoints(endpoints => { endpoints.MapHealthChecks("/health"); });
-        });
+                startup?.Configure(context, applicationBuilder);
+                applicationBuilder.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapHealthChecks("/health");
+                });
+            }
+        );
         if (motorStartup is not null)
         {
             builder.UseSetting(WebHostDefaults.ApplicationKey, motorStartup.Assembly.GetName().Name);
         }
 
-        builder.ConfigureServices((context, collection) =>
-        {
-            startup?.ConfigureServices(context, collection);
-        });
+        builder.ConfigureServices(
+            (context, collection) =>
+            {
+                startup?.ConfigureServices(context, collection);
+            }
+        );
     }
 }

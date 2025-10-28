@@ -9,10 +9,7 @@ namespace Motor.Extensions.Diagnostics.Metrics;
 
 internal class ThreadPoolGauge : ICollector
 {
-    private static readonly string[] Labels =
-    {
-            "ThreadPoolOption"
-        };
+    private static readonly string[] Labels = { "ThreadPoolOption" };
 
     internal static readonly MetricConfiguration ThreadPoolGaugeConfig = new(
         "motor_extensions_diagnostics_metrics_threadpoolstate",
@@ -45,11 +42,7 @@ internal class ThreadPoolGauge : ICollector
 
     private void WriteSample(IMetricsWriter writer, double value, string labelValue)
     {
-        writer.WriteSample(
-            value,
-            string.Empty,
-            Labels,
-            new[] { Capitalize(labelValue) });
+        writer.WriteSample(value, string.Empty, Labels, new[] { Capitalize(labelValue) });
     }
 
     private static string Capitalize(string labelValue) =>

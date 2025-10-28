@@ -14,14 +14,17 @@ internal class PrometheusDelegatingHandler : DelegatingHandler
 
     public PrometheusDelegatingHandler(IMetricsFactory<PrometheusDelegatingHandler> metricsFactory)
     {
-        _requestTotal =
-            metricsFactory.CreateCounter("request_total", "number of external request", false, "host", "status");
+        _requestTotal = metricsFactory.CreateCounter(
+            "request_total",
+            "number of external request",
+            false,
+            "host",
+            "status"
+        );
         _requestLatency = metricsFactory.CreateSummary("request_latency", "request duration in ms", new[] { "host" });
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken token)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();

@@ -66,7 +66,10 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     [Theory(Timeout = 50000)]
     [InlineData(false, 0)]
     [InlineData(true, 1)]
-    public async Task ConsumerStartAsync_CallbackInvalidInput_VerifyCorrectBehaviorOnInvalidInput(bool republishOnInvalidInput, uint expectedNumberOfMessagesInDlxQueue)
+    public async Task ConsumerStartAsync_CallbackInvalidInput_VerifyCorrectBehaviorOnInvalidInput(
+        bool republishOnInvalidInput,
+        uint expectedNumberOfMessagesInDlxQueue
+    )
     {
         var taskCompletionSource = new TaskCompletionSource();
         var builder = await RabbitMQTestBuilder
@@ -74,11 +77,13 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
             .WithDeadLetterExchange()
             .WithRepublishToDeadLetterExchangeOnInvalidInput(republishOnInvalidInput)
             .WithSingleRandomPublishedMessage()
-            .WithConsumerCallback((_, _) =>
-            {
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.InvalidInput);
-            })
+            .WithConsumerCallback(
+                (_, _) =>
+                {
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.InvalidInput);
+                }
+            )
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
 
@@ -104,13 +109,15 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
             .WithSinglePublishedMessage(priority, message)
-            .WithConsumerCallback((motorEvent, _) =>
-            {
-                consumedPriority = motorEvent.GetRabbitMQPriority();
-                consumedMessage = motorEvent.TypedData;
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.Success);
-            })
+            .WithConsumerCallback(
+                (motorEvent, _) =>
+                {
+                    consumedPriority = motorEvent.GetRabbitMQPriority();
+                    consumedMessage = motorEvent.TypedData;
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.Success);
+                }
+            )
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
 
@@ -128,9 +135,7 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     [Fact]
     public async Task PublisherPublishMessageAsync_SomeMessage_PublishedEqualsConsumed()
     {
-        var builder = await RabbitMQTestBuilder
-            .CreateWithQueueDeclare(fixture)
-            .BuildAsync();
+        var builder = await RabbitMQTestBuilder.CreateWithQueueDeclare(fixture).BuildAsync();
         var publisher = await builder.GetPublisherAsync<byte[]>();
         await publisher.StartAsync();
 
@@ -150,16 +155,17 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     [Fact(Timeout = 50000)]
     public async Task ConsumerStartAsync_OneMessageInQueueAndConsumeCallbackSuccess_QueueEmptyAfterAck()
     {
-
         var taskCompletionSource = new TaskCompletionSource();
         var builder = await RabbitMQTestBuilder
             .CreateWithoutQueueDeclare(fixture)
             .WithSingleRandomPublishedMessage()
-            .WithConsumerCallback((_, _) =>
-            {
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.Success);
-            })
+            .WithConsumerCallback(
+                (_, _) =>
+                {
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.Success);
+                }
+            )
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
 
@@ -180,12 +186,14 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         const ushort messageCount = 99;
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
-            .WithConsumerCallback(async (_, ct) =>
-            {
-                await Task.CompletedTask;
-                await Task.Delay(singleMessageProcessingTime, ct);
-                return ProcessedMessageStatus.Success;
-            })
+            .WithConsumerCallback(
+                async (_, ct) =>
+                {
+                    await Task.CompletedTask;
+                    await Task.Delay(singleMessageProcessingTime, ct);
+                    return ProcessedMessageStatus.Success;
+                }
+            )
             .WithMultipleRandomPublishedMessage(messageCount)
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
@@ -201,25 +209,25 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     }
 
     [Fact(Timeout = 50000)]
-    public async Task
-        ConsumerStartAsync_OneMessageInQueueAndConsumeCallbackReturnsTempFailureAndAfterwardsSuccess_MessageConsumedTwice()
+    public async Task ConsumerStartAsync_OneMessageInQueueAndConsumeCallbackReturnsTempFailureAndAfterwardsSuccess_MessageConsumedTwice()
     {
         var taskCompletionSource = new TaskCompletionSource();
         var consumerCounter = 0;
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
             .WithSingleRandomPublishedMessage()
-
-            .WithConsumerCallback((_, _) =>
-            {
-                consumerCounter++;
-                if (consumerCounter == 1)
+            .WithConsumerCallback(
+                (_, _) =>
                 {
-                    return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+                    consumerCounter++;
+                    if (consumerCounter == 1)
+                    {
+                        return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+                    }
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.Success);
                 }
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.Success);
-            })
+            )
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
 
@@ -237,11 +245,13 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
             .WithSingleRandomPublishedMessage()
-            .WithConsumerCallback((_, _) =>
-            {
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.InvalidInput);
-            })
+            .WithConsumerCallback(
+                (_, _) =>
+                {
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.InvalidInput);
+                }
+            )
             .BuildAsync();
         var consumer = await builder.GetConsumerAsync<string>();
 
@@ -262,11 +272,13 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
             .WithSingleRandomPublishedMessage()
-            .WithConsumerCallback((_, _) =>
-            {
-                taskCompletionSource.TrySetResult();
-                throw new Exception();
-            })
+            .WithConsumerCallback(
+                (_, _) =>
+                {
+                    taskCompletionSource.TrySetResult();
+                    throw new Exception();
+                }
+            )
             .BuildAsync();
 
         var applicationLifetimeMock = new Mock<IHostApplicationLifetime>();
@@ -287,11 +299,13 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
             .WithSingleRandomPublishedMessage()
-            .WithConsumerCallback((_, _) =>
-            {
-                taskCompletionSource.TrySetResult();
-                return Task.FromResult(ProcessedMessageStatus.CriticalFailure);
-            })
+            .WithConsumerCallback(
+                (_, _) =>
+                {
+                    taskCompletionSource.TrySetResult();
+                    return Task.FromResult(ProcessedMessageStatus.CriticalFailure);
+                }
+            )
             .BuildAsync();
 
         var applicationLifetimeMock = new Mock<IHostApplicationLifetime>();
@@ -309,11 +323,13 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     {
         var builder = await RabbitMQTestBuilder
             .CreateWithQueueDeclare(fixture)
-            .WithConsumerCallback(async (_, token) =>
-            {
-                await Task.Delay(4000, token);
-                return ProcessedMessageStatus.CriticalFailure;
-            })
+            .WithConsumerCallback(
+                async (_, token) =>
+                {
+                    await Task.Delay(4000, token);
+                    return ProcessedMessageStatus.CriticalFailure;
+                }
+            )
             .WithMultipleRandomPublishedMessage()
             .BuildAsync();
 
@@ -331,19 +347,11 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     [Fact]
     public async Task QueueMonitor_GetCurrentState_QueueEmpty_ReadyMessagesZero()
     {
-        var builder = await RabbitMQTestBuilder
-            .CreateWithQueueDeclare(fixture)
-            .BuildAsync();
+        var builder = await RabbitMQTestBuilder.CreateWithQueueDeclare(fixture).BuildAsync();
 
         var monitor = new RabbitMQQueueMonitor<string>(
             Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
-            Opts.Create(new RabbitMQConsumerOptions<string>
-            {
-                Queue =
-                {
-                    Name = builder.QueueName
-                }
-            }),
+            Opts.Create(new RabbitMQConsumerOptions<string> { Queue = { Name = builder.QueueName } }),
             fixture.ConnectionFactory<string>()
         );
 
@@ -363,13 +371,7 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
 
         var monitor = new RabbitMQQueueMonitor<string>(
             Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
-            Opts.Create(new RabbitMQConsumerOptions<string>
-            {
-                Queue =
-                {
-                    Name = builder.QueueName
-                }
-            }),
+            Opts.Create(new RabbitMQConsumerOptions<string> { Queue = { Name = builder.QueueName } }),
             fixture.ConnectionFactory<string>()
         );
 
@@ -389,13 +391,7 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
 
         var monitor = new RabbitMQQueueMonitor<string>(
             Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
-            Opts.Create(new RabbitMQConsumerOptions<string>
-            {
-                Queue =
-                {
-                    Name = builder.QueueName
-                }
-            }),
+            Opts.Create(new RabbitMQConsumerOptions<string> { Queue = { Name = builder.QueueName } }),
             fixture.ConnectionFactory<string>()
         );
 
@@ -425,13 +421,7 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
 
         var monitor = new RabbitMQQueueMonitor<string>(
             Mock.Of<ILogger<RabbitMQQueueMonitor<string>>>(),
-            Opts.Create(new RabbitMQConsumerOptions<string>
-            {
-                Queue =
-                {
-                    Name = builder.QueueName
-                }
-            }),
+            Opts.Create(new RabbitMQConsumerOptions<string> { Queue = { Name = builder.QueueName } }),
             fixture.ConnectionFactory<string>()
         );
 
@@ -444,7 +434,8 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
     private static Task WaitUntilAsync(Action action) => WaitUntilAsync(async () => await Task.Run(action));
 
     private static Task WaitUntilAsync(Func<Task> action) =>
-        Policy.Handle<Exception>()
+        Policy
+            .Handle<Exception>()
             .WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(10))
             .ExecuteAsync(async () => await action());
 }

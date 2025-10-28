@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Motor.Extensions.Hosting.BackgroundService_IntegrationTest.TestExample;
 using Motor.Extensions.Hosting.BackgroundService;
+using Motor.Extensions.Hosting.BackgroundService_IntegrationTest.TestExample;
 using Motor.Extensions.TestUtilities;
 using Xunit;
 
@@ -45,7 +45,8 @@ public class BackgroundServiceTests
     [Fact]
     public async Task WaitUntilHealthy_SafeHostedService_StartsSuccessfully()
     {
-        await using var host = MotorTestHost.BasedOn<ExampleProgram>()
+        await using var host = MotorTestHost
+            .BasedOn<ExampleProgram>()
             .ConfigureServices(services =>
             {
                 services.AddHostedService<BackgroundStartupTask>();
@@ -57,10 +58,11 @@ public class BackgroundServiceTests
         Assert.True(sharedService.IsFinished());
     }
 
-    public class SafeHostedService(ISharedService service,
+    public class SafeHostedService(
+        ISharedService service,
         IHostApplicationLifetime appLifetime,
-        ILogger<StartedBackgroundService> logger)
-        : StartedBackgroundService(appLifetime, logger)
+        ILogger<StartedBackgroundService> logger
+    ) : StartedBackgroundService(appLifetime, logger)
     {
         protected override Task ExecuteWhenStartedAsync(CancellationToken ct)
         {

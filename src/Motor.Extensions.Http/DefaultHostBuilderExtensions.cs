@@ -12,17 +12,20 @@ namespace Motor.Extensions.Http;
 
 public static class DefaultHostBuilderExtensions
 {
-    public static IHostBuilder ConfigureDefaultHttpClient(this IHostBuilder hostBuilder,
-        string configSection = "Request")
+    public static IHostBuilder ConfigureDefaultHttpClient(
+        this IHostBuilder hostBuilder,
+        string configSection = "Request"
+    )
     {
-        return hostBuilder
-            .ConfigureServices((context, services) =>
+        return hostBuilder.ConfigureServices(
+            (context, services) =>
             {
                 services
                     .AddTransient<PrometheusDelegatingHandler>()
                     .Configure<HttpOptions>(context.Configuration.GetSection(configSection))
                     .AddHttpClient(Options.DefaultName);
-            });
+            }
+        );
     }
 
     public static IHttpClientBuilder AddDefaultHttpClient(this IServiceCollection services, string name)
@@ -30,8 +33,7 @@ public static class DefaultHostBuilderExtensions
         return services.AddHttpClient(name).AddDefaultBehaviour();
     }
 
-    public static IHttpClientBuilder AddDefaultHttpClient<TClient, TImplementation>(
-        this IServiceCollection services)
+    public static IHttpClientBuilder AddDefaultHttpClient<TClient, TImplementation>(this IServiceCollection services)
         where TClient : class
         where TImplementation : class, TClient
     {
@@ -41,24 +43,31 @@ public static class DefaultHostBuilderExtensions
     private static IHttpClientBuilder AddDefaultBehaviour(this IHttpClientBuilder clientBuilder)
     {
         return clientBuilder
-            .AddPolicyHandler((provider, _) =>
-            {
-                var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
-                var nonTransientStatusCodesToRetry = config?.Value.NonTransientStatusCodesToRetry ?? Array.Empty<int>();
-                return HttpPolicyExtensions
-                    .HandleTransientHttpError()
-                    .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
-                    .OrResult(r => nonTransientStatusCodesToRetry.Contains((int)r.StatusCode))
-                    .WaitAndRetryAsync(
-                        config?.Value.NumberOfRetries ?? HttpOptions.DefaultNumberOfRetries,
-                        i => TimeSpan.FromSeconds(Math.Pow(2, i)));
-            })
-            .AddPolicyHandler((provider, _) =>
-            {
-                var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
-                return Policy.TimeoutAsync<HttpResponseMessage>(config?.Value.TimeoutInSeconds ??
-                                                                HttpOptions.DefaultTimeoutInSeconds);
-            })
+            .AddPolicyHandler(
+                (provider, _) =>
+                {
+                    var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
+                    var nonTransientStatusCodesToRetry =
+                        config?.Value.NonTransientStatusCodesToRetry ?? Array.Empty<int>();
+                    return HttpPolicyExtensions
+                        .HandleTransientHttpError()
+                        .Or<TimeoutRejectedException>() // thrown by Polly's TimeoutPolicy if the inner call times out
+                        .OrResult(r => nonTransientStatusCodesToRetry.Contains((int)r.StatusCode))
+                        .WaitAndRetryAsync(
+                            config?.Value.NumberOfRetries ?? HttpOptions.DefaultNumberOfRetries,
+                            i => TimeSpan.FromSeconds(Math.Pow(2, i))
+                        );
+                }
+            )
+            .AddPolicyHandler(
+                (provider, _) =>
+                {
+                    var config = (IOptions<HttpOptions>?)provider.GetService(typeof(IOptions<HttpOptions>));
+                    return Policy.TimeoutAsync<HttpResponseMessage>(
+                        config?.Value.TimeoutInSeconds ?? HttpOptions.DefaultTimeoutInSeconds
+                    );
+                }
+            )
             .AddHttpMessageHandler<PrometheusDelegatingHandler>();
     }
 }

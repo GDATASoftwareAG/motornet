@@ -11,9 +11,10 @@ public static class QueuedGenericServiceExtensions
         where TInput : class
     {
         services.AddHostedService<QueuedGenericService<TInput>>();
-        services
-            .AddSingleton<IBackgroundTaskQueue<MotorCloudEvent<TInput>>,
-                BackgroundTaskQueue<MotorCloudEvent<TInput>>>();
+        services.AddSingleton<
+            IBackgroundTaskQueue<MotorCloudEvent<TInput>>,
+            BackgroundTaskQueue<MotorCloudEvent<TInput>>
+        >();
         services.AddTransient<BaseDelegatingMessageHandler<TInput>>();
         services.AddTransient<PrepareDelegatingMessageHandler<TInput>>();
         return services;

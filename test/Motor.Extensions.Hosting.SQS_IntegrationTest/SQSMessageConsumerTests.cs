@@ -68,25 +68,22 @@ public class SQSMessageConsumerTests : IClassFixture<SQSFixture>
         var clientOptions = new SQSClientOptions
         {
             ServiceUrl = $"{_fixture.BaseSQSUrl}",
-            QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queueName}"
+            QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queueName}",
         };
         return clientOptions;
     }
 
     private async Task PublishMessage(IAmazonSQS sqsClient, string queue, string message)
     {
-        await sqsClient.SendMessageAsync(new SendMessageRequest
-        {
-            QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queue}",
-            MessageBody = message
-        });
+        await sqsClient.SendMessageAsync(
+            new SendMessageRequest { QueueUrl = $"{_fixture.BaseSQSUrl}queue/{queue}", MessageBody = message }
+        );
     }
 
     private SQSConsumer<T> GetConsumer<T>(IOptions<SQSClientOptions> clientOptions, string queueName)
     {
         var fakeLoggerMock = Mock.Of<ILogger<SQSConsumer<T>>>();
-        return new SQSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
-            new SQSClientFactory());
+        return new SQSConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(), new SQSClientFactory());
     }
 
     private IApplicationNameService GetApplicationNameService(string source = "test://non")

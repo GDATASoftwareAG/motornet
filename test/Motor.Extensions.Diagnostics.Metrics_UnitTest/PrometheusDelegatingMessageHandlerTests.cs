@@ -15,8 +15,7 @@ public class PrometheusDelegatingMessageHandlerTests
         var _ = new PrometheusDelegatingMessageHandler<string>(metricsFactoryMock.Object);
 
         metricsFactoryMock.Verify(x =>
-            x.CreateSummary("message_processing", "Message processing duration in ms",
-                false, "status")
-    );
+            x.CreateSummary("message_processing", "Message processing duration in ms", false, "status")
+        );
     }
 }

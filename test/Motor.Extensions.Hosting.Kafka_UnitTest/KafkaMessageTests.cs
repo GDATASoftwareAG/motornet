@@ -34,8 +34,10 @@ public class KafkaMessageTests
         var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
         var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-        Assert.Equal(MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count(),
-            outputCloudEvent.GetPopulatedAttributes().Count());
+        Assert.Equal(
+            MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count(),
+            outputCloudEvent.GetPopulatedAttributes().Count()
+        );
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
         {
             Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
@@ -53,10 +55,14 @@ public class KafkaMessageTests
         var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
         var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
-        Assert.Equal(MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count() + 1,
-            outputCloudEvent.GetPopulatedAttributes().Count());
-        Assert.Equal(inputCloudEvent[EncodingExtension.EncodingAttribute],
-            outputCloudEvent[EncodingExtension.EncodingAttribute]);
+        Assert.Equal(
+            MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion).Count() + 1,
+            outputCloudEvent.GetPopulatedAttributes().Count()
+        );
+        Assert.Equal(
+            inputCloudEvent[EncodingExtension.EncodingAttribute],
+            outputCloudEvent[EncodingExtension.EncodingAttribute]
+        );
         foreach (var requiredAttribute in MotorCloudEventInfo.RequiredAttributes(CurrentMotorVersion))
         {
             Assert.Equal(inputCloudEvent[requiredAttribute], outputCloudEvent[requiredAttribute]);
@@ -83,14 +89,15 @@ public class KafkaMessageTests
     private static Version CurrentMotorVersion => typeof(KafkaMessageTests).Assembly.GetName().Version;
 
     private static KafkaMessagePublisher<TData> GetKafkaPublisher<TData>(
-        CloudEventFormat format = CloudEventFormat.Protocol)
+        CloudEventFormat format = CloudEventFormat.Protocol
+    )
     {
-        var options = new KafkaPublisherOptions<TData>
-        {
-            Topic = KafkaTopic
-        };
-        return new KafkaMessagePublisher<TData>(Options.Create(options), new JsonEventFormatter(),
-            Options.Create(new PublisherOptions { CloudEventFormat = format }));
+        var options = new KafkaPublisherOptions<TData> { Topic = KafkaTopic };
+        return new KafkaMessagePublisher<TData>(
+            Options.Create(options),
+            new JsonEventFormatter(),
+            Options.Create(new PublisherOptions { CloudEventFormat = format })
+        );
     }
 
     private KafkaMessageConsumer<T> GetKafkaConsumer<T>()
@@ -98,8 +105,14 @@ public class KafkaMessageTests
         var options = Options.Create(GetConsumerConfig<T>(KafkaTopic));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
         var fakeLifetimeMock = Mock.Of<IHostApplicationLifetime>();
-        return new KafkaMessageConsumer<T>(fakeLoggerMock, options, fakeLifetimeMock, null, GetApplicationNameService(),
-            new JsonEventFormatter());
+        return new KafkaMessageConsumer<T>(
+            fakeLoggerMock,
+            options,
+            fakeLifetimeMock,
+            null,
+            GetApplicationNameService(),
+            new JsonEventFormatter()
+        );
     }
 
     private static IApplicationNameService GetApplicationNameService(string source = "test://non")
@@ -120,7 +133,7 @@ public class KafkaMessageTests
             EnableAutoCommit = false,
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,
-            AutoOffsetReset = AutoOffsetReset.Earliest
+            AutoOffsetReset = AutoOffsetReset.Earliest,
         };
     }
 }

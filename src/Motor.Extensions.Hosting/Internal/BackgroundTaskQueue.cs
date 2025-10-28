@@ -8,7 +8,8 @@ using Prometheus.Client;
 
 namespace Motor.Extensions.Hosting.Internal;
 
-public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where T : notnull
+public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable
+    where T : notnull
 {
     private readonly IGauge? _elementsInQueue;
     private readonly SemaphoreSlim _signal = new(0);
@@ -17,7 +18,8 @@ public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable where
 
     public BackgroundTaskQueue(IMetricsFactory<BackgroundTaskQueue<T>>? metricsFactory)
     {
-        _elementsInQueue = metricsFactory?.CreateGauge("task_queue_enqueued_elements", "", false, "type")
+        _elementsInQueue = metricsFactory
+            ?.CreateGauge("task_queue_enqueued_elements", "", false, "type")
             ?.WithLabels(typeof(T).Name);
         _totalMessages = metricsFactory?.CreateCounter("total_messages", "", false, "type")?.WithLabels(typeof(T).Name);
         LastDequeuedAt = DateTimeOffset.UtcNow;

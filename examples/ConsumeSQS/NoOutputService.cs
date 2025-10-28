@@ -9,8 +9,10 @@ namespace ConsumeSQS;
 
 public class NoOutputService : INoOutputService<InputMessage>
 {
-
-    public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<InputMessage> dataCloudEvent, CancellationToken token = default)
+    public Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<InputMessage> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         var msg = dataCloudEvent?.TypedData;
         Console.WriteLine(msg);

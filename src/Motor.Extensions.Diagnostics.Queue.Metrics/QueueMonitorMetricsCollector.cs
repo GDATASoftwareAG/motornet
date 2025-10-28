@@ -13,8 +13,9 @@ internal class QueueMonitorMetricsCollector : ICollector
 {
     private static readonly string[] Labels = { "queue" };
 
-    internal static readonly CollectorConfiguration QueueMonitorCollectorConfig =
-        new("motor_extensions_diagnostics_queue_metrics");
+    internal static readonly CollectorConfiguration QueueMonitorCollectorConfig = new(
+        "motor_extensions_diagnostics_queue_metrics"
+    );
 
     private static readonly MetricConfiguration MessagesReadyGaugeConfig = new(
         "motor_extensions_diagnostics_queue_metrics_messages_ready",
@@ -41,8 +42,7 @@ internal class QueueMonitorMetricsCollector : ICollector
 
     public void Collect(IMetricsWriter writer)
     {
-        var tasks = _queueMonitors
-            .Select(m => m.GetCurrentStateAsync());
+        var tasks = _queueMonitors.Select(m => m.GetCurrentStateAsync());
         var states = Task.WhenAll(tasks).Result;
         WriteMessagesReadyMetric(writer, states);
         WriteActiveConsumersMetric(writer, states);
@@ -50,11 +50,8 @@ internal class QueueMonitorMetricsCollector : ICollector
 
     public CollectorConfiguration Configuration => QueueMonitorCollectorConfig;
 
-    public IReadOnlyList<string> MetricNames => new[]
-    {
-            MessagesReadyGaugeConfig.Name,
-            ActiveConsumersGaugeConfig.Name
-        };
+    public IReadOnlyList<string> MetricNames =>
+        new[] { MessagesReadyGaugeConfig.Name, ActiveConsumersGaugeConfig.Name };
 
     private static void WriteMessagesReadyMetric(IMetricsWriter writer, IEnumerable<QueueState> states)
     {

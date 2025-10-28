@@ -26,7 +26,8 @@ public class QueuedGenericService<TInput> : BackgroundService
         IOptions<QueuedGenericServiceOptions>? options,
         IHostApplicationLifetime hostApplicationLifetime,
         IBackgroundTaskQueue<MotorCloudEvent<TInput>> queue,
-        BaseDelegatingMessageHandler<TInput> rootService)
+        BaseDelegatingMessageHandler<TInput> rootService
+    )
     {
         _logger = logger;
         _options = options?.Value ?? new QueuedGenericServiceOptions();
@@ -38,37 +39,41 @@ public class QueuedGenericService<TInput> : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken token)
     {
         var optionsParallelProcesses = _options.ParallelProcesses ?? Environment.ProcessorCount;
-        await Task.WhenAll(Enumerable.Repeat(0, optionsParallelProcesses)
-            .Select(_ => CreateRunnerTaskAsync(token))).ConfigureAwait(false);
+        await Task.WhenAll(Enumerable.Repeat(0, optionsParallelProcesses).Select(_ => CreateRunnerTaskAsync(token)))
+            .ConfigureAwait(false);
     }
 
     private Task CreateRunnerTaskAsync(CancellationToken token)
     {
-        return Task.Run(async () =>
-        {
-            while (!token.IsCancellationRequested)
+        return Task.Run(
+            async () =>
             {
-                var queueItem = await _queue.DequeueAsync(token)
-                    .ConfigureAwait(false);
-                if (queueItem is null)
+                while (!token.IsCancellationRequested)
                 {
-                    continue;
-                }
+                    var queueItem = await _queue.DequeueAsync(token).ConfigureAwait(false);
+                    if (queueItem is null)
+                    {
+                        continue;
+                    }
 
-                await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
-                    .ConfigureAwait(false);
-            }
-        }, token);
+                    await HandleSingleMessageAsync(queueItem.Item, queueItem.TaskCompletionStatus, token)
+                        .ConfigureAwait(false);
+                }
+            },
+            token
+        );
     }
 
-    private async Task HandleSingleMessageAsync(MotorCloudEvent<TInput> dataCloudEvent,
-        TaskCompletionSource<ProcessedMessageStatus> taskCompletionSource, CancellationToken token)
+    private async Task HandleSingleMessageAsync(
+        MotorCloudEvent<TInput> dataCloudEvent,
+        TaskCompletionSource<ProcessedMessageStatus> taskCompletionSource,
+        CancellationToken token
+    )
     {
         var status = ProcessedMessageStatus.CriticalFailure;
         try
         {
-            status = await _rootService.HandleMessageAsync(dataCloudEvent, token)
-                .ConfigureAwait(false);
+            status = await _rootService.HandleMessageAsync(dataCloudEvent, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException e)
         {
@@ -77,8 +82,11 @@ public class QueuedGenericService<TInput> : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(LogEvents.UnexpectedErrorOnMessageProcessing, ex,
-                "HandleMessage processed failed to with an unexpected exception.");
+            _logger.LogCritical(
+                LogEvents.UnexpectedErrorOnMessageProcessing,
+                ex,
+                "HandleMessage processed failed to with an unexpected exception."
+            );
         }
         finally
         {

@@ -16,9 +16,7 @@ namespace Motor.Extensions.Hosting_UnitTest;
 
 public class MultiOutputServiceAdapterTests
 {
-
-    private static Mock<IMultiOutputService<string, string>> FakeService =>
-        new();
+    private static Mock<IMultiOutputService<string, string>> FakeService => new();
 
     private static Mock<ITypedMessagePublisher<string>> FakePublisher => new();
 
@@ -38,21 +36,22 @@ public class MultiOutputServiceAdapterTests
     public async Task HandleMessageAsync_ConverterThrowsArgumentException_ThrowsArgumentException()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Throws(new ArgumentException("argException"));
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            messageHandler.HandleMessageAsync(CreateMotorEvent("message_1")));
+            messageHandler.HandleMessageAsync(CreateMotorEvent("message_1"))
+        );
     }
 
     [Fact]
     public async Task HandleMessageAsync_ConverterThrowsSomeException_TemporaryFailureResult()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Throws(new Exception("someException"));
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
@@ -65,27 +64,27 @@ public class MultiOutputServiceAdapterTests
     public async Task HandleMessageAsync_ConverterReturnsNull_ReturnWithSuccess()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Returns(CreateReturnValues((string)null));
         var publisherMock = FakePublisher;
-        var messageHandler = GetMessageHandler(service: converterMock.Object,
-            publisher: publisherMock.Object);
+        var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
 
         var actual = await messageHandler.HandleMessageAsync(CreateMotorEvent("message_5"));
 
         Assert.Equal(ProcessedMessageStatus.Success, actual);
         publisherMock.Verify(
             x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
     public async Task HandleMessageAsync_ConverterReturnIsEmpty_ReturnWithSuccess()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Returns(CreateReturnValues());
         var publisherMock = FakePublisher;
         var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
@@ -95,15 +94,16 @@ public class MultiOutputServiceAdapterTests
         Assert.Equal(ProcessedMessageStatus.Success, actual);
         publisherMock.Verify(
             x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
     public async Task HandleMessageAsync_ConverterReturnsSomeResult_ReturnWithSuccess()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Returns(CreateReturnValues("someResult"));
         var publisherMock = FakePublisher;
         var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
@@ -120,8 +120,8 @@ public class MultiOutputServiceAdapterTests
         const string converterResult2 = "someOtherResult2";
         const string converterResult3 = "someOtherResult3";
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Returns(CreateReturnValues(converterResult1, converterResult2, converterResult3));
         var publisherMock = FakePublisher;
         var messageHandler = GetMessageHandler(service: converterMock.Object, publisher: publisherMock.Object);
@@ -130,24 +130,40 @@ public class MultiOutputServiceAdapterTests
 
         publisherMock.Verify(
             x => x.PublishMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(3));
+            Times.Exactly(3)
+        );
         publisherMock.Verify(
-            x => x.PublishMessageAsync(It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult1),
-                It.IsAny<CancellationToken>()), Times.Once);
+            x =>
+                x.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult1),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
         publisherMock.Verify(
-            x => x.PublishMessageAsync(It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult2),
-                It.IsAny<CancellationToken>()), Times.Once);
+            x =>
+                x.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult2),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
         publisherMock.Verify(
-            x => x.PublishMessageAsync(It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult3),
-                It.IsAny<CancellationToken>()), Times.Once);
+            x =>
+                x.PublishMessageAsync(
+                    It.Is<MotorCloudEvent<string>>(t => t.TypedData == converterResult3),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task HandleMessageAsync_MessageProcessingFailure_ReturnsFailure()
     {
         var converterMock = FakeService;
-        converterMock.Setup(x =>
-                x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
+        converterMock
+            .Setup(x => x.ConvertMessageAsync(It.IsAny<MotorCloudEvent<string>>(), It.IsAny<CancellationToken>()))
             .Throws(new FailureException("message processing failed"));
         var messageHandler = GetMessageHandler(service: converterMock.Object);
 
@@ -167,7 +183,8 @@ public class MultiOutputServiceAdapterTests
     private MultiOutputServiceAdapter<string, string> GetMessageHandler(
         ILogger<SingleOutputServiceAdapter<string, string>>? logger = null,
         IMultiOutputService<string, string>? service = null,
-        ITypedMessagePublisher<string>? publisher = null)
+        ITypedMessagePublisher<string>? publisher = null
+    )
     {
         logger ??= Mock.Of<ILogger<SingleOutputServiceAdapter<string, string>>>();
         service ??= FakeService.Object;

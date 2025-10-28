@@ -31,7 +31,8 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
 
     public void ConfigurePublisher(IConfiguration section) => _configSection = section;
 
-    public void AddPublisher<TPublisher>() where TPublisher : IRawMessagePublisher<TOutput>
+    public void AddPublisher<TPublisher>()
+        where TPublisher : IRawMessagePublisher<TOutput>
     {
         _serviceCollection.AddTransient(typeof(TPublisher));
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
@@ -46,14 +47,15 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
         PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
     }
 
-    public void AddSerializer<TSerializer>() where TSerializer : IMessageSerializer<TOutput> =>
+    public void AddSerializer<TSerializer>()
+        where TSerializer : IMessageSerializer<TOutput> =>
         _serviceCollection.AddTransient(typeof(IMessageSerializer<TOutput>), typeof(TSerializer));
 
-    public void AddEncoder<TEncoder>() where TEncoder : IMessageEncoder =>
+    public void AddEncoder<TEncoder>()
+        where TEncoder : IMessageEncoder =>
         _serviceCollection.Replace(ServiceDescriptor.Transient(typeof(IMessageEncoder), typeof(TEncoder)));
 
-    public IEnumerator<ServiceDescriptor> GetEnumerator() =>
-        _serviceCollection.GetEnumerator();
+    public IEnumerator<ServiceDescriptor> GetEnumerator() => _serviceCollection.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

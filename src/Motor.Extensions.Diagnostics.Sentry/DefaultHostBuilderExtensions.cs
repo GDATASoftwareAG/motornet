@@ -12,14 +12,15 @@ public static class DefaultHostBuilderExtensions
 {
     public static IMotorHostBuilder ConfigureSentry(this IMotorHostBuilder hostBuilder)
     {
-        return hostBuilder
-            .ConfigureServices((context, services) =>
+        return hostBuilder.ConfigureServices(
+            (context, services) =>
             {
                 var sentryOptions = new SentrySerilogOptions();
                 context.Configuration.GetSection("Sentry").Bind(sentryOptions);
                 sentryOptions.Dsn ??= string.Empty;
                 SentrySdk.Init(sentryOptions);
                 services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
-            });
+            }
+        );
     }
 }

@@ -15,37 +15,45 @@ namespace Motor.Extensions.Utilities;
 
 public static class MotorHost
 {
-    private static IMotorHostBuilder ToMotorHostBuilder(this IHostBuilder hostBuilder,
-        bool enableConfigureWebDefaults = true)
+    private static IMotorHostBuilder ToMotorHostBuilder(
+        this IHostBuilder hostBuilder,
+        bool enableConfigureWebDefaults = true
+    )
     {
         return new MotorHostBuilder(hostBuilder, enableConfigureWebDefaults);
     }
 
-    public static IMotorHostBuilder CreateDefaultBuilder(Assembly? assembly = null,
+    public static IMotorHostBuilder CreateDefaultBuilder(
+        Assembly? assembly = null,
         bool enableConfigureWebDefaults = true,
         string applicationName = "ApplicationName",
-        string contentEncoding = "ContentEncoding")
+        string contentEncoding = "ContentEncoding"
+    )
     {
         assembly ??= Assembly.GetCallingAssembly();
 
-        var hostBuilder = Host.CreateDefaultBuilder()
-            .ToMotorHostBuilder(enableConfigureWebDefaults);
+        var hostBuilder = Host.CreateDefaultBuilder().ToMotorHostBuilder(enableConfigureWebDefaults);
 
-        return (IMotorHostBuilder)hostBuilder
-            .ConfigureServices((ctx, collection) =>
-            {
-                collection.Configure<DefaultApplicationNameOptions>(ctx.Configuration.GetSection(applicationName));
-                collection.Configure<ContentEncodingOptions>(ctx.Configuration.GetSection(contentEncoding));
-                collection.AddTransient<IApplicationNameService>(provider =>
-                {
-                    var options = provider.GetRequiredService<IOptions<DefaultApplicationNameOptions>>();
-                    return new DefaultApplicationNameService(assembly, options);
-                });
-            })
-            .ConfigureSerilog()
-            .ConfigureOpenTelemetry()
-            .ConfigurePrometheus()
-            .ConfigureDefaultHttpClient()
-            .UseConsoleLifetime();
+        return (IMotorHostBuilder)
+            hostBuilder
+                .ConfigureServices(
+                    (ctx, collection) =>
+                    {
+                        collection.Configure<DefaultApplicationNameOptions>(
+                            ctx.Configuration.GetSection(applicationName)
+                        );
+                        collection.Configure<ContentEncodingOptions>(ctx.Configuration.GetSection(contentEncoding));
+                        collection.AddTransient<IApplicationNameService>(provider =>
+                        {
+                            var options = provider.GetRequiredService<IOptions<DefaultApplicationNameOptions>>();
+                            return new DefaultApplicationNameService(assembly, options);
+                        });
+                    }
+                )
+                .ConfigureSerilog()
+                .ConfigureOpenTelemetry()
+                .ConfigurePrometheus()
+                .ConfigureDefaultHttpClient()
+                .UseConsoleLifetime();
     }
 }

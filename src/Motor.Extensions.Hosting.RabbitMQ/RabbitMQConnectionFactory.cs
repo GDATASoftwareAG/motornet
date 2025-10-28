@@ -50,7 +50,8 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
         );
     }
 
-    public static IRabbitMQConnectionFactory<TC> From<TOptions>(TOptions options) where TOptions : RabbitMQBaseOptions
+    public static IRabbitMQConnectionFactory<TC> From<TOptions>(TOptions options)
+        where TOptions : RabbitMQBaseOptions
     {
         Validator.ValidateObject(options, new ValidationContext(options), true);
         return new RabbitMQConnectionFactory<TC>(FromConfig(options));
@@ -72,8 +73,8 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
                 ServerName = baseOptions.Host,
                 Version = baseOptions.Tls.Enabled ? baseOptions.Tls.Protocols : SslProtocols.None,
                 AcceptablePolicyErrors = baseOptions.Tls.AcceptablePolicyErrors,
-                CertificateValidationCallback = baseOptions.Tls.CertificateValidationCallback
-            }
+                CertificateValidationCallback = baseOptions.Tls.CertificateValidationCallback,
+            },
         };
     }
 
@@ -85,9 +86,11 @@ public sealed class RabbitMQConnectionFactory<TC> : IRabbitMQConnectionFactory<T
 
     public async Task<IChannel> CurrentChannelAsync() => await _lazyChannel.Value;
 
-    public async Task<IConnection> CreateConnectionAsync(CancellationToken ct) => await _connectionFactory.CreateConnectionAsync(ct);
+    public async Task<IConnection> CreateConnectionAsync(CancellationToken ct) =>
+        await _connectionFactory.CreateConnectionAsync(ct);
 
-    public async Task<IChannel> CreateChannelAsync(CancellationToken ct) => await (await CurrentConnectionAsync()).CreateChannelAsync(cancellationToken: ct);
+    public async Task<IChannel> CreateChannelAsync(CancellationToken ct) =>
+        await (await CurrentConnectionAsync()).CreateChannelAsync(cancellationToken: ct);
 
     public void Dispose()
     {

@@ -10,7 +10,9 @@ namespace ConsumeAndPublishNATS;
 public class SingleOutputService : ISingleOutputService<IncomingMessage, OutgoingMessage>
 {
     public Task<MotorCloudEvent<OutgoingMessage>> ConvertMessageAsync(
-        MotorCloudEvent<IncomingMessage> dataCloudEvent, CancellationToken token = default)
+        MotorCloudEvent<IncomingMessage> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         Console.WriteLine(dataCloudEvent.TypedData.SomeProperty);
         return Task.FromResult(dataCloudEvent.CreateNew(DoSomething(dataCloudEvent.TypedData)));
@@ -22,7 +24,7 @@ public class SingleOutputService : ISingleOutputService<IncomingMessage, Outgoin
         {
             SomeProperty = incomingMessage.SomeProperty,
             IncomingTime = incomingMessage.IncomingTime,
-            OutgoingTime = DateTime.UtcNow
+            OutgoingTime = DateTime.UtcNow,
         };
     }
 }

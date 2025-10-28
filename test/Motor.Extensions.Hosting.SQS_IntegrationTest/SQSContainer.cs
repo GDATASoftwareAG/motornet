@@ -7,5 +7,6 @@ namespace Motor.Extensions.Hosting.SQS_IntegrationTest;
 
 public class SQSContainer(IContainerConfiguration configuration) : DockerContainer(configuration)
 {
-    public string BaseSQSUrl => new UriBuilder("http", Hostname, GetMappedPublicPort(SQSBuilder.DefaultPort)).ToString();
+    public string BaseSQSUrl =>
+        new UriBuilder("http", Hostname, GetMappedPublicPort(SQSBuilder.DefaultPort)).ToString();
 }

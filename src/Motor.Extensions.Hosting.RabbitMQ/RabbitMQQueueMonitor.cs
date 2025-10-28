@@ -9,7 +9,8 @@ using static Motor.Extensions.Hosting.RabbitMQ.LogEvents;
 
 namespace Motor.Extensions.Hosting.RabbitMQ;
 
-public class RabbitMQQueueMonitor<T> : IQueueMonitor where T : notnull
+public class RabbitMQQueueMonitor<T> : IQueueMonitor
+    where T : notnull
 {
     private readonly IOptions<RabbitMQConsumerOptions<T>> _options;
     private readonly IRabbitMQConnectionFactory<T> _connectionFactory;
@@ -38,8 +39,12 @@ public class RabbitMQQueueMonitor<T> : IQueueMonitor where T : notnull
         }
         catch (Exception e)
         {
-            _logger.LogWarning(QueueStateRetrievalFailed, e, "Failed to QueueDeclarePassive for queue {QueueName}",
-                _options.Value.Queue.Name);
+            _logger.LogWarning(
+                QueueStateRetrievalFailed,
+                e,
+                "Failed to QueueDeclarePassive for queue {QueueName}",
+                _options.Value.Queue.Name
+            );
             return new QueueState(_options.Value.Queue.Name, -1, -1);
         }
     }

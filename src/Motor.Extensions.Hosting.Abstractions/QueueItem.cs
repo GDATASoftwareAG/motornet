@@ -2,7 +2,8 @@ using System.Threading.Tasks;
 
 namespace Motor.Extensions.Hosting.Abstractions;
 
-public record QueueItem<T> where T : notnull
+public record QueueItem<T>
+    where T : notnull
 {
     public QueueItem(T item, TaskCompletionSource<ProcessedMessageStatus> taskCompletionStatus)
     {

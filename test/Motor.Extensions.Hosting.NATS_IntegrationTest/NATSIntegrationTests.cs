@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MSOptions = Microsoft.Extensions.Options.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -15,6 +14,7 @@ using NATS.Client;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
+using MSOptions = Microsoft.Extensions.Options.Options;
 
 namespace Motor.Extensions.Hosting.NATS_IntegrationTest;
 
@@ -43,8 +43,11 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         var consumerOptions = GetNATSConsumerOptions(topicName, queueName);
 
         var consumer = GetConsumer<string>(MSOptions.Create(consumerOptions));
-        var rawConsumedNatsMessage =
-            await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(consumer, publisher, expectedMessage);
+        var rawConsumedNatsMessage = await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(
+            consumer,
+            publisher,
+            expectedMessage
+        );
 
         Assert.NotNull(rawConsumedNatsMessage);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(rawConsumedNatsMessage));
@@ -63,14 +66,16 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         var consumerOptions = GetNATSConsumerOptions(topicName, queueName);
 
         var consumer = GetConsumer<string>(MSOptions.Create(consumerOptions));
-        var rawConsumedNatsMessage =
-            await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(consumer, publisher, expectedMessage);
+        var rawConsumedNatsMessage = await RawConsumedNatsMessageWithNatsPublisherPublishedMessage(
+            consumer,
+            publisher,
+            expectedMessage
+        );
 
         Assert.NotNull(rawConsumedNatsMessage);
         var jsonEventFormatter = new JsonEventFormatter();
         var cloudEvent = jsonEventFormatter.DecodeStructuredModeMessage(rawConsumedNatsMessage, null, null);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(cloudEvent.Data as byte[] ?? Array.Empty<byte>()));
-
     }
 
     [Fact(Timeout = 50000)]
@@ -90,7 +95,10 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
     }
 
     private static async Task<byte[]> RawConsumedNatsMessageWithNatsPublisherPublishedMessage(
-        NATSMessageConsumer<string> messageConsumer, NATSMessagePublisher<string> messagePublisher, string expectedMessage)
+        NATSMessageConsumer<string> messageConsumer,
+        NATSMessagePublisher<string> messagePublisher,
+        string expectedMessage
+    )
     {
         var rawConsumedNatsMessage = (byte[])null;
         var taskCompletionSource = new TaskCompletionSource();
@@ -106,14 +114,19 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
 
         await Task.Delay(TimeSpan.FromSeconds(5));
         await messagePublisher.PublishMessageAsync(
-            MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(expectedMessage)));
+            MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(expectedMessage))
+        );
 
         await Task.WhenAny(consumerStartTask, taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30)));
         return rawConsumedNatsMessage;
     }
 
-    private static async Task<byte[]> RawConsumedNatsMessage(NATSMessageConsumer<string> messageConsumer, IConnection nats,
-        string topicName, string expectedMessage)
+    private static async Task<byte[]> RawConsumedNatsMessage(
+        NATSMessageConsumer<string> messageConsumer,
+        IConnection nats,
+        string topicName,
+        string expectedMessage
+    )
     {
         var rawConsumedNatsMessage = (byte[])null;
         var taskCompletionSource = new TaskCompletionSource();
@@ -136,11 +149,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
 
     private NATSBaseOptions GetNATSBaseOptions(string topicName)
     {
-        var clientOptions = new NATSBaseOptions()
-        {
-            Url = _natsUrl,
-            Topic = topicName,
-        };
+        var clientOptions = new NATSBaseOptions() { Url = _natsUrl, Topic = topicName };
         return clientOptions;
     }
 
@@ -150,7 +159,7 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         {
             Url = _natsUrl,
             Topic = topicName,
-            Queue = queueName
+            Queue = queueName,
         };
         return clientOptions;
     }
@@ -160,17 +169,28 @@ public class NATSIntegrationTests : IClassFixture<NATSFixture>
         natsClient.Publish(topic, Encoding.UTF8.GetBytes(message));
     }
 
-    private NATSMessagePublisher<string> GetPublisher(IOptions<NATSBaseOptions> clientOptions, CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol)
+    private NATSMessagePublisher<string> GetPublisher(
+        IOptions<NATSBaseOptions> clientOptions,
+        CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol
+    )
     {
-        return new NATSMessagePublisher<string>(clientOptions, new NATSClientFactory(), new JsonEventFormatter(),
-            MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat }));
+        return new NATSMessagePublisher<string>(
+            clientOptions,
+            new NATSClientFactory(),
+            new JsonEventFormatter(),
+            MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat })
+        );
     }
 
     private NATSMessageConsumer<T> GetConsumer<T>(IOptions<NATSConsumerOptions> clientOptions)
     {
         var fakeLoggerMock = Mock.Of<ILogger<NATSMessageConsumer<T>>>();
-        return new NATSMessageConsumer<T>(clientOptions, fakeLoggerMock, GetApplicationNameService(),
-            new NATSClientFactory());
+        return new NATSMessageConsumer<T>(
+            clientOptions,
+            fakeLoggerMock,
+            GetApplicationNameService(),
+            new NATSClientFactory()
+        );
     }
 
     private IApplicationNameService GetApplicationNameService(string source = "test://non")

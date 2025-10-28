@@ -4,5 +4,5 @@ public enum BridgeConsumerType
 {
     RabbitMQ,
     Kafka,
-    SQS
+    SQS,
 }

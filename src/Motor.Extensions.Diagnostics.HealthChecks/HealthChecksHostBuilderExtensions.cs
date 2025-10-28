@@ -6,14 +6,15 @@ namespace Motor.Extensions.Diagnostics.HealthChecks;
 
 public static class HealthChecksHostBuilderExtensions
 {
-    public static IHostBuilder ConfigureHealthChecks(this IHostBuilder hostBuilder,
-        Action<IHealthChecksBuilder> configure)
+    public static IHostBuilder ConfigureHealthChecks(
+        this IHostBuilder hostBuilder,
+        Action<IHealthChecksBuilder> configure
+    )
     {
-        return hostBuilder
-            .ConfigureServices(collection =>
-            {
-                var healthChecksBuilder = collection.AddHealthChecks();
-                configure(healthChecksBuilder);
-            });
+        return hostBuilder.ConfigureServices(collection =>
+        {
+            var healthChecksBuilder = collection.AddHealthChecks();
+            configure(healthChecksBuilder);
+        });
     }
 }

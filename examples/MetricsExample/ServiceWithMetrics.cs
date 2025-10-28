@@ -17,26 +17,34 @@ public class ServiceWithMetrics : INoOutputService<InputMessage>
     private readonly ISummary? _simpleSummary;
     private readonly IMetricFamily<ISummary>? _labeledSummary;
 
-    public ServiceWithMetrics(IMetricsFactory<ServiceWithMetrics> metricFactory,
-        IServiceInDifferentNamespace serviceInDifferentNamespace)
+    public ServiceWithMetrics(
+        IMetricsFactory<ServiceWithMetrics> metricFactory,
+        IServiceInDifferentNamespace serviceInDifferentNamespace
+    )
     {
         _serviceInDifferentNamespace = serviceInDifferentNamespace;
 
         // Resulting label in Prometheus: metricsexample_emtpy_string_total
-        _counter = metricFactory?.CreateCounter("empty_string_total",
-            "Counts the total number of recieved empty strings.");
+        _counter = metricFactory?.CreateCounter(
+            "empty_string_total",
+            "Counts the total number of recieved empty strings."
+        );
 
         // Resulting label in Prometheus: metricsexample_fancy_number
-        _simpleSummary = metricFactory?.CreateSummary("fancy_number",
-            "Shows the distribution of fancy numbers.");
+        _simpleSummary = metricFactory?.CreateSummary("fancy_number", "Shows the distribution of fancy numbers.");
 
         // Resulting label in Prometheus: metricsexample_processing_time
-        _labeledSummary = metricFactory?.CreateSummary("processing_time",
-            "Shows the processing time of fancy inputs.", new[] { "successful" });
+        _labeledSummary = metricFactory?.CreateSummary(
+            "processing_time",
+            "Shows the processing time of fancy inputs.",
+            new[] { "successful" }
+        );
     }
 
-    public Task<ProcessedMessageStatus> HandleMessageAsync(MotorCloudEvent<InputMessage> inputEvent,
-        CancellationToken token = default)
+    public Task<ProcessedMessageStatus> HandleMessageAsync(
+        MotorCloudEvent<InputMessage> inputEvent,
+        CancellationToken token = default
+    )
     {
         /*
          * Handle incoming messages
@@ -72,7 +80,7 @@ public class ServiceWithMetrics : INoOutputService<InputMessage>
          * With AutoObserveStopwatch, the metrics are still collected,
          * even if an exception is thrown within the using scope.
          * For histograms, AutoObserve can be used as a more generic approach.
-         * 
+         *
          * When using the Rider IDE, you might see a warning here, regarding possible
          * modifications of the variable `success` in the outer scope. Because this is
          * exactly what we want to achieve here, you can simply ignore this warning.

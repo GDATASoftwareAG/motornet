@@ -16,15 +16,19 @@ public class ReverseStringConverter : ISingleOutputService<string, string>
     private readonly IMetricFamily<ISummary> _summary;
     private static readonly ActivitySource ActivitySource = new(OpenTelemetryOptions.DefaultActivitySourceName);
 
-    public ReverseStringConverter(ILogger<ReverseStringConverter> logger,
-        IMetricsFactory<ReverseStringConverter> metricsFactory)
+    public ReverseStringConverter(
+        ILogger<ReverseStringConverter> logger,
+        IMetricsFactory<ReverseStringConverter> metricsFactory
+    )
     {
         _logger = logger;
         _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
     }
 
-    public Task<MotorCloudEvent<string>?> ConvertMessageAsync(MotorCloudEvent<string> dataCloudEvent,
-        CancellationToken token = default)
+    public Task<MotorCloudEvent<string>?> ConvertMessageAsync(
+        MotorCloudEvent<string> dataCloudEvent,
+        CancellationToken token = default
+    )
     {
         _logger.LogInformation("log your request");
         var tmpChar = dataCloudEvent.TypedData.ToCharArray();

@@ -7,8 +7,7 @@ namespace Motor.Extensions.Hosting.SQS;
 
 public static class SQSHostBuilderExtensions
 {
-    public static void AddSQSWithConfig<T>(this IConsumerBuilder<T> builder,
-        IConfiguration clientConfiguration)
+    public static void AddSQSWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration clientConfiguration)
         where T : notnull
     {
         builder.Configure<SQSClientOptions>(clientConfiguration);

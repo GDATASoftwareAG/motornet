@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace AspNetExample.Persistency;
 
-public interface IStorage<T> where T : IEntity
+public interface IStorage<T>
+    where T : IEntity
 {
     public IEnumerable<T> GetAll();
     public T? Get(long id);
