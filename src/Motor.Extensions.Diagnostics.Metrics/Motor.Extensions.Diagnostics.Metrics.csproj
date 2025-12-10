@@ -19,7 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics.Abstractions\Motor.Extensions.Diagnostics.Metrics.Abstractions.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
