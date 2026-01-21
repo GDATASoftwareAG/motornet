@@ -3,7 +3,7 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.20" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.21" />
     <PackageReference Include="AWSSDK.SQS" Version="4.0.2.12" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.10" />
