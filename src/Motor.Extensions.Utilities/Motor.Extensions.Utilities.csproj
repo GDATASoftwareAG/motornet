@@ -6,6 +6,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.HealthChecks\Motor.Extensions.Diagnostics.HealthChecks.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Logging\Motor.Extensions.Diagnostics.Logging.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
