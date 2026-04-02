@@ -63,7 +63,7 @@ public abstract class GenericHostingTestBase
 
         await channel.BasicPublishAsync(
             "amq.topic",
-            "serviceQueue",
+            Environment.GetEnvironmentVariable("RabbitMQPublisher__PublishingTarget__RoutingKey") ?? "serviceQueue",
             true,
             basicProperties,
             Encoding.UTF8.GetBytes(messageToPublish)
