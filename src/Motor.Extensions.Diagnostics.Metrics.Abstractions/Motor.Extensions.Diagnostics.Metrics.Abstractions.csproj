@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="Prometheus.Client" Version="6.1.0" />
+    <PackageReference Include="Prometheus.Client" />
   </ItemGroup>
 </Project>
