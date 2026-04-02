@@ -25,7 +25,7 @@ public class BackgroundServiceTests
             })
             .Build();
 
-        Assert.Throws<Exception>(() => host.Services.GetRequiredService<ISharedService>());
+        Assert.Throws<Exception>(host.Services.GetRequiredService<ISharedService>);
     }
 
     private class UnsafeHostedService(ISharedService service) : Microsoft.Extensions.Hosting.BackgroundService

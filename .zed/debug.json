@@ -1,0 +1,28 @@
+[
+  {
+    "label": "Attach xUnit Test",
+    "adapter": "netcoredbg",
+    "request": "attach",
+    "processId": 96414,
+  },
+  {
+    "label": "Debug .NET Core App",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "${ZED_WORKTREE_ROOT}/test/Motor.Extensions.Utilities_IntegrationTest/obj/Debug/net10.0/Motor.Extensions.Utilities_IntegrationTest.dll",
+    "cwd": "${ZED_WORKTREE_ROOT}/test/Motor.Extensions.Utilities_IntegrationTest",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development",
+      "ASPNETCORE_URLS": "http://localhost:5243",
+    },
+    "build": {
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${ZED_WORKTREE_ROOT}/test/Motor.Extensions.Utilities_IntegrationTest/Motor.Extensions.Utilities_IntegrationTest.csproj",
+        "-p:Configuration=Debug",
+        "-p:TargetFramework=net10.0",
+      ],
+    },
+  },
+]

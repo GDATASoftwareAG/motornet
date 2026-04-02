@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
@@ -14,5 +13,4 @@
     <ProjectReference Include="..\Motor.Extensions.Utilities.Abstractions\Motor.Extensions.Utilities.Abstractions.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>

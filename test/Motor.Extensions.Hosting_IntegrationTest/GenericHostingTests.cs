@@ -233,15 +233,14 @@ public class GenericHostingTests : IDisposable
         )
         {
             _logger.LogInformation("log your request");
-            var tmpChar = dataCloudEvent.TypedData.ToCharArray();
             if (!ActivitySource.HasListeners())
             {
                 throw new ArgumentException();
             }
 
-            var reversed = tmpChar.Reverse().ToArray();
+            var reversed = new string(dataCloudEvent.TypedData.Reverse().ToArray());
             _summary.WithLabels("collect_your_metrics").Observe(1.0);
-            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));
+            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(reversed));
         }
     }
 

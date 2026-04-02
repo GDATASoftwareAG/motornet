@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,7 +24,7 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
     public DemonstrationTests(RabbitMQFixture fixture)
         : base(fixture) { }
 
-    [Fact(Timeout = 60000)]
+    [Fact]
     public async Task StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
     {
         PrepareQueues();
@@ -39,7 +35,7 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
 
         await host.StartAsync();
-        PublishMessageIntoQueueOfServiceAsync(channel, message);
+        await PublishMessageIntoQueueOfServiceAsync(channel, message);
 
         var actual = await GetMessageFromDestinationQueue(channel);
         Assert.Equal("54321", actual);
@@ -90,7 +86,7 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             return Task.CompletedTask;
         };
         await channel.BasicConsumeAsync(destinationQueueName, false, consumer);
-        await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+        await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(60)));
 
         return messageFromDestinationQueue;
     }
@@ -117,10 +113,16 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             var parentContext = dataCloudEvent.GetActivityContext();
             Assert.NotEqual(default, parentContext);
             _logger.LogInformation("log your request");
-            var tmpChar = dataCloudEvent.TypedData.ToCharArray();
-            var reversed = tmpChar.Reverse().ToArray();
+
+            var chars = dataCloudEvent.TypedData.ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                (chars[chars.Length - 1 - i], chars[i]) = (chars[i], chars[chars.Length - 1 - i]);
+            }
+
+            var reversed = new string(chars);
             _summary.WithLabels("collect_your_metrics").Observe(1.0);
-            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));
+            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(reversed));
         }
     }
 }

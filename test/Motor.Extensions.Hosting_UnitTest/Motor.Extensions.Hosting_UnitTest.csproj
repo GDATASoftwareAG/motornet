@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <IsPackable>false</IsPackable>
-    <Nullable>enable</Nullable>
     <Product>Test</Product>
   </PropertyGroup>
   <ItemGroup>
