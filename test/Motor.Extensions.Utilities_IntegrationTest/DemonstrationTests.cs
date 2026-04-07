@@ -1,4 +1,6 @@
 using System.Text;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,23 +16,22 @@ using Motor.Extensions.Utilities;
 using Prometheus.Client;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RandomDataGenerator.FieldOptions;
+using RandomDataGenerator.Randomizers;
 using Xunit;
 
 namespace Motor.Extensions.Utilities_IntegrationTest;
 
 [Collection("GenericHosting")]
-public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQFixture>
+public class DemonstrationTests(RabbitMQFixture fixture)
+    : GenericHostingTestBase(fixture),
+        IClassFixture<RabbitMQFixture>
 {
-    public DemonstrationTests(RabbitMQFixture fixture)
-        : base(fixture) { }
-
     [Fact]
     public async Task StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
     {
-        PrepareQueues();
-
         const string message = "12345";
-        using var host = GetReverseStringService();
+        using var host = GetReverseStringService(RandomHttpPort);
         var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
 
@@ -42,9 +43,11 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         await host.StopAsync();
     }
 
-    private static IHost GetReverseStringService()
+    private IHost GetReverseStringService(ushort listenerPort, int prefetchCount = 1)
     {
-        var host = MotorHost
+        var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+
+        return MotorHost
             .CreateDefaultBuilder()
             .ConfigureSingleOutputService<string, string>()
             .ConfigureServices(
@@ -67,9 +70,33 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
                     builder.AddSerializer<StringSerializer>();
                 }
             )
+            .ConfigureHostConfiguration(config =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        { "ASPNETCORE_URLS", $"http://0.0.0.0:{listenerPort}" },
+                        { "Prometheus__Port", $"http://0.0.0.0:{listenerPort}" },
+                    }
+                );
+            })
+            .ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        { "RabbitMQConsumer__Port", Fixture.Port.ToString() },
+                        { "RabbitMQConsumer__Host", Fixture.Hostname },
+                        { "RabbitMQConsumer__Queue__Name", randomizerString.Generate() },
+                        { "RabbitMQConsumer__PrefetchCount", prefetchCount.ToString() },
+                        { "RabbitMQPublisher__PublishingTarget__RoutingKey", randomizerString.Generate() },
+                        { "RabbitMQPublisher__Port", Fixture.Port.ToString() },
+                        { "RabbitMQPublisher__Host", Fixture.Hostname },
+                        { "DestinationQueueName", randomizerString.Generate() },
+                    }
+                );
+            })
             .Build();
-
-        return host;
     }
 
     private static async Task<string> GetMessageFromDestinationQueue(IChannel channel)
@@ -91,19 +118,17 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
         return messageFromDestinationQueue;
     }
 
-    protected class ReverseStringConverter : ISingleOutputService<string, string>
+    protected class ReverseStringConverter(
+        ILogger<ReverseStringConverter> logger,
+        IMetricsFactory<ReverseStringConverter> metricsFactory
+    ) : ISingleOutputService<string, string>
     {
-        private readonly ILogger<ReverseStringConverter> _logger;
-        private readonly IMetricFamily<ISummary> _summary;
-
-        public ReverseStringConverter(
-            ILogger<ReverseStringConverter> logger,
-            IMetricsFactory<ReverseStringConverter> metricsFactory
-        )
-        {
-            _logger = logger;
-            _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
-        }
+        private readonly ILogger<ReverseStringConverter> _logger = logger;
+        private readonly IMetricFamily<ISummary> _summary = metricsFactory.CreateSummary(
+            "summaryName",
+            "summaryHelpString",
+            new[] { "someLabel" }
+        );
 
         public Task<MotorCloudEvent<string>?> ConvertMessageAsync(
             MotorCloudEvent<string> dataCloudEvent,
@@ -115,7 +140,7 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             _logger.LogInformation("log your request");
 
             var chars = dataCloudEvent.TypedData.ToCharArray();
-            for (var i = 0; i < chars.Length; i++)
+            for (var i = 0; i < chars.Length / 2; i++)
             {
                 (chars[chars.Length - 1 - i], chars[i]) = (chars[i], chars[chars.Length - 1 - i]);
             }

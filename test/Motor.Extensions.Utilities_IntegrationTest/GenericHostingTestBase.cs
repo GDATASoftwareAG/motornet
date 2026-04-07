@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using RabbitMQ.Client;
-using RandomDataGenerator.FieldOptions;
-using RandomDataGenerator.Randomizers;
 
 namespace Motor.Extensions.Utilities_IntegrationTest;
 
 public abstract class GenericHostingTestBase
 {
+    private static readonly Random _random = new();
+
     protected RabbitMQFixture Fixture { get; }
 
     protected GenericHostingTestBase(RabbitMQFixture fixture)
@@ -19,21 +16,7 @@ public abstract class GenericHostingTestBase
         Fixture = fixture;
     }
 
-    protected void PrepareQueues(int prefetchCount = 1)
-    {
-        var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-        Environment.SetEnvironmentVariable("RabbitMQConsumer__Port", Fixture.Port.ToString());
-        Environment.SetEnvironmentVariable("RabbitMQConsumer__Host", Fixture.Hostname);
-        Environment.SetEnvironmentVariable("RabbitMQConsumer__Queue__Name", randomizerString.Generate());
-        Environment.SetEnvironmentVariable("RabbitMQConsumer__PrefetchCount", prefetchCount.ToString());
-        Environment.SetEnvironmentVariable(
-            "RabbitMQPublisher__PublishingTarget__RoutingKey",
-            randomizerString.Generate()
-        );
-        Environment.SetEnvironmentVariable("RabbitMQPublisher__Port", Fixture.Port.ToString());
-        Environment.SetEnvironmentVariable("RabbitMQPublisher__Host", Fixture.Hostname);
-        Environment.SetEnvironmentVariable("DestinationQueueName", randomizerString.Generate());
-    }
+    protected ushort RandomHttpPort { get; } = (ushort)_random.Next(ushort.MaxValue);
 
     protected static async Task CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(IChannel channel)
     {

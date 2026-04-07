@@ -25,5 +25,6 @@
     <None Update="appsettings.json" CopyToOutputDirectory="Always" />
     <None Update="appsettings.Production.json" CopyToOutputDirectory="Always" />
     <None Update="appsettings.Development.json" CopyToOutputDirectory="Always" />
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

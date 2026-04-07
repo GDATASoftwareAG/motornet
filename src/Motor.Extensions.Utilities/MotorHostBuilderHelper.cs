@@ -22,10 +22,6 @@ public static class MotorHostBuilderHelper
         {
             builder.UseUrls(defaultUrl);
         }
-        else if (!urls.Contains(defaultUrl))
-        {
-            builder.UseUrls($"{urls};{defaultUrl}");
-        }
 
         builder.Configure(
             (context, applicationBuilder) =>
