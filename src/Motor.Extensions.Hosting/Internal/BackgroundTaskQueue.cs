@@ -11,6 +11,7 @@ namespace Motor.Extensions.Hosting.Internal;
 public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable
     where T : notnull
 {
+    private int _itemCount;
     private readonly IGauge? _elementsInQueue;
     private readonly SemaphoreSlim _signal = new(0);
     private readonly ICounter? _totalMessages;
@@ -40,10 +41,10 @@ public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable
             LastDequeuedAt = DateTimeOffset.UtcNow;
         }
         _workItems.Enqueue(new QueueItem<T>(item, taskCompletionStatus));
+        Interlocked.Increment(ref _itemCount);
         _elementsInQueue?.Inc();
         _totalMessages?.Inc();
         _signal.Release();
-        ItemCount++;
         return taskCompletionStatus.Task;
     }
 
@@ -53,15 +54,19 @@ public class BackgroundTaskQueue<T> : IBackgroundTaskQueue<T>, IDisposable
         _workItems.TryDequeue(out var workItem);
         _elementsInQueue?.Dec();
         LastDequeuedAt = DateTimeOffset.UtcNow;
-        ItemCount--;
+        Interlocked.Decrement(ref _itemCount);
         return workItem;
     }
 
-    public int ItemCount { get; private set; }
+    public int ItemCount
+    {
+        get => _itemCount;
+    }
     public DateTimeOffset LastDequeuedAt { get; private set; }
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         _signal.Dispose();
     }
 }

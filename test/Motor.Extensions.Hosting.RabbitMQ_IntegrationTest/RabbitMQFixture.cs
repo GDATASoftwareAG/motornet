@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Polly;
@@ -14,10 +12,12 @@ public class RabbitMQFixture : IAsyncLifetime
 {
     private const int RabbitMqPort = 5672;
 
-    private readonly RabbitMqContainer _container = new RabbitMqBuilder()
+    private readonly RabbitMqContainer _container = new RabbitMqBuilder("rabbitmq:4.2-alpine")
         .WithUsername("guest")
         .WithPassword("guest")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Server startup complete"))
+        .WithPortBinding(RabbitMqPort)
+        .WithPortBinding("15672")
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(RabbitMqPort))
         .Build();
 
     public Task InitializeAsync()
@@ -38,8 +38,7 @@ public class RabbitMQFixture : IAsyncLifetime
     public int Port => _container.GetMappedPublicPort(RabbitMqPort);
     public string Hostname => _container.Hostname;
 
-    private IConnectionFactory CreateConnectionFactory() =>
-        new ConnectionFactory { Uri = new Uri(_container.GetConnectionString()) };
+    private ConnectionFactory CreateConnectionFactory() => new() { Uri = new Uri(_container.GetConnectionString()) };
 
     private async Task<IConnection> CreateConnectionAsync()
     {

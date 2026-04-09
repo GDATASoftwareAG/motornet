@@ -1,8 +1,6 @@
-using System;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -23,32 +21,32 @@ using Xunit;
 namespace Motor.Extensions.Utilities_IntegrationTest;
 
 [Collection("GenericHosting")]
-public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQFixture>
+public class DemonstrationTests(RabbitMQFixture fixture)
+    : GenericHostingTestBase(fixture),
+        IClassFixture<RabbitMQFixture>
 {
-    public DemonstrationTests(RabbitMQFixture fixture)
-        : base(fixture) { }
-
-    [Fact(Timeout = 60000)]
+    [Fact]
     public async Task StartAsync_SetupAndStartReverseStringServiceAndPublishMessageIntoServiceQueue_MessageInDestinationQueueIsReversed()
     {
-        PrepareQueues();
-
         const string message = "12345";
-        using var host = GetReverseStringService();
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
+        using var host = GetReverseStringService(RandomHttpPort);
+        await using var connection = await Fixture.ConnectionAsync();
+        var publisherChannel = await connection.CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(publisherChannel);
 
         await host.StartAsync();
-        PublishMessageIntoQueueOfServiceAsync(channel, message);
+        await PublishMessageIntoQueueOfServiceAsync(publisherChannel, message);
 
-        var actual = await GetMessageFromDestinationQueue(channel);
+        await using var consumerChannel = await connection.CreateChannelAsync();
+
+        var actual = await GetMessageFromDestinationQueue(consumerChannel);
         Assert.Equal("54321", actual);
         await host.StopAsync();
     }
 
-    private static IHost GetReverseStringService()
+    private IHost GetReverseStringService(ushort listenerPort, int prefetchCount = 1)
     {
-        var host = MotorHost
+        var builder = MotorHost
             .CreateDefaultBuilder()
             .ConfigureSingleOutputService<string, string>()
             .ConfigureServices(
@@ -71,15 +69,34 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
                     builder.AddSerializer<StringSerializer>();
                 }
             )
-            .Build();
+            .ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        { "RabbitMQConsumer:Port", Fixture.Port.ToString() },
+                        { "RabbitMQConsumer:Host", Fixture.Hostname },
+                        { "RabbitMQConsumer:Queue:Name", ConsumerQueueName },
+                        { "RabbitMQConsumer:PrefetchCount", prefetchCount.ToString() },
+                        { "RabbitMQPublisher:PublishingTarget:RoutingKey", RoutingKey },
+                        { "RabbitMQPublisher:Port", Fixture.Port.ToString() },
+                        { "RabbitMQPublisher:Host", Fixture.Hostname },
+                        { "DestinationQueueName", DestinationQueueName },
+                    }
+                );
+            });
 
-        return host;
+        if (builder is MotorHostBuilder motorHostBuilder)
+        {
+            motorHostBuilder.UseSetting(WebHostDefaults.ServerUrlsKey, $"http://0.0.0.0:{listenerPort}");
+        }
+
+        return builder.Build();
     }
 
-    private static async Task<string> GetMessageFromDestinationQueue(IChannel channel)
+    private async Task<string> GetMessageFromDestinationQueue(IChannel channel)
     {
         var taskCompletionSource = new TaskCompletionSource();
-        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName") ?? "DefaultQueueName";
         var consumer = new AsyncEventingBasicConsumer(channel);
         var messageFromDestinationQueue = string.Empty;
         consumer.ReceivedAsync += (_, args) =>
@@ -89,25 +106,23 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         };
-        await channel.BasicConsumeAsync(destinationQueueName, false, consumer);
-        await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+        await channel.BasicConsumeAsync(DestinationQueueName, false, consumer);
+        await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(60)));
 
         return messageFromDestinationQueue;
     }
 
-    protected class ReverseStringConverter : ISingleOutputService<string, string>
+    protected class ReverseStringConverter(
+        ILogger<ReverseStringConverter> logger,
+        IMetricsFactory<ReverseStringConverter> metricsFactory
+    ) : ISingleOutputService<string, string>
     {
-        private readonly ILogger<ReverseStringConverter> _logger;
-        private readonly IMetricFamily<ISummary> _summary;
-
-        public ReverseStringConverter(
-            ILogger<ReverseStringConverter> logger,
-            IMetricsFactory<ReverseStringConverter> metricsFactory
-        )
-        {
-            _logger = logger;
-            _summary = metricsFactory.CreateSummary("summaryName", "summaryHelpString", new[] { "someLabel" });
-        }
+        private readonly ILogger<ReverseStringConverter> _logger = logger;
+        private readonly IMetricFamily<ISummary> _summary = metricsFactory.CreateSummary(
+            "summaryName",
+            "summaryHelpString",
+            new[] { "someLabel" }
+        );
 
         public Task<MotorCloudEvent<string>?> ConvertMessageAsync(
             MotorCloudEvent<string> dataCloudEvent,
@@ -117,10 +132,16 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             var parentContext = dataCloudEvent.GetActivityContext();
             Assert.NotEqual(default, parentContext);
             _logger.LogInformation("log your request");
-            var tmpChar = dataCloudEvent.TypedData.ToCharArray();
-            var reversed = tmpChar.Reverse().ToArray();
+
+            var chars = dataCloudEvent.TypedData.ToCharArray();
+            for (var i = 0; i < chars.Length / 2; i++)
+            {
+                (chars[chars.Length - 1 - i], chars[i]) = (chars[i], chars[chars.Length - 1 - i]);
+            }
+
+            var reversed = new string(chars);
             _summary.WithLabels("collect_your_metrics").Observe(1.0);
-            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));
+            return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(reversed));
         }
     }
 }

@@ -16,7 +16,7 @@ public static class MotorHostBuilderHelper
             startup = Activator.CreateInstance(motorStartup) as IMotorStartup;
         }
 
-        var urls = builder.GetSetting(WebHostDefaults.ServerUrlsKey);
+        var urls = getSetting(WebHostDefaults.ServerUrlsKey);
         const string defaultUrl = "http://0.0.0.0:9110";
         if (string.IsNullOrEmpty(urls))
         {

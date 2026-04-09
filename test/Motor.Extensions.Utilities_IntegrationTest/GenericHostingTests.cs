@@ -1,8 +1,5 @@
-using System;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -19,42 +16,47 @@ using Motor.Extensions.Hosting.RabbitMQ_IntegrationTest;
 using Motor.Extensions.Http;
 using Motor.Extensions.Utilities;
 using Polly;
+using RandomDataGenerator.FieldOptions;
+using RandomDataGenerator.Randomizers;
 using Xunit;
 
 namespace Motor.Extensions.Utilities_IntegrationTest;
 
 [Collection("GenericHosting")]
-public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitMQFixture>
+public class GenericHostingTests(RabbitMQFixture fixture)
+    : GenericHostingTestBase(fixture),
+        IClassFixture<RabbitMQFixture>
 {
-    public GenericHostingTests(RabbitMQFixture fixture)
-        : base(fixture) { }
-
     [Fact(Timeout = 60000)]
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckUnhealthy()
     {
         const string maxTimeSinceLastProcessedMessage = "00:00:00.1";
-        Environment.SetEnvironmentVariable(
-            "HealthChecks__MessageProcessingHealthCheck__MaxTimeSinceLastProcessedMessage",
-            maxTimeSinceLastProcessedMessage
-        );
+
         var messageCount = Environment.ProcessorCount + 1;
-        PrepareQueues(messageCount);
         const string message = "somestring";
-        using var host = GetStringService<TimingOutMessageConverter>();
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        using var host = GetStringService<TimingOutMessageConverter>(
+            listenerPort: RandomHttpPort,
+            prefetchCount: messageCount,
+            additionalOverrides: new KeyValuePair<string, string?>(
+                "HealthChecks:MessageProcessingHealthCheck:MaxTimeSinceLastProcessedMessage",
+                maxTimeSinceLastProcessedMessage
+            )
+        );
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = HttpClient();
 
         await WaitUntilAsync(async () =>
         {
-            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
-
+            using var healthResponse = await httpClient.GetAsync($"http://localhost:{RandomHttpPort}/health");
             Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
             Assert.Equal(nameof(HealthStatus.Unhealthy), await healthResponse.Content.ReadAsStringAsync());
         });
@@ -65,25 +67,29 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckHealthy()
     {
         const string maxTimeSinceLastProcessedMessage = "00:01:00";
-        Environment.SetEnvironmentVariable(
-            "HealthChecks__MessageProcessingHealthCheck__MaxTimeSinceLastProcessedMessage",
-            maxTimeSinceLastProcessedMessage
-        );
         var messageCount = Environment.ProcessorCount + 1;
-        PrepareQueues(messageCount);
         const string message = "somestring";
-        using var host = GetStringService<TimingOutMessageConverter>();
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        using var host = GetStringService<TimingOutMessageConverter>(
+            listenerPort: RandomHttpPort,
+            prefetchCount: messageCount,
+            additionalOverrides: new KeyValuePair<string, string?>(
+                "HealthChecks:MessageProcessingHealthCheck:MaxTimeSinceLastProcessedMessage",
+                maxTimeSinceLastProcessedMessage
+            )
+        );
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = HttpClient();
 
-        var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+        var healthResponse = await httpClient.GetAsync($"http://localhost:{RandomHttpPort}/health");
 
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
         Assert.Equal(nameof(HealthStatus.Healthy), await healthResponse.Content.ReadAsStringAsync());
@@ -94,22 +100,26 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithTooManyTemporaryFailuresHealthCheck_HealthCheckUnhealthy()
     {
         const int messageCount = 20;
-        PrepareQueues(messageCount);
         const string message = "somestring";
-        using var host = GetStringService<TemporaryFailingConverter>();
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        using var host = GetStringService<TemporaryFailingConverter>(
+            listenerPort: RandomHttpPort,
+            prefetchCount: messageCount
+        );
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = HttpClient();
 
         await WaitUntilAsync(async () =>
         {
-            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+            var healthResponse = await httpClient.GetAsync($"http://localhost:{RandomHttpPort}/health");
             Assert.Equal(HttpStatusCode.ServiceUnavailable, healthResponse.StatusCode);
             Assert.Equal(nameof(HealthStatus.Unhealthy), await healthResponse.Content.ReadAsStringAsync());
         });
@@ -120,22 +130,26 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithTooManyTemporaryFailuresHealthCheck_HealthCheckHealthy()
     {
         const int messageCount = 20;
-        PrepareQueues(messageCount);
         const string message = "somestring";
-        using var host = GetStringService<SometimesFailingConverter>();
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        using var host = GetStringService<SometimesFailingConverter>(
+            listenerPort: RandomHttpPort,
+            prefetchCount: messageCount
+        );
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = HttpClient();
 
         await WaitUntilAsync(async () =>
         {
-            var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
+            var healthResponse = await httpClient.GetAsync($"http://localhost:{RandomHttpPort}/health");
 
             Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
             Assert.Equal(nameof(HealthStatus.Healthy), await healthResponse.Content.ReadAsStringAsync());
@@ -143,10 +157,16 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
         await host.StopAsync();
     }
 
-    private static IHost GetStringService<TConverter>()
+    private IHost GetStringService<TConverter>(
+        ushort listenerPort = 9110,
+        int prefetchCount = 1,
+        params KeyValuePair<string, string?>[] additionalOverrides
+    )
         where TConverter : class, ISingleOutputService<string, string>
     {
-        var host = new MotorHostBuilder(new HostBuilder())
+        var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
+
+        var builder = new MotorHostBuilder(new HostBuilder())
             .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
             .ConfigureSerilog()
             .ConfigurePrometheus()
@@ -182,17 +202,41 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             .ConfigureAppConfiguration(
                 (_, config) =>
                 {
+                    var settingOverrides = new Dictionary<string, string?>
+                    {
+                        { "RabbitMQConsumer:Port", Fixture.Port.ToString() },
+                        { "RabbitMQConsumer:Host", Fixture.Hostname },
+                        { "RabbitMQConsumer:Queue:Name", randomizerString.Generate() },
+                        { "RabbitMQConsumer:PrefetchCount", prefetchCount.ToString() },
+                        { "RabbitMQPublisher:PublishingTarget:RoutingKey", randomizerString.Generate() },
+                        { "RabbitMQPublisher:Port", Fixture.Port.ToString() },
+                        { "RabbitMQPublisher:Host", Fixture.Hostname },
+                        { "DestinationQueueName", randomizerString.Generate() },
+                        { "Prometheus:Port", $"{listenerPort}" },
+                    };
+
                     config.AddJsonFile("appsettings.json", true, false);
-                    config.AddEnvironmentVariables();
+                    config.AddInMemoryCollection(settingOverrides);
+                    config.AddInMemoryCollection(additionalOverrides);
                 }
             )
-            .ConfigureDefaultHttpClient()
-            .Build();
-        return host;
+            .ConfigureDefaultHttpClient();
+
+        if (builder is MotorHostBuilder motorHostBuilder)
+        {
+            motorHostBuilder.UseSetting(WebHostDefaults.ServerUrlsKey, $"http://0.0.0.0:{listenerPort}");
+        }
+
+        return builder.Build();
     }
 
+    private static HttpClient HttpClient() => new() { Timeout = TimeSpan.FromSeconds(5) };
+
     private static Task WaitUntilAsync(Func<Task> action) =>
-        Policy.Handle<Exception>().RetryForeverAsync().ExecuteAsync(async () => await action());
+        Policy
+            .Handle<Exception>()
+            .WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(250))
+            .ExecuteAsync(async () => await action());
 
     private class TimingOutMessageConverter : ISingleOutputService<string, string>
     {

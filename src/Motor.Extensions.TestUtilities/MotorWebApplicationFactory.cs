@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -47,17 +48,17 @@ public class MotorWebApplicationFactory<TStartup> : WebApplicationFactory<TStart
 
     public async Task<bool> IsHealthy()
     {
-        var client = CreateClient();
-        var response = await client.GetAsync("/health");
+        using var client = CreateClient();
+        using var response = await client.GetAsync("/health");
         return response.IsSuccessStatusCode;
     }
 
     public async Task WaitUntilHealthy()
     {
-        CreateClient();
-
         var retryPolicy = Policy
             .HandleResult<bool>(healthy => !healthy)
+            .Or<ObjectDisposedException>()
+            .Or<HttpRequestException>()
             .WaitAndRetryAsync(10, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt)));
 
         await retryPolicy.ExecuteAsync(async () => await IsHealthy());

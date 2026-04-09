@@ -18,18 +18,12 @@ public class SharedService : ISharedService
         _started = true;
     }
 
-    public bool IsStarted()
-    {
-        return _started;
-    }
+    public bool IsStarted() => _started;
 
     public void Finish()
     {
         _finished = true;
     }
 
-    public bool IsFinished()
-    {
-        return _finished;
-    }
+    public bool IsFinished() => _finished;
 }

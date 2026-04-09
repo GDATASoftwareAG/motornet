@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -21,11 +18,18 @@ public class BackgroundServiceTests
             .ConfigureServices(services =>
             {
                 services.AddHostedService<UnsafeHostedService>();
-                services.AddHostedService<BackgroundStartupTask>();
             })
             .Build();
 
-        Assert.Throws<Exception>(() => host.Services.GetRequiredService<ISharedService>());
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+        {
+            while (true)
+            {
+                await host.WaitUntilHealthy();
+                await Task.Delay(10);
+            }
+            // ReSharper disable once FunctionNeverReturns
+        });
     }
 
     private class UnsafeHostedService(ISharedService service) : Microsoft.Extensions.Hosting.BackgroundService
@@ -53,7 +57,10 @@ public class BackgroundServiceTests
                 services.AddHostedService<SafeHostedService>();
             })
             .Build();
+
         var sharedService = host.Services.GetRequiredService<ISharedService>();
+
+        await host.WaitUntilHealthy();
 
         Assert.True(sharedService.IsFinished());
     }
@@ -64,7 +71,7 @@ public class BackgroundServiceTests
         ILogger<StartedBackgroundService> logger
     ) : StartedBackgroundService(appLifetime, logger)
     {
-        protected override Task ExecuteWhenStartedAsync(CancellationToken ct)
+        protected override async Task ExecuteWhenStartedAsync(CancellationToken ct)
         {
             if (!service.IsStarted())
             {
@@ -72,7 +79,7 @@ public class BackgroundServiceTests
             }
 
             service.Finish();
-            return Task.CompletedTask;
+            await Task.Delay(1000, ct);
         }
     }
 

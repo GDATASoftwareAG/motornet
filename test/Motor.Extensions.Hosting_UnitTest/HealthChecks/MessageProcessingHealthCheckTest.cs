@@ -21,7 +21,7 @@ public class MessageProcessingHealthCheckTest
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message"));
         await Task.Delay(_timeout * 2);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
@@ -34,9 +34,9 @@ public class MessageProcessingHealthCheckTest
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message0"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message0"));
         await queue.DequeueAsync(CancellationToken.None);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message1"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message1"));
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -60,7 +60,7 @@ public class MessageProcessingHealthCheckTest
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message"));
         await queue.DequeueAsync(CancellationToken.None);
         await Task.Delay(_timeout * 2);
 
@@ -74,7 +74,7 @@ public class MessageProcessingHealthCheckTest
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message"));
         await queue.DequeueAsync(CancellationToken.None);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
@@ -88,7 +88,7 @@ public class MessageProcessingHealthCheckTest
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
         await Task.Delay(_timeout * 2);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message"));
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
 
@@ -100,7 +100,7 @@ public class MessageProcessingHealthCheckTest
     {
         var queue = CreateEmptyQueue();
         var healthCheck = CreateHealthCheck(queue);
-        queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent<string>("message"));
+        _ = queue.QueueBackgroundWorkItem(MotorCloudEvent.CreateTestCloudEvent("message"));
         await Task.Delay(_timeout * 2);
 
         var result = (await healthCheck.CheckHealthAsync(new HealthCheckContext())).Status;
