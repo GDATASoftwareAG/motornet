@@ -16,8 +16,6 @@ using Motor.Extensions.Utilities;
 using Prometheus.Client;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RandomDataGenerator.FieldOptions;
-using RandomDataGenerator.Randomizers;
 using Xunit;
 
 namespace Motor.Extensions.Utilities_IntegrationTest;
@@ -32,22 +30,23 @@ public class DemonstrationTests(RabbitMQFixture fixture)
     {
         const string message = "12345";
         using var host = GetReverseStringService(RandomHttpPort);
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
-        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
+        await using var connection = await Fixture.ConnectionAsync();
+        var publisherChannel = await connection.CreateChannelAsync();
+        await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(publisherChannel);
 
         await host.StartAsync();
-        await PublishMessageIntoQueueOfServiceAsync(channel, message);
+        await PublishMessageIntoQueueOfServiceAsync(publisherChannel, message);
 
-        var actual = await GetMessageFromDestinationQueue(channel);
+        await using var consumerChannel = await connection.CreateChannelAsync();
+
+        var actual = await GetMessageFromDestinationQueue(consumerChannel);
         Assert.Equal("54321", actual);
         await host.StopAsync();
     }
 
     private IHost GetReverseStringService(ushort listenerPort, int prefetchCount = 1)
     {
-        var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
-
-        return MotorHost
+        var builder = MotorHost
             .CreateDefaultBuilder()
             .ConfigureSingleOutputService<string, string>()
             .ConfigureServices(
@@ -70,39 +69,34 @@ public class DemonstrationTests(RabbitMQFixture fixture)
                     builder.AddSerializer<StringSerializer>();
                 }
             )
-            .ConfigureHostConfiguration(config =>
-            {
-                config.AddInMemoryCollection(
-                    new Dictionary<string, string?>
-                    {
-                        { "ASPNETCORE_URLS", $"http://0.0.0.0:{listenerPort}" },
-                        { "Prometheus__Port", $"http://0.0.0.0:{listenerPort}" },
-                    }
-                );
-            })
             .ConfigureAppConfiguration(config =>
             {
                 config.AddInMemoryCollection(
                     new Dictionary<string, string?>
                     {
-                        { "RabbitMQConsumer__Port", Fixture.Port.ToString() },
-                        { "RabbitMQConsumer__Host", Fixture.Hostname },
-                        { "RabbitMQConsumer__Queue__Name", randomizerString.Generate() },
-                        { "RabbitMQConsumer__PrefetchCount", prefetchCount.ToString() },
-                        { "RabbitMQPublisher__PublishingTarget__RoutingKey", randomizerString.Generate() },
-                        { "RabbitMQPublisher__Port", Fixture.Port.ToString() },
-                        { "RabbitMQPublisher__Host", Fixture.Hostname },
-                        { "DestinationQueueName", randomizerString.Generate() },
+                        { "RabbitMQConsumer:Port", Fixture.Port.ToString() },
+                        { "RabbitMQConsumer:Host", Fixture.Hostname },
+                        { "RabbitMQConsumer:Queue:Name", ConsumerQueueName },
+                        { "RabbitMQConsumer:PrefetchCount", prefetchCount.ToString() },
+                        { "RabbitMQPublisher:PublishingTarget:RoutingKey", RoutingKey },
+                        { "RabbitMQPublisher:Port", Fixture.Port.ToString() },
+                        { "RabbitMQPublisher:Host", Fixture.Hostname },
+                        { "DestinationQueueName", DestinationQueueName },
                     }
                 );
-            })
-            .Build();
+            });
+
+        if (builder is MotorHostBuilder motorHostBuilder)
+        {
+            motorHostBuilder.UseSetting(WebHostDefaults.ServerUrlsKey, $"http://0.0.0.0:{listenerPort}");
+        }
+
+        return builder.Build();
     }
 
-    private static async Task<string> GetMessageFromDestinationQueue(IChannel channel)
+    private async Task<string> GetMessageFromDestinationQueue(IChannel channel)
     {
         var taskCompletionSource = new TaskCompletionSource();
-        var destinationQueueName = Environment.GetEnvironmentVariable("DestinationQueueName") ?? "DefaultQueueName";
         var consumer = new AsyncEventingBasicConsumer(channel);
         var messageFromDestinationQueue = string.Empty;
         consumer.ReceivedAsync += (_, args) =>
@@ -112,7 +106,7 @@ public class DemonstrationTests(RabbitMQFixture fixture)
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         };
-        await channel.BasicConsumeAsync(destinationQueueName, false, consumer);
+        await channel.BasicConsumeAsync(DestinationQueueName, false, consumer);
         await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(60)));
 
         return messageFromDestinationQueue;

@@ -1,9 +1,4 @@
-using System;
 using System.Net;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,27 +31,26 @@ public class GenericHostingTests(RabbitMQFixture fixture)
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckUnhealthy()
     {
         const string maxTimeSinceLastProcessedMessage = "00:00:00.1";
-        Environment.SetEnvironmentVariable(
-            "HealthChecks__MessageProcessingHealthCheck__MaxTimeSinceLastProcessedMessage",
-            maxTimeSinceLastProcessedMessage
-        );
 
         var messageCount = Environment.ProcessorCount + 1;
+        const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>(
             listenerPort: RandomHttpPort,
-            prefetchCount: messageCount
+            prefetchCount: messageCount,
+            additionalOverrides: new KeyValuePair<string, string?>(
+                "HealthChecks:MessageProcessingHealthCheck:MaxTimeSinceLastProcessedMessage",
+                maxTimeSinceLastProcessedMessage
+            )
         );
-        await using var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
 
-        await Task.Run(async () =>
+        for (var i = 0; i < messageCount; i++)
         {
-            foreach (var _ in Enumerable.Range(0, messageCount))
-            {
-                await PublishMessageIntoQueueOfServiceAsync(channel, "somestring");
-            }
-        });
+            await PublishMessageIntoQueueOfServiceAsync(channel, message);
+        }
 
         using var httpClient = HttpClient();
 
@@ -73,19 +67,21 @@ public class GenericHostingTests(RabbitMQFixture fixture)
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckHealthy()
     {
         const string maxTimeSinceLastProcessedMessage = "00:01:00";
-        Environment.SetEnvironmentVariable(
-            "HealthChecks__MessageProcessingHealthCheck__MaxTimeSinceLastProcessedMessage",
-            maxTimeSinceLastProcessedMessage
-        );
         var messageCount = Environment.ProcessorCount + 1;
         const string message = "somestring";
         using var host = GetStringService<TimingOutMessageConverter>(
             listenerPort: RandomHttpPort,
-            prefetchCount: messageCount
+            prefetchCount: messageCount,
+            additionalOverrides: new KeyValuePair<string, string?>(
+                "HealthChecks:MessageProcessingHealthCheck:MaxTimeSinceLastProcessedMessage",
+                maxTimeSinceLastProcessedMessage
+            )
         );
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
@@ -109,9 +105,11 @@ public class GenericHostingTests(RabbitMQFixture fixture)
             listenerPort: RandomHttpPort,
             prefetchCount: messageCount
         );
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
@@ -137,9 +135,11 @@ public class GenericHostingTests(RabbitMQFixture fixture)
             listenerPort: RandomHttpPort,
             prefetchCount: messageCount
         );
-        var channel = await (await Fixture.ConnectionAsync()).CreateChannelAsync();
+        await using var connection = await Fixture.ConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
         await CreateQueueForServicePublisherWithPublisherBindingFromConfigAsync(channel);
         await host.StartAsync();
+
         for (var i = 0; i < messageCount; i++)
         {
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
@@ -157,12 +157,16 @@ public class GenericHostingTests(RabbitMQFixture fixture)
         await host.StopAsync();
     }
 
-    private IHost GetStringService<TConverter>(ushort listenerPort = 9110, int prefetchCount = 1)
+    private IHost GetStringService<TConverter>(
+        ushort listenerPort = 9110,
+        int prefetchCount = 1,
+        params KeyValuePair<string, string?>[] additionalOverrides
+    )
         where TConverter : class, ISingleOutputService<string, string>
     {
         var randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[A-Z]{10}" });
 
-        return new MotorHostBuilder(new HostBuilder())
+        var builder = new MotorHostBuilder(new HostBuilder())
             .UseSetting(MotorHostDefaults.EnablePrometheusEndpointKey, false.ToString())
             .ConfigureSerilog()
             .ConfigurePrometheus()
@@ -198,26 +202,32 @@ public class GenericHostingTests(RabbitMQFixture fixture)
             .ConfigureAppConfiguration(
                 (_, config) =>
                 {
+                    var settingOverrides = new Dictionary<string, string?>
+                    {
+                        { "RabbitMQConsumer:Port", Fixture.Port.ToString() },
+                        { "RabbitMQConsumer:Host", Fixture.Hostname },
+                        { "RabbitMQConsumer:Queue:Name", randomizerString.Generate() },
+                        { "RabbitMQConsumer:PrefetchCount", prefetchCount.ToString() },
+                        { "RabbitMQPublisher:PublishingTarget:RoutingKey", randomizerString.Generate() },
+                        { "RabbitMQPublisher:Port", Fixture.Port.ToString() },
+                        { "RabbitMQPublisher:Host", Fixture.Hostname },
+                        { "DestinationQueueName", randomizerString.Generate() },
+                        { "Prometheus:Port", $"{listenerPort}" },
+                    };
+
                     config.AddJsonFile("appsettings.json", true, false);
-                    config.AddInMemoryCollection(
-                        new Dictionary<string, string?>
-                        {
-                            { "ASPNETCORE_URLS", $"http://0.0.0.0:{listenerPort}" },
-                            { "Prometheus__Port", $"http://0.0.0.0:{listenerPort}" },
-                            { "RabbitMQConsumer__Port", Fixture.Port.ToString() },
-                            { "RabbitMQConsumer__Host", Fixture.Hostname },
-                            { "RabbitMQConsumer__Queue__Name", randomizerString.Generate() },
-                            { "RabbitMQConsumer__PrefetchCount", prefetchCount.ToString() },
-                            { "RabbitMQPublisher__PublishingTarget__RoutingKey", randomizerString.Generate() },
-                            { "RabbitMQPublisher__Port", Fixture.Port.ToString() },
-                            { "RabbitMQPublisher__Host", Fixture.Hostname },
-                            { "DestinationQueueName", randomizerString.Generate() },
-                        }
-                    );
+                    config.AddInMemoryCollection(settingOverrides);
+                    config.AddInMemoryCollection(additionalOverrides);
                 }
             )
-            .ConfigureDefaultHttpClient()
-            .Build();
+            .ConfigureDefaultHttpClient();
+
+        if (builder is MotorHostBuilder motorHostBuilder)
+        {
+            motorHostBuilder.UseSetting(WebHostDefaults.ServerUrlsKey, $"http://0.0.0.0:{listenerPort}");
+        }
+
+        return builder.Build();
     }
 
     private static HttpClient HttpClient() => new() { Timeout = TimeSpan.FromSeconds(5) };

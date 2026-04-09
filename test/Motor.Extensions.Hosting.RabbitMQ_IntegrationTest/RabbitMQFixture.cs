@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Polly;
@@ -18,6 +16,7 @@ public class RabbitMQFixture : IAsyncLifetime
         .WithUsername("guest")
         .WithPassword("guest")
         .WithPortBinding(RabbitMqPort)
+        .WithPortBinding("15672")
         .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(RabbitMqPort))
         .Build();
 
