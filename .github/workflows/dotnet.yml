@@ -42,11 +42,11 @@ jobs:
             8.0.x
             9.0.x
       - name: Install dependencies
-        run: dotnet restore Motor.NET.sln
+        run: dotnet restore Motor.NET.slnx
       - name: Build
-        run: dotnet build --configuration Release --no-restore Motor.NET.sln
+        run: dotnet build --configuration Release --no-restore Motor.NET.slnx
       - name: Pack
-        run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.sln
+        run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.slnx
       - name: Publish Bridge
         run: dotnet publish --framework net9.0 -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
       - name: Upload Artifact
@@ -72,9 +72,9 @@ jobs:
           dotnet-version: |
             8.0.x
       - name: Install dependencies
-        run: dotnet restore Motor.NET.sln
+        run: dotnet restore Motor.NET.slnx
       - name: Test .NET8
-        run: dotnet test --no-restore Motor.NET.sln --framework net8.0
+        run: dotnet test --no-restore Motor.NET.slnx --framework net8.0
 
   test-net9:
     runs-on: ubuntu-latest
@@ -86,9 +86,9 @@ jobs:
           dotnet-version: |
             8.0.x
       - name: Install dependencies
-        run: dotnet restore Motor.NET.sln
+        run: dotnet restore Motor.NET.slnx
       - name: Test .NET9
-        run: dotnet test --no-restore Motor.NET.sln --framework net9.0
+        run: dotnet test --no-restore Motor.NET.slnx --framework net9.0
 
           
   #code-ql:
@@ -104,9 +104,9 @@ jobs:
   #    with:
   #      dotnet-version: 7.0.x
   #  - name: Install dependencies
-  #    run: dotnet restore Motor.NET.sln
+  #    run: dotnet restore Motor.NET.slnx
   #  - name: Build
-  #    run: dotnet build --configuration Release --no-restore Motor.NET.sln
+  #    run: dotnet build --configuration Release --no-restore Motor.NET.slnx
   #  - name: Perform CodeQL Analysis
   #    uses: github/codeql-action/analyze@v1
 

@@ -35,6 +35,15 @@ public class RabbitMQMessageHostBuilderExtensionsTests
                         mock.Setup(t => t.GetSource()).Returns(new Uri("motor://test"));
                         return mock.Object;
                     });
+                    services.AddTransient(_ =>
+                    {
+                        var mock = new Mock<ISingleOutputService<string, string>>();
+
+                        return mock.Object;
+                    });
+                    services.AddTransient<ITypedMessagePublisher<string>>(_ =>
+                        new Mock<ITypedMessagePublisher<string>>().Object
+                    );
                 }
             );
     }
