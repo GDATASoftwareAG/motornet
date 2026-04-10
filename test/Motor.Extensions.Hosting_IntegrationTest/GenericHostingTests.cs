@@ -233,7 +233,7 @@ public class GenericHostingTests : IDisposable
         )
         {
             _logger.LogInformation("log your request");
-            var tmpChar = dataCloudEvent.TypedData.ToCharArray();
+            var tmpChar = dataCloudEvent.TypedData.AsEnumerable();
             if (!ActivitySource.HasListeners())
             {
                 throw new ArgumentException();

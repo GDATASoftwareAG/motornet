@@ -117,7 +117,7 @@ public class DemonstrationTests : GenericHostingTestBase, IClassFixture<RabbitMQ
             var parentContext = dataCloudEvent.GetActivityContext();
             Assert.NotEqual(default, parentContext);
             _logger.LogInformation("log your request");
-            var tmpChar = dataCloudEvent.TypedData.ToCharArray();
+            var tmpChar = dataCloudEvent.TypedData.AsEnumerable();
             var reversed = tmpChar.Reverse().ToArray();
             _summary.WithLabels("collect_your_metrics").Observe(1.0);
             return Task.FromResult<MotorCloudEvent<string>?>(dataCloudEvent.CreateNew(new string(reversed)));

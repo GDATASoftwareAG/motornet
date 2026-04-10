@@ -1,0 +1,87 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/examples/">
+    <Project Path="examples/AspNetExample/AspNetExample.csproj" />
+    <Project Path="examples/AspNetExample_IntegrationTest/AspNetExample_IntegrationTest.csproj" />
+    <Project Path="examples/ConsumeAndMultiOutputPublisherWithRabbitMQ/ConsumeAndMultiOutputPublisherWithRabbitMQ.csproj" />
+    <Project Path="examples/ConsumeAndPublishNATS/ConsumeAndPublishNATS.csproj" />
+    <Project Path="examples/ConsumeAndPublishWithKafka/ConsumeAndPublishWithKafka.csproj" />
+    <Project Path="examples/ConsumeAndPublishWithKafka_IntegrationTest/ConsumeAndPublishWithKafka_IntegrationTest.csproj" />
+    <Project Path="examples/ConsumeAndPublishWithRabbitMQ/ConsumeAndPublishWithRabbitMQ.csproj" />
+    <Project Path="examples/ConsumeSQS/ConsumeSQS.csproj" />
+    <Project Path="examples/ConsumeWithRabbitMQAndDeadLetterExchange/ConsumeWithRabbitMQAndDeadLetterExchange.csproj" />
+    <Project Path="examples/MetricsExample/MetricsExample.csproj" />
+    <Project Path="examples/OpenTelemetryExample/OpenTelemetryExample.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path=".pre-commit-config.yaml" />
+    <File Path="Directory.Packages.props" />
+    <File Path="Readme.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+    <Project Path="src/Motor.Extensions.ContentEncoding.Abstractions/Motor.Extensions.ContentEncoding.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.ContentEncoding.Gzip/Motor.Extensions.ContentEncoding.Gzip.csproj" />
+    <Project Path="src/Motor.Extensions.Conversion.Abstractions/Motor.Extensions.Conversion.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.Conversion.JsonNet/Motor.Extensions.Conversion.JsonNet.csproj" />
+    <Project Path="src/Motor.Extensions.Conversion.Protobuf/Motor.Extensions.Conversion.Protobuf.csproj" />
+    <Project Path="src/Motor.Extensions.Conversion.SystemJson/Motor.Extensions.Conversion.SystemJson.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.HealthChecks/Motor.Extensions.Diagnostics.HealthChecks.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Logging/Motor.Extensions.Diagnostics.Logging.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Metrics.Abstractions/Motor.Extensions.Diagnostics.Metrics.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Metrics/Motor.Extensions.Diagnostics.Metrics.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Queue.Abstractions/Motor.Extensions.Diagnostics.Queue.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Queue.Metrics/Motor.Extensions.Diagnostics.Queue.Metrics.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Sentry/Motor.Extensions.Diagnostics.Sentry.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Telemetry/Motor.Extensions.Diagnostics.Telemetry.csproj" />
+    <Project Path="src/Motor.Extensions.Diagnostics.Tracing/Motor.Extensions.Diagnostics.Tracing.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Abstractions/Motor.Extensions.Hosting.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.BackgroundService/Motor.Extensions.Hosting.BackgroundService.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.CloudEvents/Motor.Extensions.Hosting.CloudEvents.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Consumer/Motor.Extensions.Hosting.Consumer.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Kafka/Motor.Extensions.Hosting.Kafka.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.NATS/Motor.Extensions.Hosting.NATS.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Publisher/Motor.Extensions.Hosting.Publisher.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.RabbitMQ/Motor.Extensions.Hosting.RabbitMQ.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.SQS/Motor.Extensions.Hosting.SQS.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.Timer/Motor.Extensions.Hosting.Timer.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting/Motor.Extensions.Hosting.csproj" />
+    <Project Path="src/Motor.Extensions.Http/Motor.Extensions.Http.csproj" />
+    <Project Path="src/Motor.Extensions.TestUtilities/Motor.Extensions.TestUtilities.csproj" />
+    <Project Path="src/Motor.Extensions.Utilities.Abstractions/Motor.Extensions.Utilities.Abstractions.csproj" />
+    <Project Path="src/Motor.Extensions.Utilities/Motor.Extensions.Utilities.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <File Path="test/Directory.Build.props" />
+    <Project Path="test/Motor.Extensions.ContentEncoding.Abstractions_UnitTest/Motor.Extensions.ContentEncoding.Abstractions_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.ContentEncoding.Gzip_UnitTest/Motor.Extensions.ContentEncoding.Gzip_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Conversion.JsonNet_UnitTest/Motor.Extensions.Conversion.JsonNet_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Conversion.Protobuf_UnitTest/Motor.Extensions.Conversion.Protobuf_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Conversion.SystemJson_UnitTest/Motor.Extensions.Conversion.SystemJson_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Diagnostics.Metrics_UnitTest/Motor.Extensions.Diagnostics.Metrics_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Diagnostics.Telemetry_IntegrationTest/Motor.Extensions.Diagnostics.Telemetry_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.AspNet_IntegrationTest/Motor.Extensions.Hosting.AspNet_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.BackgroundService_IntegrationTest/Motor.Extensions.Hosting.BackgroundService_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.CloudEvents_UnitTest/Motor.Extensions.Hosting.CloudEvents_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.Consumer_UnitTest/Motor.Extensions.Hosting.Consumer_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.Kafka_IntegrationTest/Motor.Extensions.Hosting.Kafka_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.Kafka_UnitTest/Motor.Extensions.Hosting.Kafka_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.NATS_IntegrationTest/Motor.Extensions.Hosting.NATS_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.Publisher_UnitTest/Motor.Extensions.Hosting.Publisher_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_UnitTest/Motor.Extensions.Hosting.RabbitMQ_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.SQS_IntegrationTest/Motor.Extensions.Hosting.SQS_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.Timer_IntegrationTest/Motor.Extensions.Hosting.Timer_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting_IntegrationTest/Motor.Extensions.Hosting_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting_UnitTest/Motor.Extensions.Hosting_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Http_UnitTest/Motor.Extensions.Http_UnitTest.csproj" />
+    <Project Path="test/Motor.Extensions.Utilities_IntegrationTest/Motor.Extensions.Utilities_IntegrationTest.csproj" />
+  </Folder>
+</Solution>

@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <Product>Motor.NET/bridge</Product>
   </PropertyGroup>
@@ -19,5 +18,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)../../shared.csproj" />
 </Project>
