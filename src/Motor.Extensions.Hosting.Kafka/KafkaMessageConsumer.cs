@@ -274,6 +274,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly Timer _timer;
     private readonly object _commitLock = new();
     private bool _pendingCommit;
+    private int _messagesSinceLastCommit;
 
     private async Task ExecuteCommitLoopAsync(CancellationToken cancellationToken)
     {
@@ -299,9 +300,12 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 {
                     _consumer?.StoreOffset(result.ConsumeResult);
                     _pendingCommit = true;
+                    _messagesSinceLastCommit++;
                 }
 
-                if ((result.ConsumeResult.Offset.Value + 1) % _options.CommitPeriod == 0)
+                // Use message count since last commit instead of offset-based check.
+                // This works correctly across multiple partitions with non-contiguous offsets.
+                if (_messagesSinceLastCommit >= _options.CommitPeriod)
                 {
                     Commit();
                     RestartCommitTimer();
@@ -340,6 +344,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             }
 
             _pendingCommit = false;
+            _messagesSinceLastCommit = 0;
             try
             {
                 _consumer?.Commit();
