@@ -10,6 +10,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Conversion.JsonNet\Motor.Extensions.Conversion.JsonNet.csproj" />
   </ItemGroup>
 </Project>
