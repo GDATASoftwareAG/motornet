@@ -47,12 +47,17 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         CloudEventFormatter cloudEventFormatter
     )
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(config.Value);
+        ArgumentNullException.ThrowIfNull(applicationNameService);
+        ArgumentNullException.ThrowIfNull(cloudEventFormatter);
+
+        _logger = logger;
         _applicationLifetime = applicationLifetime;
-        _applicationNameService =
-            applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
+        _applicationNameService = applicationNameService;
         _cloudEventFormatter = cloudEventFormatter;
-        _options = config.Value ?? throw new ArgumentNullException(nameof(config));
+        _options = config.Value;
+
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
             "Contains a summary of current consumer lag of each partition",
