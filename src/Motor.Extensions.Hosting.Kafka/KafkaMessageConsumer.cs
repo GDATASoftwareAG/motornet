@@ -34,6 +34,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly AsyncPolicy<ProcessedMessageStatus> _retryPolicy;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -69,6 +70,13 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             _options.MaxConcurrentMessages
         );
         _timer = new Timer(HandleCommitTimer);
+
+        _retryPolicy = Policy
+            .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
+            .WaitAndRetryAsync(
+                _options.RetriesOnTemporaryFailure,
+                retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt)
+            );
     }
 
     public Func<
@@ -241,13 +249,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             );
             var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
 
-            var retryPolicy = Policy
-                .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
-                .WaitAndRetryAsync(
-                    _options.RetriesOnTemporaryFailure,
-                    retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt)
-                );
-            var status = await retryPolicy.ExecuteAsync(
+            var status = await _retryPolicy.ExecuteAsync(
                 (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken),
                 token
             );
