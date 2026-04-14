@@ -168,21 +168,24 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case SyslogLevel.Alert:
             case SyslogLevel.Critical:
                 _logger.LogCritical(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Error:
                 _logger.LogError(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Warning:
                 _logger.LogWarning(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
@@ -190,14 +193,16 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case SyslogLevel.Notice:
             case SyslogLevel.Info:
                 _logger.LogInformation(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Debug:
                 _logger.LogDebug(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
@@ -393,7 +398,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             default:
                 _logger.LogCritical(
                     LogEvents.UnknownProcessedMessageStatus,
-                    "Unknown processed message status {status}",
+                    "Unknown processed message status {Status}",
                     status
                 );
                 return true;
