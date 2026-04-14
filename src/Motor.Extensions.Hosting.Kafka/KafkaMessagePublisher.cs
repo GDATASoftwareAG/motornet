@@ -36,11 +36,43 @@ public class KafkaMessagePublisher<TOutput> : IRawMessagePublisher<TOutput>, IDi
         _producer = new ProducerBuilder<string?, byte[]>(_options).Build();
     }
 
-    public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
+    public Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
     {
         var topic = motorCloudEvent.GetKafkaTopic() ?? _options.Topic;
         var message = CloudEventToKafkaMessage(motorCloudEvent);
-        await _producer.ProduceAsync(topic, message, token);
+
+        // Use Produce with a TaskCompletionSource for pipelining instead of
+        // awaiting ProduceAsync per message. This allows librdkafka to batch
+        // multiple messages into a single broker request, significantly
+        // improving throughput.
+        var tcs = new TaskCompletionSource<DeliveryResult<string?, byte[]>>(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+
+        try
+        {
+            _producer.Produce(
+                topic,
+                message,
+                deliveryReport =>
+                {
+                    if (deliveryReport.Error.IsError)
+                    {
+                        tcs.SetException(new ProduceException<string?, byte[]>(deliveryReport.Error, deliveryReport));
+                    }
+                    else
+                    {
+                        tcs.SetResult(deliveryReport);
+                    }
+                }
+            );
+        }
+        catch (ProduceException<string?, byte[]> ex)
+        {
+            tcs.SetException(ex);
+        }
+
+        return tcs.Task;
     }
 
     public Message<string?, byte[]> CloudEventToKafkaMessage(MotorCloudEvent<byte[]> motorCloudEvent)
