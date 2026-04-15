@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -38,6 +39,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
+    // Per-partition processing state
+    private readonly ConcurrentDictionary<TopicPartition, PartitionProcessor> _partitionProcessors = new();
+    private readonly object _pauseLock = new();
+    private readonly HashSet<TopicPartition> _pausedPartitions = new();
+
     public KafkaMessageConsumer(
         ILogger<KafkaMessageConsumer<TData>> logger,
         IOptions<KafkaConsumerOptions<TData>> config,
@@ -71,9 +77,6 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             "partition"
         );
 
-        _processedMessages = Channel.CreateBounded<Task<ConsumeResultAndProcessedMessageStatus>>(
-            _options.MaxConcurrentMessages
-        );
         _timer = new Timer(HandleCommitTimer);
 
         _retryPolicy = Policy
@@ -97,9 +100,56 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             throw new InvalidOperationException("ConsumeCallback is null");
         }
 
+        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_internalCts.Token, token);
+
         var consumerBuilder = new ConsumerBuilder<string?, byte[]>(_options)
             .SetLogHandler((_, logMessage) => WriteLog(logMessage))
-            .SetStatisticsHandler((_, json) => WriteStatistics(json));
+            .SetStatisticsHandler((_, json) => WriteStatistics(json))
+            .SetPartitionsAssignedHandler(
+                (_, partitions) =>
+                {
+                    foreach (var tp in partitions)
+                    {
+                        var processor = new PartitionProcessor(
+                            tp,
+                            _options.MaxConcurrentMessagesPerPartition,
+                            ConsumeCallbackAsync,
+                            _applicationNameService,
+                            _cloudEventFormatter,
+                            _retryPolicy,
+                            _applicationLifetime,
+                            _logger,
+                            linkedCts.Token
+                        );
+                        _partitionProcessors[tp] = processor;
+                        _logger.LogInformation(LogEvents.PartitionAssigned, "Partition assigned: {TopicPartition}", tp);
+                    }
+                }
+            )
+            .SetPartitionsRevokedHandler(
+                (consumer, partitions) =>
+                {
+                    foreach (var tp in partitions.Select(tpo => tpo.TopicPartition))
+                    {
+                        if (_partitionProcessors.TryRemove(tp, out var processor))
+                        {
+                            DrainPartitionProcessor(processor);
+                            _logger.LogInformation(
+                                LogEvents.PartitionRevoked,
+                                "Partition revoked: {TopicPartition}",
+                                tp
+                            );
+                        }
+
+                        lock (_pauseLock)
+                        {
+                            _pausedPartitions.Remove(tp);
+                        }
+                    }
+
+                    Commit();
+                }
+            );
 
         _consumer = consumerBuilder.Build();
         _consumer.Subscribe(_options.Topic);
@@ -120,25 +170,49 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                         {
                             try
                             {
-                                if (!await _processedMessages.Writer.WaitToWriteAsync(cts.Token))
+                                ResumePartitionsWithCapacity();
+
+                                var msg = _consumer?.Consume(TimeSpan.FromMilliseconds(100));
+                                if (msg is null || msg.IsPartitionEOF)
                                 {
-                                    break;
+                                    _logger.LogDebug(LogEvents.NoMessageReceived, "No messages received");
+                                    continue;
                                 }
 
-                                var msg = _consumer?.Consume(cts.Token);
-                                if (msg is { IsPartitionEOF: false })
+                                var tp = msg.TopicPartition;
+
+                                if (!_partitionProcessors.TryGetValue(tp, out var processor))
                                 {
-                                    await _processedMessages.Writer.WriteAsync(
-                                        SingleMessageHandlingAsync(msg, cts.Token),
-                                        cts.Token
+                                    // Partition not assigned (race condition during rebalance), skip
+                                    _logger.LogWarning(
+                                        "Received message for unassigned partition {TopicPartition}, skipping",
+                                        tp
                                     );
+                                    continue;
+                                }
+
+                                // Try to write the raw message into the partition's input channel.
+                                // The PartitionProcessor will process it sequentially.
+                                if (processor.HasCapacity)
+                                {
+                                    processor.InputChannel.Writer.TryWrite(msg);
                                 }
                                 else
                                 {
-                                    _logger.LogDebug(LogEvents.NoMessageReceived, "No messages received");
+                                    // Channel is full — pause this partition and wait for space.
+                                    PausePartition(tp);
+
+                                    if (await processor.InputChannel.Writer.WaitToWriteAsync(cts.Token))
+                                    {
+                                        processor.InputChannel.Writer.TryWrite(msg);
+                                    }
                                 }
                             }
-                            catch (Exception e) when (e is not OperationCanceledException or ChannelClosedException)
+                            catch (ChannelClosedException)
+                            {
+                                // Channel was closed due to partition revocation, skip and continue
+                            }
+                            catch (Exception e) when (e is not OperationCanceledException)
                             {
                                 _logger.LogError(LogEvents.MessageReceivedFailure, e, "Failed to receive message.");
                             }
@@ -163,6 +237,86 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         CloseOrDispose();
         return Task.CompletedTask;
+    }
+
+    // PausePartition is implemented in the client, it tells the partition fetcher to stop fetching an otherwise active partition.
+    // https://github.com/confluentinc/librdkafka/issues/1849#issuecomment-397763904
+    private void PausePartition(TopicPartition tp)
+    {
+        lock (_pauseLock)
+        {
+            if (_pausedPartitions.Add(tp))
+            {
+                try
+                {
+                    _consumer?.Pause(new[] { tp });
+                    _logger.LogDebug(LogEvents.PartitionPaused, "Paused partition {TopicPartition}", tp);
+                }
+                catch (KafkaException)
+                {
+                    // Partition may have been revoked
+                    _pausedPartitions.Remove(tp);
+                }
+            }
+        }
+    }
+
+    // ResumePartition is implemented in the client, it tells the partition fetcher to stop fetching an otherwise active partition.
+    // https://github.com/confluentinc/librdkafka/issues/1849#issuecomment-397763904
+    private void ResumePartitionsWithCapacity()
+    {
+        lock (_pauseLock)
+        {
+            if (_pausedPartitions.Count == 0)
+            {
+                return;
+            }
+
+            var toResume = new List<TopicPartition>();
+            foreach (var tp in _pausedPartitions)
+            {
+                if (
+                    _partitionProcessors.TryGetValue(tp, out var processor)
+                    && processor.InputChannel.Reader.Count < processor.Capacity
+                )
+                {
+                    toResume.Add(tp);
+                }
+            }
+
+            foreach (var tp in toResume)
+            {
+                try
+                {
+                    _consumer?.Resume(new[] { tp });
+                    _pausedPartitions.Remove(tp);
+                    _logger.LogDebug(LogEvents.PartitionResumed, "Resumed partition {TopicPartition}", tp);
+                }
+                catch (KafkaException)
+                {
+                    _pausedPartitions.Remove(tp);
+                }
+            }
+        }
+    }
+
+    private void DrainPartitionProcessor(PartitionProcessor processor)
+    {
+        // Complete the input channel so the processing loop finishes
+        processor.InputChannel.Writer.TryComplete();
+
+        // Read any already-completed results from the output channel
+        while (processor.OutputChannel.Reader.TryRead(out var result))
+        {
+            try
+            {
+                _consumer?.StoreOffset(result.ConsumeResult);
+            }
+            catch
+            {
+                // Best effort drain
+            }
+        }
     }
 
     private void WriteLog(LogMessage logMessage)
@@ -242,45 +396,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         }
     }
 
-    private async Task<ConsumeResultAndProcessedMessageStatus> SingleMessageHandlingAsync(
-        ConsumeResult<string?, byte[]> msg,
-        CancellationToken token
-    )
-    {
-        try
-        {
-            _logger.LogDebug(
-                LogEvents.ReceivedMessage,
-                "Received message from topic '{Topic}:{Partition}' with offset: '{Offset}[{TopicPartitionOffset}]'",
-                msg.Topic,
-                msg.Partition,
-                msg.Offset,
-                msg.TopicPartitionOffset
-            );
-            var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
-
-            var status = await _retryPolicy.ExecuteAsync(
-                (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken),
-                token
-            );
-            return new ConsumeResultAndProcessedMessageStatus(msg, status);
-        }
-        catch (Exception e)
-        {
-            _logger.LogCritical(
-                LogEvents.MessageHandlingUnexpectedException,
-                e,
-                "Unexpected exception in message handling"
-            );
-            _applicationLifetime.StopApplication();
-        }
-
-        return new ConsumeResultAndProcessedMessageStatus(msg, ProcessedMessageStatus.CriticalFailure);
-    }
-
     #region Commit
 
-    private readonly Channel<Task<ConsumeResultAndProcessedMessageStatus>> _processedMessages;
     private readonly Timer _timer;
     private readonly object _commitLock = new();
     private bool _pendingCommit;
@@ -294,31 +411,48 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         {
             try
             {
-                var result = await PeekAndAwaitProcessedMessages(cancellationToken);
+                // Poll all partition processors in a round-robin fashion
+                var didWork = false;
 
-                if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
+                foreach (var kvp in _partitionProcessors)
                 {
-                    await _internalCts.CancelAsync();
-                    _applicationLifetime.StopApplication();
-                    break;
+                    var outputChannel = kvp.Value.OutputChannel;
+
+                    // Try to read the next completed result from this partition's output channel
+                    if (!outputChannel.Reader.TryRead(out var result))
+                    {
+                        continue;
+                    }
+
+                    didWork = true;
+
+                    if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
+                    {
+                        await _internalCts.CancelAsync();
+                        _applicationLifetime.StopApplication();
+                        return;
+                    }
+
+                    lock (_commitLock)
+                    {
+                        _consumer?.StoreOffset(result.ConsumeResult);
+                        _pendingCommit = true;
+                        _messagesSinceLastCommit++;
+                    }
+
+                    // Use message count since last commit instead of offset-based check.
+                    // This works correctly across multiple partitions with non-contiguous offsets.
+                    if (_messagesSinceLastCommit >= _options.CommitPeriod)
+                    {
+                        Commit();
+                        RestartCommitTimer();
+                    }
                 }
 
-                // Remove message from channel, when Task is successfully completed
-                await _processedMessages.Reader.ReadAsync(cancellationToken);
-
-                lock (_commitLock)
+                if (!didWork)
                 {
-                    _consumer?.StoreOffset(result.ConsumeResult);
-                    _pendingCommit = true;
-                    _messagesSinceLastCommit++;
-                }
-
-                // Use message count since last commit instead of offset-based check.
-                // This works correctly across multiple partitions with non-contiguous offsets.
-                if (_messagesSinceLastCommit >= _options.CommitPeriod)
-                {
-                    Commit();
-                    RestartCommitTimer();
+                    // No partition had a completed result; wait for any partition to produce one
+                    await WaitForAnyPartitionCompletion(cancellationToken);
                 }
             }
             catch (Exception e) when (e is OperationCanceledException or ChannelClosedException)
@@ -330,18 +464,24 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         StopCommitTimer();
     }
 
-    private async Task<ConsumeResultAndProcessedMessageStatus> PeekAndAwaitProcessedMessages(
-        CancellationToken cancellationToken
-    )
+    private async Task WaitForAnyPartitionCompletion(CancellationToken cancellationToken)
     {
-        await _processedMessages.Reader.WaitToReadAsync(cancellationToken);
+        var waitTasks = new List<Task>();
 
-        if (!_processedMessages.Reader.TryPeek(out var consumeAndProcessTask))
+        foreach (var kvp in _partitionProcessors)
         {
-            throw new InvalidOperationException("Awaited channel data has been removed by another consumer");
+            var outputChannel = kvp.Value.OutputChannel;
+            waitTasks.Add(outputChannel.Reader.WaitToReadAsync(cancellationToken).AsTask());
         }
 
-        return await consumeAndProcessTask;
+        if (waitTasks.Count == 0)
+        {
+            // No partitions assigned yet, just wait briefly
+            await Task.Delay(10, cancellationToken);
+            return;
+        }
+
+        await Task.WhenAny(waitTasks);
     }
 
     private void Commit()
@@ -441,14 +581,24 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private void CloseOrDispose()
     {
+        // Cancel the internal CTS first so that any in-flight message handlers
+        // are cancelled before Close() triggers partition revocation (which drains channels).
         try
         {
-            _consumer?.Close();
             _internalCts.Cancel();
         }
         catch (ObjectDisposedException)
         {
-            // thrown if the consumer is already closed
+            // CTS already disposed
+        }
+
+        try
+        {
+            _consumer?.Close();
+        }
+        catch (ObjectDisposedException)
+        {
+            // thrown if the consumer is already closed/disposed
         }
         finally
         {
