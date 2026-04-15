@@ -17,4 +17,9 @@ public static class LogEvents
         8,
         nameof(MessageHandlingUnexpectedException)
     );
+
+    public static readonly EventId PartitionAssigned = new(9, nameof(PartitionAssigned));
+    public static readonly EventId PartitionRevoked = new(10, nameof(PartitionRevoked));
+    public static readonly EventId PartitionPaused = new(11, nameof(PartitionPaused));
+    public static readonly EventId PartitionResumed = new(12, nameof(PartitionResumed));
 }
