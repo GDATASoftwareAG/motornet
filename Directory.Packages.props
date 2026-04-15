@@ -29,11 +29,11 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.14" />
