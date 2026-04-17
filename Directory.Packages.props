@@ -65,7 +65,7 @@
     <PackageVersion Include="System.Text.Json" Version="9.0.14" />
     <PackageVersion Include="TestContainers" Version="4.11.0" />
     <PackageVersion Include="TestContainers.Kafka" Version="4.11.0" />
-    <PackageVersion Include="TestContainers.RabbitMq" Version="4.8.1" />
+    <PackageVersion Include="TestContainers.RabbitMq" Version="4.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
