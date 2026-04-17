@@ -3,6 +3,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.HealthChecks\Motor.Extensions.Diagnostics.HealthChecks.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Logging\Motor.Extensions.Diagnostics.Logging.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />
