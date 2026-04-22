@@ -62,7 +62,7 @@
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageVersion Include="System.Text.Json" Version="9.0.14" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.7" />
     <PackageVersion Include="TestContainers" Version="4.11.0" />
     <PackageVersion Include="TestContainers.Kafka" Version="4.11.0" />
     <PackageVersion Include="TestContainers.RabbitMq" Version="4.11.0" />
