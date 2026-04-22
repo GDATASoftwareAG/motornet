@@ -25,7 +25,7 @@
       Condition="'$(TargetFramework)' == 'net9.0'"
     />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.14" />
