@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
     <ProjectReference Include="..\Motor.Extensions.ContentEncoding.Abstractions\Motor.Extensions.ContentEncoding.Abstractions.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Conversion.Abstractions\Motor.Extensions.Conversion.Abstractions.csproj" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Metrics\Motor.Extensions.Diagnostics.Metrics.csproj" />

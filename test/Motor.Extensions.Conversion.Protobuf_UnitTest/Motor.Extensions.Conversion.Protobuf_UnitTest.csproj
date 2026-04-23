@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <PackageReference Include="System.Text.Json" />
     <Protobuf Include="Proto3/*.proto" />
   </ItemGroup>
   <ItemGroup>
