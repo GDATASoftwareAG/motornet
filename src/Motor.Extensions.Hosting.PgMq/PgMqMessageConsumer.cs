@@ -236,7 +236,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
             {
                 try
                 {
-                    cloudEvent.SetAttributeFromString(key, value?.ToString() ?? string.Empty);
+                    cloudEvent.SetAttributeFromString(key, value.ToString() ?? string.Empty);
                 }
                 catch (ArgumentException)
                 {

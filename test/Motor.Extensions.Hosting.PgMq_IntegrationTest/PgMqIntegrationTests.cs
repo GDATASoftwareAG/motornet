@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -18,7 +13,9 @@ using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
 using MSOptions = Microsoft.Extensions.Options.Options;
+
 namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
+
 [Collection("PgMqMessage")]
 public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
 {
@@ -93,14 +90,14 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         var queueName = _randomizerString.Generate()!;
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Protocol, loggerMock.Object);
+        var consumer = GetConsumer(queueName, CloudEventFormat.Protocol, loggerMock.Object);
         // Do NOT call StartAsync
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await consumer.ExecuteAsync(cts.Token);
         loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
-                Motor.Extensions.Hosting.PgMq.LogEvents.ConsumerNotStarted,
+                PgMq.LogEvents.ConsumerNotStarted,
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()
@@ -139,7 +136,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(
+        var consumer = GetConsumer(
             queueName,
             CloudEventFormat.Protocol,
             loggerMock.Object,
@@ -157,7 +154,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         loggerMock.Verify(
             x => x.Log(
                 LogLevel.Critical,
-                Motor.Extensions.Hosting.PgMq.LogEvents.MessageHandlingUnexpectedException,
+                PgMq.LogEvents.MessageHandlingUnexpectedException,
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()
@@ -184,7 +181,10 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
             lock (received)
             {
                 received.Add(Encoding.UTF8.GetString(evt.TypedData));
-                if (received.Count == messageCount) tcs.TrySetResult();
+                if (received.Count == messageCount)
+                {
+                    tcs.TrySetResult();
+                }
             }
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
@@ -241,9 +241,9 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
             return await Task.FromResult(ProcessedMessageStatus.Success);
         };
         await producer.PublishMessageAsync(
-            MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes("delete-me"))
+            MotorCloudEvent.CreateTestCloudEvent("delete-me"u8.ToArray())
         );
-        var executeTask = consumer.ExecuteAsync();
+        _ = consumer.ExecuteAsync();
         await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(15)));
         // Wait longer than visibility timeout to ensure no redelivery
         await Task.Delay(TimeSpan.FromSeconds(5));
@@ -292,7 +292,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     // ------------------------------------------------------------------
     private PgMqMessageProducer<T> GetProducer<T>(
         string queueName,
-        CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol
+        CloudEventFormat cloudEventFormat
     ) where T : notnull
     {
         var publisherOptions = MSOptions.Create(new PgMqPublisherOptions<T>
@@ -308,7 +308,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     }
     private PgMqMessageConsumer<T> GetConsumer<T>(
         string queueName,
-        CloudEventFormat cloudEventFormat = CloudEventFormat.Protocol,
+        CloudEventFormat cloudEventFormat,
         ILogger<PgMqMessageConsumer<T>>? logger = null,
         IHostApplicationLifetime? applicationLifetime = null,
         int visibilityTimeoutInSeconds = 30

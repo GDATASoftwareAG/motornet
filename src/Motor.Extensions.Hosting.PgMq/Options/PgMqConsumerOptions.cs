@@ -2,6 +2,7 @@ using Motor.Extensions.Hosting.Abstractions;
 
 namespace Motor.Extensions.Hosting.PgMq.Options;
 
+// ReSharper disable once UnusedTypeParameter
 public class PgMqConsumerOptions<T>
 {
     public string ConnectionString { get; set; } = string.Empty;
