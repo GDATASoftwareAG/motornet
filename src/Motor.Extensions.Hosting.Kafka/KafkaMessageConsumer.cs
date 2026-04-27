@@ -34,6 +34,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly IRawMessagePublisher<TData>? _deadLetterPublisher;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -43,7 +44,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         IHostApplicationLifetime applicationLifetime,
         IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
         IApplicationNameService applicationNameService,
-        CloudEventFormatter cloudEventFormatter
+        CloudEventFormatter cloudEventFormatter,
+        IEnumerable<IRawMessagePublisher<TData>>? deadLetterPublishers = null
     )
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -51,6 +53,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         _applicationNameService =
             applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
         _cloudEventFormatter = cloudEventFormatter;
+        _deadLetterPublisher = deadLetterPublishers?.FirstOrDefault();
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
@@ -77,7 +80,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         Task<ProcessedMessageStatus>
     >? ConsumeCallbackAsync { get; set; }
 
-    public Task StartAsync(CancellationToken token = default)
+    public async Task StartAsync(CancellationToken token = default)
     {
         if (ConsumeCallbackAsync is null)
         {
@@ -90,7 +93,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
         _consumer = consumerBuilder.Build();
         _consumer.Subscribe(_options.Topic);
-        return Task.CompletedTask;
+        if (_deadLetterPublisher != null)
+        {
+            await _deadLetterPublisher.StartAsync(token);
+        }
     }
 
     public async Task ExecuteAsync(CancellationToken token = default)
@@ -149,7 +155,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     public Task StopAsync(CancellationToken token = default)
     {
         CloseOrDispose();
-        return Task.CompletedTask;
+        return _deadLetterPublisher?.StopAsync(token) ?? Task.CompletedTask;
     }
 
     private void WriteLog(LogMessage logMessage)
@@ -283,7 +289,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             {
                 var result = await PeekAndAwaitProcessedMessages(cancellationToken);
 
-                if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
+                if (ShouldPublishToDeadLetter(result.ProcessedMessageStatus))
+                {
+                    await PublishToDeadLetterAsync(result, cancellationToken);
+                }
+                else if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
                 {
                     await _internalCts.CancelAsync();
                     _applicationLifetime.StopApplication();
@@ -367,6 +377,49 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         Commit();
         RestartCommitTimer();
+    }
+
+    private bool ShouldPublishToDeadLetter(ProcessedMessageStatus status)
+    {
+        if (_deadLetterPublisher == null || _options.DeadLetterQueue == null)
+        {
+            return false;
+        }
+
+        return status switch
+        {
+            ProcessedMessageStatus.Failure => _options.DeadLetterQueue.PublishFailure,
+            ProcessedMessageStatus.InvalidInput => _options.DeadLetterQueue.PublishInvalidInput,
+            ProcessedMessageStatus.TemporaryFailure => _options.DeadLetterQueue.PublishTemporaryFailureAfterRetries,
+            _ => false
+        };
+    }
+
+    private async Task PublishToDeadLetterAsync(
+        ConsumeResultAndProcessedMessageStatus result,
+        CancellationToken cancellationToken
+    )
+    {
+        _logger.LogWarning(
+            LogEvents.DeadLetterQueuePublish,
+            "Message with status {Status} forwarded to dead letter queue",
+            result.ProcessedMessageStatus
+        );
+        try
+        {
+            await _deadLetterPublisher!.PublishMessageAsync(
+                KafkaMessageToCloudEvent(result.ConsumeResult.Message),
+                cancellationToken
+            );
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            _logger.LogError(
+                LogEvents.DeadLetterQueuePublishFailed,
+                e,
+                "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
+            );
+        }
     }
 
     private bool IsIrrecoverableFailure(ProcessedMessageStatus status)
