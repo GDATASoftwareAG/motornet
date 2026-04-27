@@ -12,14 +12,14 @@ using Npgmq;
 namespace Motor.Extensions.Hosting.PgMq;
 
 /// <summary>
-/// Message producer for pgmq (https://github.com/pgmq/pgmq)
+/// Message producer for pgmq (https://github.com/pgmq/pgmq).
 /// </summary>
 /// <remarks>
-/// <list>
-/// <item>Uses Npgmq (https://github.com/brianpursley/Npgmq)</item>
+/// <list type="bullet">
+/// <item>Uses Npgmq (https://github.com/brianpursley/Npgmq).</item>
 /// </list>
 /// </remarks>
-/// <typeparam name="TOutput"></typeparam>
+/// <typeparam name="TOutput">The output message type.</typeparam>
 public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
     where TOutput : notnull
 {
@@ -40,14 +40,16 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
     }
 
     /// <summary>
-    /// Starts the PgMqMessageProducer
+    /// Starts the <see cref="PgMqMessageProducer{TOutput}"/>.
     /// </summary>
-    /// <param name="token">A CancellationToken</param>
-    /// <returns></returns>
+    /// <param name="token">A cancellation token.</param>
+    /// <returns>A <see cref="Task"/> that completes when the producer is ready.</returns>
     /// <remarks>
-    /// * Creates the NpmqClient
-    /// * Ensures the pgmq extension has been created in postgres
-    /// * Creates the queue
+    /// <list type="bullet">
+    /// <item>Creates the <see cref="NpgmqClient"/>.</item>
+    /// <item>Ensures the pgmq extension has been created in Postgres.</item>
+    /// <item>Creates the queue if it does not exist.</item>
+    /// </list>
     /// </remarks>
     public async Task StartAsync(CancellationToken token = default)
     {
@@ -57,14 +59,15 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
     }
 
     /// <summary>
-    /// Publishes a MotorCloudEvent to a pgmq queue.
+    /// Publishes a <see cref="MotorCloudEvent{TData}"/> to the pgmq queue.
     /// </summary>
-    /// <param name="motorCloudEvent"></param>
-    /// <param name="token"></param>
-    /// <returns>A Task that completes when the motorCloudEvent has been added to the DB.</returns>
+    /// <param name="motorCloudEvent">The cloud event to publish.</param>
+    /// <param name="token">A cancellation token.</param>
+    /// <returns>A <see cref="Task"/> that completes when the message has been added to the database.</returns>
     /// <remarks>
-    /// <list>
-    /// <item>Publishes headers and data of the motorCloudEvents.</item>
+    /// <list type="bullet">
+    /// <item>In Protocol format, CloudEvent attributes are written as Npgmq message headers and the raw bytes are sent as the message body.</item>
+    /// <item>In JSON format, the full CloudEvent is encoded as a structured JSON message.</item>
     /// </list>
     /// </remarks>
     public async Task PublishMessageAsync(MotorCloudEvent<byte[]> motorCloudEvent, CancellationToken token = default)
