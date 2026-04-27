@@ -17,4 +17,7 @@ public static class LogEvents
         7,
         nameof(MessageHandlingUnexpectedException)
     );
+
+    public static readonly EventId DeadLetterQueuePublish = new(8, nameof(DeadLetterQueuePublish));
+    public static readonly EventId DeadLetterQueuePublishFailed = new(9, nameof(DeadLetterQueuePublishFailed));
 }
