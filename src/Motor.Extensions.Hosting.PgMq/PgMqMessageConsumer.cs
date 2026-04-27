@@ -234,7 +234,14 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         {
             foreach (var (key, value) in headers)
             {
-                cloudEvent.SetAttributeFromString(key, value?.ToString() ?? string.Empty);
+                try
+                {
+                    cloudEvent.SetAttributeFromString(key, value?.ToString() ?? string.Empty);
+                }
+                catch (ArgumentException)
+                {
+                    // Ignore headers that cannot be parsed as valid CloudEvent attributes.
+                }
             }
         }
 

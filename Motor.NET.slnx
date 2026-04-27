@@ -75,6 +75,7 @@
     <Project Path="test/Motor.Extensions.Hosting.Kafka_IntegrationTest/Motor.Extensions.Hosting.Kafka_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.Kafka_UnitTest/Motor.Extensions.Hosting.Kafka_UnitTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.NATS_IntegrationTest/Motor.Extensions.Hosting.NATS_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.PgMq_IntegrationTest/Motor.Extensions.Hosting.PgMq_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.Publisher_UnitTest/Motor.Extensions.Hosting.Publisher_UnitTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_UnitTest/Motor.Extensions.Hosting.RabbitMQ_UnitTest.csproj" />
