@@ -2,7 +2,6 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.34" />
     <PackageVersion Include="AWSSDK.SQS" Version="4.0.2.26" />
@@ -14,16 +13,8 @@
     <PackageVersion Include="Divergic.Logging.Xunit" Version="4.3.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.34.1" />
     <PackageVersion Include="Grpc.Tools" Version="2.80.0" />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Mvc.Testing"
-      Version="8.0.25"
-      Condition="'$(TargetFramework)' == 'net8.0'"
-    />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Mvc.Testing"
-      Version="9.0.14"
-      Condition="'$(TargetFramework)' == 'net9.0'"
-    />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.25" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.14" Condition="'$(TargetFramework)' == 'net9.0'" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.14" />
@@ -43,6 +34,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="NATS.Client" Version="1.1.8" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Npgmq" Version="1.13.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />

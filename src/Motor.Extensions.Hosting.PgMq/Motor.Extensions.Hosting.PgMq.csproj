@@ -2,5 +2,8 @@
     <ItemGroup>
       <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Npgmq" />
+    </ItemGroup>
 
 </Project>
