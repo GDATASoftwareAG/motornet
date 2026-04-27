@@ -48,6 +48,7 @@
     <Project Path="src/Motor.Extensions.Hosting.Consumer/Motor.Extensions.Hosting.Consumer.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.Kafka/Motor.Extensions.Hosting.Kafka.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.NATS/Motor.Extensions.Hosting.NATS.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.PgMq/Motor.Extensions.Hosting.PgMq.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.Publisher/Motor.Extensions.Hosting.Publisher.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.RabbitMQ/Motor.Extensions.Hosting.RabbitMQ.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.SQS/Motor.Extensions.Hosting.SQS.csproj" />
