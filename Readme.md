@@ -34,6 +34,7 @@ You find working examples for different use-cases under the [examples](./example
 | Timer     | ( :heavy_check_mark: ) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
 | SQS       | ( :heavy_check_mark: ) | -                    | :x:                    | :x:                | :x:                | :x:                |                                 |
 | NATS      | ( :heavy_check_mark: ) | :heavy_check_mark:   | :x:                    | :heavy_check_mark: | :x:                | :x:                |                                 |
+| PGMQ      | :heavy_check_mark:     | :heavy_check_mark:   | :heavy_check_mark:     | :x:                | :x:                | :x:                |                                 |
 
 **CloudEvents (Protocol)**: If supported, the protocol format uses headers from Kafka or RabbitMQ to store CloudEvent metadata.
 
