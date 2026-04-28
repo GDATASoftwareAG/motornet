@@ -1,6 +1,7 @@
 using Docker.DotNet.Models;
 using DotNet.Testcontainers.Configurations;
 namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
+
 public class PostgresConfiguration : ContainerConfiguration
 {
     public PostgresConfiguration() { }

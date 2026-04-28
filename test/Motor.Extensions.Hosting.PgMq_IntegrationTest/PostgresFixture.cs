@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Xunit;
 namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
+
 [CollectionDefinition("PgMqMessage")]
 public class PgMqMessageCollection : ICollectionFixture<PostgresFixture> { }
 public class PostgresFixture : IAsyncLifetime

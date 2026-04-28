@@ -3,6 +3,7 @@ using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
+
 public sealed class PostgresBuilder(PostgresConfiguration resourceConfiguration)
     : ContainerBuilder<PostgresBuilder, PostgresContainer, PostgresConfiguration>(resourceConfiguration)
 {
