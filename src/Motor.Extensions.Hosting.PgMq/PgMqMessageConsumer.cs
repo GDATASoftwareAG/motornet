@@ -47,11 +47,11 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         _applicationNameService = applicationNameService;
     }
 
-    public Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>>? ConsumeCallbackAsync
-    {
-        get;
-        set;
-    }
+    public Func<
+        MotorCloudEvent<byte[]>,
+        CancellationToken,
+        Task<ProcessedMessageStatus>
+    >? ConsumeCallbackAsync { get; set; }
 
     /// <summary>
     /// Starts the <see cref="PgMqMessageConsumer{TData}"/>.
@@ -88,7 +88,10 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     {
         if (_npgmqClient is null)
         {
-            _logger.LogError(LogEvents.ConsumerNotStarted, "Consumer not started. Call StartAsync before ExecuteAsync.");
+            _logger.LogError(
+                LogEvents.ConsumerNotStarted,
+                "Consumer not started. Call StartAsync before ExecuteAsync."
+            );
             return;
         }
 
@@ -182,11 +185,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         }
 
         var jsonBytes = Encoding.UTF8.GetBytes(message.Message ?? string.Empty);
-        var cloudEvent = _cloudEventFormatter.DecodeStructuredModeMessage(
-            jsonBytes,
-            null,
-            null
-        );
+        var cloudEvent = _cloudEventFormatter.DecodeStructuredModeMessage(jsonBytes, null, null);
         var motorCloudEvent = ToMotorCloudEvent(cloudEvent);
 
         var status = await InvokeCallbackAsync(motorCloudEvent, token);
@@ -224,11 +223,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         System.Collections.Generic.IReadOnlyDictionary<string, object>? headers
     )
     {
-        var cloudEvent = new MotorCloudEvent<byte[]>(
-            _applicationNameService,
-            body,
-            new Uri("pgmq://notset")
-        );
+        var cloudEvent = new MotorCloudEvent<byte[]>(_applicationNameService, body, new Uri("pgmq://notset"));
 
         if (headers is not null)
         {
@@ -263,7 +258,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         var data = cloudEvent.Data switch
         {
             byte[] bytes => bytes,
-            _ => Encoding.UTF8.GetBytes(cloudEvent.Data.ToString() ?? string.Empty)
+            _ => Encoding.UTF8.GetBytes(cloudEvent.Data.ToString() ?? string.Empty),
         };
 
         var motorCloudEvent = new MotorCloudEvent<byte[]>(
