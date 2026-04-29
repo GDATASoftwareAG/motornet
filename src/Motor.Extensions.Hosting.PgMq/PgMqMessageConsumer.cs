@@ -81,7 +81,9 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// <item>Consumes messages from the queue sequentially.</item>
     /// <item>Uses polling with a delay when no messages are available.</item>
     /// <item>On <see cref="ProcessedMessageStatus.Success"/>, the message is acknowledged (deleted).</item>
-    /// <item>On any other status or unhandled exception, the application is stopped.</item>
+    /// <item>On <see cref="ProcessedMessageStatus.TemporaryFailure"/>, the message is left in the queue to be redelivered after the visibility timeout.</item>
+    /// <item>On <see cref="ProcessedMessageStatus.Failure"/> or <see cref="ProcessedMessageStatus.InvalidInput"/>, the message is deleted (not redelivered).</item>
+    /// <item>On <see cref="ProcessedMessageStatus.CriticalFailure"/> or unhandled exception, the application is stopped.</item>
     /// </list>
     /// </remarks>
     public async Task ExecuteAsync(CancellationToken token = default)
@@ -152,18 +154,44 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         var cloudEvent = BuildCloudEventFromHeaders(message.Message ?? Array.Empty<byte>(), message.Headers);
         var status = await InvokeCallbackAsync(cloudEvent, token);
 
-        if (status == ProcessedMessageStatus.Success)
+        switch (status)
         {
-            await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
-        }
-        else
-        {
-            _logger.LogCritical(
-                LogEvents.CriticalFailureOnConsume,
-                "Message processing failed with status {Status}, stopping application",
-                status
-            );
-            _applicationLifetime.StopApplication();
+            case ProcessedMessageStatus.Success:
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.TemporaryFailure:
+                _logger.LogWarning(
+                    LogEvents.TemporaryFailureOnConsume,
+                    "Message {MsgId} had a temporary failure, will be requeued after visibility timeout",
+                    message.MsgId
+                );
+                break;
+            case ProcessedMessageStatus.Failure:
+                _logger.LogError(
+                    LogEvents.FailureOnConsume,
+                    "Message {MsgId} failed permanently, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.InvalidInput:
+                _logger.LogError(
+                    LogEvents.InvalidInputOnConsume,
+                    "Message {MsgId} has invalid input, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.CriticalFailure:
+                _logger.LogCritical(
+                    LogEvents.CriticalFailureOnConsume,
+                    "Message {MsgId} processing failed with critical failure, stopping application",
+                    message.MsgId
+                );
+                _applicationLifetime.StopApplication();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status.ToString());
         }
     }
 
@@ -191,18 +219,53 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
 
         var status = await InvokeCallbackAsync(motorCloudEvent, token);
 
-        if (status == ProcessedMessageStatus.Success)
+        switch (status)
         {
-            await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
-        }
-        else
-        {
-            _logger.LogCritical(
-                LogEvents.CriticalFailureOnConsume,
-                "Message processing failed with status {Status}, stopping application",
-                status
-            );
-            _applicationLifetime.StopApplication();
+            case ProcessedMessageStatus.Success:
+                // ACK: message processed successfully, delete it from the queue.
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.TemporaryFailure:
+                // NACK / requeue: do nothing – the visibility timeout will expire and the
+                // message becomes visible again automatically (≙ BasicReject requeue=true).
+                _logger.LogWarning(
+                    LogEvents.TemporaryFailureOnConsume,
+                    "Message {MsgId} had a temporary failure, will be requeued after visibility timeout",
+                    message.MsgId
+                );
+                break;
+            case ProcessedMessageStatus.Failure:
+                // Permanent failure: delete so the message is not redelivered.
+                // TODO: optionally forward to a configurable error queue before deleting
+                //       (analog to RabbitMQ BasicReject requeue=false + DeadLetterExchange).
+                _logger.LogError(
+                    LogEvents.FailureOnConsume,
+                    "Message {MsgId} failed permanently, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.InvalidInput:
+                // Invalid input: delete so the message is not redelivered.
+                // TODO: optionally forward to a configurable error queue before deleting
+                //       (analog to RabbitMQ InvalidInput + DeadLetterExchange with RepublishInvalidInput).
+                _logger.LogError(
+                    LogEvents.InvalidInputOnConsume,
+                    "Message {MsgId} has invalid input, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
+                break;
+            case ProcessedMessageStatus.CriticalFailure:
+                _logger.LogCritical(
+                    LogEvents.CriticalFailureOnConsume,
+                    "Message {MsgId} processing failed with critical failure, stopping application",
+                    message.MsgId
+                );
+                _applicationLifetime.StopApplication();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status.ToString());
         }
     }
 
@@ -211,12 +274,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         CancellationToken token
     )
     {
-        if (ConsumeCallbackAsync is null)
-        {
-            throw new InvalidOperationException("ConsumeCallbackAsync is not configured.");
-        }
-
-        return await ConsumeCallbackAsync(cloudEvent, token);
+        return await (ConsumeCallbackAsync ?? throw new InvalidOperationException("ConsumeCallbackAsync is not configured."))(cloudEvent, token);
     }
 
     private MotorCloudEvent<byte[]> BuildCloudEventFromHeaders(
