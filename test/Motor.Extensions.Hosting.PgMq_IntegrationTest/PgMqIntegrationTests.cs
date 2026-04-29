@@ -318,16 +318,14 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     )
         where T : notnull
     {
-        var options = MSOptions.Create(
-            new PgMqConsumerOptions<T>
-            {
-                ConnectionString = _connectionString,
-                QueueName = queueName,
-                CloudEventFormat = cloudEventFormat,
-                VisibilityTimeoutInSeconds = visibilityTimeoutInSeconds,
-                PollingIntervalInMilliseconds = 100,
-            }
-        );
+        var options = new PgMqConsumerOptions<T>
+        {
+            ConnectionString = _connectionString,
+            QueueName = queueName,
+            CloudEventFormat = cloudEventFormat,
+            VisibilityTimeoutInSeconds = visibilityTimeoutInSeconds,
+            PollingIntervalInMilliseconds = 100,
+        };
         logger ??= Mock.Of<ILogger<PgMqMessageConsumer<T>>>();
         applicationLifetime ??= Mock.Of<IHostApplicationLifetime>();
         return new PgMqMessageConsumer<T>(

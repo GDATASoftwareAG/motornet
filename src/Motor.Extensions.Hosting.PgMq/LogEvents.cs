@@ -14,4 +14,5 @@ public static class LogEvents
     public static readonly EventId TemporaryFailureOnConsume = new(4, nameof(TemporaryFailureOnConsume));
     public static readonly EventId InvalidInputOnConsume = new(5, nameof(InvalidInputOnConsume));
     public static readonly EventId FailureOnConsume = new(6, nameof(FailureOnConsume));
+    public static readonly EventId MessageSuccessfullyProcessed = new(7, nameof(MessageSuccessfullyProcessed));
 }
