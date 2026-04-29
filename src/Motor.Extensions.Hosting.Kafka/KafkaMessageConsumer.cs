@@ -34,6 +34,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly AsyncPolicy<ProcessedMessageStatus> _retryPolicy;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -46,12 +47,17 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         CloudEventFormatter cloudEventFormatter
     )
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(config.Value);
+        ArgumentNullException.ThrowIfNull(applicationNameService);
+        ArgumentNullException.ThrowIfNull(cloudEventFormatter);
+
+        _logger = logger;
         _applicationLifetime = applicationLifetime;
-        _applicationNameService =
-            applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
+        _applicationNameService = applicationNameService;
         _cloudEventFormatter = cloudEventFormatter;
-        _options = config.Value ?? throw new ArgumentNullException(nameof(config));
+        _options = config.Value;
+
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
             "Contains a summary of current consumer lag of each partition",
@@ -69,6 +75,13 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             _options.MaxConcurrentMessages
         );
         _timer = new Timer(HandleCommitTimer);
+
+        _retryPolicy = Policy
+            .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
+            .WaitAndRetryAsync(
+                _options.RetriesOnTemporaryFailure,
+                retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt)
+            );
     }
 
     public Func<
@@ -160,21 +173,24 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case SyslogLevel.Alert:
             case SyslogLevel.Critical:
                 _logger.LogCritical(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Error:
                 _logger.LogError(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Warning:
                 _logger.LogWarning(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
@@ -182,14 +198,16 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             case SyslogLevel.Notice:
             case SyslogLevel.Info:
                 _logger.LogInformation(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
                 break;
             case SyslogLevel.Debug:
                 _logger.LogDebug(
-                    $"{logMessage.Message} -(Facility: {{facility}}, Name: {{name}})",
+                    "{Message} -(Facility: {Facility}, Name: {Name})",
+                    logMessage.Message,
                     logMessage.Facility,
                     logMessage.Name
                 );
@@ -241,13 +259,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             );
             var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
 
-            var retryPolicy = Policy
-                .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
-                .WaitAndRetryAsync(
-                    _options.RetriesOnTemporaryFailure,
-                    retryAttempt => _options.RetryBasePeriod * Math.Pow(2, retryAttempt)
-                );
-            var status = await retryPolicy.ExecuteAsync(
+            var status = await _retryPolicy.ExecuteAsync(
                 (cancellationToken) => ConsumeCallbackAsync!.Invoke(cloudEvent, cancellationToken),
                 token
             );
@@ -272,6 +284,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly Timer _timer;
     private readonly object _commitLock = new();
     private bool _pendingCommit;
+    private int _messagesSinceLastCommit;
 
     private async Task ExecuteCommitLoopAsync(CancellationToken cancellationToken)
     {
@@ -297,9 +310,12 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 {
                     _consumer?.StoreOffset(result.ConsumeResult);
                     _pendingCommit = true;
+                    _messagesSinceLastCommit++;
                 }
 
-                if ((result.ConsumeResult.Offset.Value + 1) % _options.CommitPeriod == 0)
+                // Use message count since last commit instead of offset-based check.
+                // This works correctly across multiple partitions with non-contiguous offsets.
+                if (_messagesSinceLastCommit >= _options.CommitPeriod)
                 {
                     Commit();
                     RestartCommitTimer();
@@ -338,6 +354,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             }
 
             _pendingCommit = false;
+            _messagesSinceLastCommit = 0;
             try
             {
                 _consumer?.Commit();
@@ -386,7 +403,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             default:
                 _logger.LogCritical(
                     LogEvents.UnknownProcessedMessageStatus,
-                    "Unknown processed message status {status}",
+                    "Unknown processed message status {Status}",
                     status
                 );
                 return true;

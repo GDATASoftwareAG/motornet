@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Motor.Extensions.Hosting.Abstractions;
@@ -519,7 +520,12 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var options = Options.Create(GetPublisherConfig<T>(topic));
         var publisherOptions = Options.Create(new PublisherOptions());
-        return new KafkaMessagePublisher<T>(options, new JsonEventFormatter(), publisherOptions);
+        return new KafkaMessagePublisher<T>(
+            options,
+            new JsonEventFormatter(),
+            publisherOptions,
+            Mock.Of<ILogger<KafkaMessagePublisher<T>>>()
+        );
     }
 
     private KafkaPublisherOptions<T> GetPublisherConfig<T>(string topic)

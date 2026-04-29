@@ -14,7 +14,7 @@ public static class LogEvents
     public static readonly EventId UnknownProcessedMessageStatus = new(7, nameof(UnknownProcessedMessageStatus));
 
     public static readonly EventId MessageHandlingUnexpectedException = new(
-        7,
+        8,
         nameof(MessageHandlingUnexpectedException)
     );
 }
