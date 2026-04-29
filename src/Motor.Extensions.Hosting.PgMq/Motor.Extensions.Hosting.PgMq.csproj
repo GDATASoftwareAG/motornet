@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-      <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-      <PackageReference Include="Npgmq" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgmq" />
+  </ItemGroup>
 </Project>
