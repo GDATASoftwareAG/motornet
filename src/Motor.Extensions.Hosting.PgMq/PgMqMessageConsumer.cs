@@ -113,9 +113,9 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     private void EnsureInitialized()
     {
         if (_messageReader is null)
-        {
             throw new InvalidOperationException("Consumer not started. Call StartAsync before ExecuteAsync.");
-        }
+        if (ConsumeCallbackAsync is null)
+            throw new InvalidOperationException("ConsumeCallbackAsync is not configured.");
     }
 
     private async Task ProcessNextMessageAsync(CancellationToken token)
@@ -181,11 +181,11 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
                 throw new ArgumentOutOfRangeException(nameof(status), status.ToString());
         }
     }
-    private async Task<ProcessedMessageStatus> InvokeCallbackAsync(
+    private Task<ProcessedMessageStatus> InvokeCallbackAsync(
         MotorCloudEvent<byte[]> cloudEvent,
         CancellationToken token
     )
     {
-        return await (ConsumeCallbackAsync ?? throw new InvalidOperationException("ConsumeCallbackAsync is not configured."))(cloudEvent, token);
+        return ConsumeCallbackAsync!(cloudEvent, token);
     }
 }

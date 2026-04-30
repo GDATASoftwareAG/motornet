@@ -1,8 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Motor.Extensions.Hosting.Abstractions\Motor.Extensions.Hosting.Abstractions.csproj" />
+    <ProjectReference Include="..\Motor.Extensions.Hosting.CloudEvents\Motor.Extensions.Hosting.CloudEvents.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Npgmq" />
   </ItemGroup>
 </Project>
