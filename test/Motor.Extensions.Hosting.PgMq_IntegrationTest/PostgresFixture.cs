@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
@@ -8,17 +9,13 @@ public class PgMqMessageCollection : ICollectionFixture<PostgresFixture> { }
 
 public class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgresContainer _container = new PostgresBuilder().Build();
-    public string ConnectionString =>
-        $"Host={_container.Hostname};Port={_container.GetMappedPublicPort(PostgresBuilder.DefaultPort)};Username=postgres;Password=postgres;Database=postgres";
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("quay.io/tembo/pg16-pgmq:latest")
+        .Build();
 
-    public Task InitializeAsync()
-    {
-        return _container.StartAsync();
-    }
+    // Get ConnectionString from TestContainer.
+    public string ConnectionString => _container.GetConnectionString();
 
-    public Task DisposeAsync()
-    {
-        return _container.DisposeAsync().AsTask();
-    }
+    public Task InitializeAsync() => _container.StartAsync();
+
+    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 }

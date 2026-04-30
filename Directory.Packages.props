@@ -13,16 +13,8 @@
     <PackageVersion Include="Divergic.Logging.Xunit" Version="4.3.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.34.1" />
     <PackageVersion Include="Grpc.Tools" Version="2.80.0" />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Mvc.Testing"
-      Version="8.0.25"
-      Condition="'$(TargetFramework)' == 'net8.0'"
-    />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Mvc.Testing"
-      Version="9.0.14"
-      Condition="'$(TargetFramework)' == 'net9.0'"
-    />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.25" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.14" Condition="'$(TargetFramework)' == 'net9.0'" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.14" />
@@ -65,6 +57,7 @@
     <PackageVersion Include="System.Text.Json" Version="9.0.14" />
     <PackageVersion Include="TestContainers" Version="4.11.0" />
     <PackageVersion Include="TestContainers.Kafka" Version="4.11.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.11.0" />
     <PackageVersion Include="TestContainers.RabbitMq" Version="4.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

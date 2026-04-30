@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -9,9 +8,7 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Npgmq;
-
 namespace Motor.Extensions.Hosting.PgMq;
-
 /// <summary>
 /// Message consumer for pgmq (https://github.com/pgmq/pgmq).
 /// </summary>
@@ -29,14 +26,15 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     private readonly ILogger<PgMqMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IApplicationNameService _applicationNameService;
-    private NpgmqClient? _npgmqClient;
-
+    private readonly INpgmqClient _npgmqClient;
+    private IPgMqMessageReader? _messageReader;
     public PgMqMessageConsumer(
         PgMqConsumerOptions<TData> options,
         CloudEventFormatter cloudEventFormatter,
         ILogger<PgMqMessageConsumer<TData>> logger,
         IHostApplicationLifetime applicationLifetime,
-        IApplicationNameService applicationNameService
+        IApplicationNameService applicationNameService,
+        INpgmqClient npgmqClient
     )
     {
         _options = options;
@@ -44,14 +42,13 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         _logger = logger;
         _applicationLifetime = applicationLifetime;
         _applicationNameService = applicationNameService;
+        _npgmqClient = npgmqClient;
     }
-
     public Func<
         MotorCloudEvent<byte[]>,
         CancellationToken,
         Task<ProcessedMessageStatus>
     >? ConsumeCallbackAsync { get; set; }
-
     /// <summary>
     /// Starts the <see cref="PgMqMessageConsumer{TData}"/>.
     /// </summary>
@@ -66,11 +63,10 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// </remarks>
     public async Task StartAsync(CancellationToken token = default)
     {
-        _npgmqClient = new NpgmqClient(_options.ConnectionString);
+        _messageReader = new AutoDetectMessageReader(_cloudEventFormatter, _applicationNameService);
         await _npgmqClient.InitAsync(token);
         await _npgmqClient.CreateQueueAsync(_options.QueueName, token);
     }
-
     /// <summary>
     /// Executes the <see cref="PgMqMessageConsumer{TData}"/>.
     /// </summary>
@@ -87,15 +83,7 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// </remarks>
     public async Task ExecuteAsync(CancellationToken token = default)
     {
-        if (_npgmqClient is null)
-        {
-            _logger.LogError(
-                LogEvents.ConsumerNotStarted,
-                "Consumer not started. Call StartAsync before ExecuteAsync."
-            );
-            return;
-        }
-
+        EnsureInitialized();
         while (!token.IsCancellationRequested)
         {
             try
@@ -118,127 +106,86 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
             }
         }
     }
-
     public Task StopAsync(CancellationToken token = default)
     {
         return Task.CompletedTask;
     }
+    private void EnsureInitialized()
+    {
+        if (_messageReader is null)
+        {
+            throw new InvalidOperationException("Consumer not started. Call StartAsync before ExecuteAsync.");
+        }
+    }
 
     private async Task ProcessNextMessageAsync(CancellationToken token)
     {
-        long msgId;
-        MotorCloudEvent<byte[]> motorCloudEvent;
-
-        switch (_options.CloudEventFormat)
+        var message = await _messageReader!.ReadAsync(
+            _npgmqClient,
+            _options.QueueName,
+            _options.VisibilityTimeoutInSeconds,
+            _options.PollTimeoutSeconds,
+            _options.PollIntervalMilliseconds,
+            token
+        );
+        if (message is null)
         {
-            case CloudEventFormat.Protocol:
-            {
-                var message = await _npgmqClient!.ReadAsync<byte[]>(
-                    _options.QueueName,
-                    _options.VisibilityTimeoutInSeconds,
-                    token
-                );
-                if (message is null)
-                {
-                    await Task.Delay(_options.PollingIntervalInMilliseconds, token);
-                    return;
-                }
-                msgId = message.MsgId;
-                motorCloudEvent = BuildCloudEventFromHeaders(message.Message ?? Array.Empty<byte>(), message.Headers);
-                break;
-            }
-            case CloudEventFormat.Json:
-            {
-                var message = await _npgmqClient!.ReadAsync<string>(
-                    _options.QueueName,
-                    _options.VisibilityTimeoutInSeconds,
-                    token
-                );
-                if (message is null)
-                {
-                    await Task.Delay(_options.PollingIntervalInMilliseconds, token);
-                    return;
-                }
-                msgId = message.MsgId;
-                var jsonBytes = Encoding.UTF8.GetBytes(message.Message ?? string.Empty);
-                var cloudEvent = _cloudEventFormatter.DecodeStructuredModeMessage(jsonBytes, null, null);
-                motorCloudEvent = cloudEvent.ToMotorCloudEvent(_applicationNameService);
-                break;
-            }
-            default:
-                throw new UnhandledCloudEventFormatException(_options.CloudEventFormat);
+            return;
         }
-
-        var status = await InvokeCallbackAsync(motorCloudEvent, token);
-
+        var status = await InvokeCallbackAsync(message.CloudEvent, token);
         switch (status)
         {
             case ProcessedMessageStatus.Success:
                 _logger.LogDebug(
                     LogEvents.MessageSuccessfullyProcessed,
                     "Message {MsgId} successfully processed, deleting from queue",
-                    msgId
+                    message.MsgId
                 );
-                await _npgmqClient!.DeleteAsync(_options.QueueName, msgId, token);
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
                 break;
             case ProcessedMessageStatus.TemporaryFailure:
                 _logger.LogWarning(
                     LogEvents.TemporaryFailureOnConsume,
                     "Message {MsgId} had a temporary failure, will be requeued after visibility timeout",
-                    msgId
+                    message.MsgId
                 );
                 break;
             case ProcessedMessageStatus.Failure:
-                _logger.LogError(LogEvents.FailureOnConsume, "Message {MsgId} failed permanently, discarding", msgId);
-                await _npgmqClient!.DeleteAsync(_options.QueueName, msgId, token);
+                _logger.LogError(
+                    LogEvents.FailureOnConsume,
+                    "Message {MsgId} failed permanently, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
                 break;
             case ProcessedMessageStatus.InvalidInput:
-                _logger.LogError(LogEvents.InvalidInputOnConsume, "Message {MsgId} has invalid input, discarding", msgId);
-                await _npgmqClient!.DeleteAsync(_options.QueueName, msgId, token);
+                _logger.LogError(
+                    LogEvents.InvalidInputOnConsume,
+                    "Message {MsgId} has invalid input, discarding",
+                    message.MsgId
+                );
+                await _npgmqClient.DeleteAsync(_options.QueueName, message.MsgId, token);
                 break;
             case ProcessedMessageStatus.CriticalFailure:
                 _logger.LogCritical(
                     LogEvents.CriticalFailureOnConsume,
-                    "Message {MsgId} processing failed with critical failure, stopping application",
-                    msgId
+                    "Message {MsgId} in queue {QueueName} processing failed with critical failure, stopping application",
+                    message.MsgId,
+                    _options.QueueName
                 );
+                // Make the message immediately visible again so it can be reprocessed after a restart.
+                await _npgmqClient.SetVtAsync(_options.QueueName, message.MsgId, 0, token);
                 _applicationLifetime.StopApplication();
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(status), status.ToString());
         }
     }
-
     private async Task<ProcessedMessageStatus> InvokeCallbackAsync(
         MotorCloudEvent<byte[]> cloudEvent,
         CancellationToken token
     )
     {
         return await (ConsumeCallbackAsync ?? throw new InvalidOperationException("ConsumeCallbackAsync is not configured."))(cloudEvent, token);
-    }
-
-    private MotorCloudEvent<byte[]> BuildCloudEventFromHeaders(
-        byte[] body,
-        System.Collections.Generic.IReadOnlyDictionary<string, object>? headers
-    )
-    {
-        var cloudEvent = new MotorCloudEvent<byte[]>(_applicationNameService, body, new Uri("pgmq://notset"));
-
-        if (headers is not null)
-        {
-            foreach (var (key, value) in headers)
-            {
-                try
-                {
-                    cloudEvent.SetAttributeFromString(key, value.ToString() ?? string.Empty);
-                }
-                catch (ArgumentException)
-                {
-                    // Ignore headers that cannot be parsed as valid CloudEvent attributes.
-                }
-            }
-        }
-
-        return cloudEvent;
     }
 }

@@ -8,6 +8,7 @@ using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Motor.Extensions.TestUtilities;
+using Npgsql;
 using Npgmq;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
@@ -20,82 +21,80 @@ namespace Motor.Extensions.Hosting.PgMq_IntegrationTest;
 public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
 {
     private readonly IRandomizerString _randomizerString;
-    private readonly string _connectionString;
+    private readonly NpgsqlConnectionStringBuilder _pgConnectionStringBuilder;
 
     public PgMqIntegrationTests(PostgresFixture fixture)
     {
         _randomizerString = RandomizerFactory.GetRandomizer(new FieldOptionsTextRegex { Pattern = @"^[a-z]{10}" });
-        _connectionString = fixture.ConnectionString;
+        _pgConnectionStringBuilder = new NpgsqlConnectionStringBuilder(fixture.ConnectionString);
     }
 
-    // ------------------------------------------------------------------
-    // Test 1: Happy path – Protocol format
-    // ------------------------------------------------------------------
     [Fact(Timeout = 50000)]
     public async Task Consume_ProduceAndConsumeProtocolFormat_ConsumedDataEqualsPublished()
     {
         const string expectedMessage = "hello-protocol";
         var queueName = _randomizerString.Generate()!;
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Protocol);
+        var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         byte[]? received = null;
         var tcs = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (evt, _) =>
+        consumer.ConsumeCallbackAsync = (evt, _) =>
         {
             received = evt.TypedData;
             tcs.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
-        var executeTask = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         await producer.PublishMessageAsync(
             MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(expectedMessage))
         );
         await Task.WhenAny(tcs.Task, executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
         Assert.NotNull(received);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(received!));
     }
 
-    // ------------------------------------------------------------------
-    // Test 2: Happy path – JSON format
-    // ------------------------------------------------------------------
     [Fact(Timeout = 50000)]
     public async Task Consume_ProduceAndConsumeJsonFormat_ConsumedDataEqualsPublished()
     {
         const string expectedMessage = "hello-json";
         var queueName = _randomizerString.Generate()!;
         var producer = GetProducer<string>(queueName, CloudEventFormat.Json);
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Json);
+        var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         byte[]? received = null;
         var tcs = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (evt, _) =>
+        consumer.ConsumeCallbackAsync = (evt, _) =>
         {
             received = evt.TypedData;
             tcs.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
-        var executeTask = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         await producer.PublishMessageAsync(
             MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes(expectedMessage))
         );
         await Task.WhenAny(tcs.Task, executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
         Assert.NotNull(received);
         Assert.Equal(expectedMessage, Encoding.UTF8.GetString(received!));
     }
 
-    // ------------------------------------------------------------------
-    // Test 3: ExecuteAsync without StartAsync logs error and returns
-    // ------------------------------------------------------------------
     [Fact(Timeout = 10000)]
     public async Task ExecuteAsync_CalledWithoutStartAsync_LogsErrorAndReturnsImmediately()
     {
         var queueName = _randomizerString.Generate()!;
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
-        var consumer = GetConsumer(queueName, CloudEventFormat.Protocol, loggerMock.Object);
-        // Do NOT call StartAsync
+        var consumer = GetConsumer(queueName, loggerMock.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await consumer.ExecuteAsync(cts.Token);
         loggerMock.Verify(
@@ -111,9 +110,6 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         );
     }
 
-    // ------------------------------------------------------------------
-    // Test 4: Non-success callback status stops application
-    // ------------------------------------------------------------------
     [Fact(Timeout = 50000)]
     public async Task Consume_CallbackReturnsFailureStatus_StopsApplicationAndLogsError()
     {
@@ -122,21 +118,21 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
         var consumer = GetConsumer<string>(
             queueName,
-            CloudEventFormat.Protocol,
-            applicationLifetime: lifetimeMock.Object
+                        applicationLifetime: lifetimeMock.Object
         );
         await producer.StartAsync();
         await consumer.StartAsync();
         consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.CriticalFailure);
-        var executeTask = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         await producer.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes("fail-me")));
         await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
         lifetimeMock.Verify(x => x.StopApplication(), Times.AtLeastOnce);
     }
 
-    // ------------------------------------------------------------------
-    // Test 5: Unhandled exception in callback stops application
-    // ------------------------------------------------------------------
     [Fact(Timeout = 50000)]
     public async Task Consume_UnhandledExceptionInCallback_StopsApplicationAndLogsCritical()
     {
@@ -144,13 +140,17 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer(queueName, CloudEventFormat.Protocol, loggerMock.Object, lifetimeMock.Object);
+        var consumer = GetConsumer(queueName, loggerMock.Object, lifetimeMock.Object);
         await producer.StartAsync();
         await consumer.StartAsync();
         consumer.ConsumeCallbackAsync = (_, _) => throw new InvalidOperationException("boom");
-        var executeTask = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         await producer.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent(Encoding.UTF8.GetBytes("boom")));
         await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
         lifetimeMock.Verify(x => x.StopApplication(), Times.AtLeastOnce);
         loggerMock.Verify(
             x =>
@@ -165,21 +165,18 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         );
     }
 
-    // ------------------------------------------------------------------
-    // Test 6: Multiple messages consumed sequentially
-    // ------------------------------------------------------------------
     [Fact(Timeout = 60000)]
     public async Task Consume_MultipleMessages_AllConsumedSequentiallyAndAcknowledged()
     {
         const int messageCount = 5;
         var queueName = _randomizerString.Generate()!;
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Protocol);
+        var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         var received = new List<string>();
         var tcs = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (evt, _) =>
+        consumer.ConsumeCallbackAsync = (evt, _) =>
         {
             lock (received)
             {
@@ -189,9 +186,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
                     tcs.TrySetResult();
                 }
             }
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
-        // Publish all messages before starting consumer loop
         for (var i = 0; i < messageCount; i++)
         {
             await producer.PublishMessageAsync(
@@ -202,17 +198,15 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var executeTask = consumer.ExecuteAsync(cts.Token);
         await Task.WhenAny(tcs.Task, executeTask, Task.Delay(TimeSpan.FromSeconds(45)));
         Assert.Equal(messageCount, received.Count);
-        // Cancel consumer and verify queue is empty via raw NpgmqClient
         await cts.CancelAsync();
-        var rawClient = new NpgmqClient(_connectionString);
+        await executeTask;
+        await consumer.StopAsync();
+        var rawClient = new NpgmqClient(_pgConnectionStringBuilder.ConnectionString);
         await rawClient.InitAsync();
         var leftover = await rawClient.ReadAsync<byte[]>(queueName, 1);
         Assert.Null(leftover);
     }
 
-    // ------------------------------------------------------------------
-    // Test 7: Cancellation during polling exits gracefully
-    // ------------------------------------------------------------------
     [Fact(Timeout = 20000)]
     public async Task Consume_TokenCancelledDuringPoll_ExitsGracefully()
     {
@@ -220,46 +214,46 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var consumer = GetConsumer<string>(
             queueName,
-            CloudEventFormat.Protocol,
-            applicationLifetime: lifetimeMock.Object
+                        applicationLifetime: lifetimeMock.Object
         );
         consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await consumer.ExecuteAsync(cts.Token);
+        await consumer.StopAsync();
         lifetimeMock.Verify(x => x.StopApplication(), Times.Never);
     }
 
-    // ------------------------------------------------------------------
-    // Test 8: Message deleted on success – no redelivery
-    // ------------------------------------------------------------------
     [Fact(Timeout = 30000)]
     public async Task Consume_MessageDeletedOnSuccess_NotRedelivered()
     {
         var queueName = _randomizerString.Generate()!;
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Protocol, visibilityTimeoutInSeconds: 3);
+        var consumer = GetConsumer<string>(queueName, visibilityTimeoutInSeconds: 3);
         await producer.StartAsync();
         await consumer.StartAsync();
         var callCount = 0;
         var tcs = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (_, _) =>
+        consumer.ConsumeCallbackAsync = (_, _) =>
         {
-            callCount++;
+            Interlocked.Increment(ref callCount);
             tcs.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
         await producer.PublishMessageAsync(MotorCloudEvent.CreateTestCloudEvent("delete-me"u8.ToArray()));
-        _ = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(15)));
-        // Wait longer than visibility timeout to ensure no redelivery
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
+        var rawClient = new NpgmqClient(_pgConnectionStringBuilder.ConnectionString);
+        await rawClient.InitAsync();
+        var leftover = await rawClient.ReadAsync<byte[]>(queueName, 1);
+        Assert.Null(leftover);
         Assert.Equal(1, callCount);
     }
 
-    // ------------------------------------------------------------------
-    // Test 9: CloudEvent attributes round-trip (Protocol format)
-    // ------------------------------------------------------------------
     [Fact(Timeout = 50000)]
     public async Task Consume_SuccessfulMessage_ProtocolFormat_CloudEventAttributesRoundTrip()
     {
@@ -267,18 +261,19 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var expectedSource = new Uri("motor://test-source");
         var expectedId = Guid.NewGuid().ToString();
         var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName, CloudEventFormat.Protocol);
+        var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         MotorCloudEvent<byte[]>? receivedEvent = null;
         var tcs = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (evt, _) =>
+        consumer.ConsumeCallbackAsync = (evt, _) =>
         {
             receivedEvent = evt;
             tcs.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
-        var executeTask = consumer.ExecuteAsync();
+        using var cts = new CancellationTokenSource();
+        var executeTask = consumer.ExecuteAsync(cts.Token);
         var appNameService = GetApplicationNameService(expectedSource.ToString());
         var cloudEvent = new MotorCloudEvent<byte[]>(
             appNameService,
@@ -291,27 +286,33 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         );
         await producer.PublishMessageAsync(cloudEvent);
         await Task.WhenAny(tcs.Task, executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        await cts.CancelAsync();
+        await executeTask;
+        await consumer.StopAsync();
         Assert.NotNull(receivedEvent);
         Assert.Equal(expectedId, receivedEvent!.Id);
         Assert.Equal(expectedSource, receivedEvent.Source);
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
     private PgMqMessageProducer<T> GetProducer<T>(string queueName, CloudEventFormat cloudEventFormat)
         where T : notnull
     {
-        var publisherOptions = MSOptions.Create(
-            new PgMqPublisherOptions<T> { ConnectionString = _connectionString, QueueName = queueName }
-        );
+        var options = new PgMqPublisherOptions<T>
+        {
+            Host = _pgConnectionStringBuilder.Host ?? "localhost",
+            Port = _pgConnectionStringBuilder.Port,
+            Database = _pgConnectionStringBuilder.Database ?? string.Empty,
+            Username = _pgConnectionStringBuilder.Username ?? string.Empty,
+            Password = _pgConnectionStringBuilder.Password ?? string.Empty,
+            QueueName = queueName,
+        };
         var producerOptions = MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat });
-        return new PgMqMessageProducer<T>(publisherOptions, producerOptions, new JsonEventFormatter());
+        var npgmqClient = new NpgmqClient(options.ToConnectionString());
+        return new PgMqMessageProducer<T>(MSOptions.Create(options), producerOptions, new JsonEventFormatter(), npgmqClient);
     }
 
     private PgMqMessageConsumer<T> GetConsumer<T>(
         string queueName,
-        CloudEventFormat cloudEventFormat,
         ILogger<PgMqMessageConsumer<T>>? logger = null,
         IHostApplicationLifetime? applicationLifetime = null,
         int visibilityTimeoutInSeconds = 30
@@ -320,11 +321,15 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         var options = new PgMqConsumerOptions<T>
         {
-            ConnectionString = _connectionString,
+            Host = _pgConnectionStringBuilder.Host ?? "localhost",
+            Port = _pgConnectionStringBuilder.Port,
+            Database = _pgConnectionStringBuilder.Database ?? string.Empty,
+            Username = _pgConnectionStringBuilder.Username ?? string.Empty,
+            Password = _pgConnectionStringBuilder.Password ?? string.Empty,
             QueueName = queueName,
-            CloudEventFormat = cloudEventFormat,
             VisibilityTimeoutInSeconds = visibilityTimeoutInSeconds,
-            PollingIntervalInMilliseconds = 100,
+            PollTimeoutSeconds = 2,
+            PollIntervalMilliseconds = 100,
         };
         logger ??= Mock.Of<ILogger<PgMqMessageConsumer<T>>>();
         applicationLifetime ??= Mock.Of<IHostApplicationLifetime>();
@@ -333,7 +338,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
             new JsonEventFormatter(),
             logger,
             applicationLifetime,
-            GetApplicationNameService()
+            GetApplicationNameService(),
+            new NpgmqClient(options.ToConnectionString())
         );
     }
 
