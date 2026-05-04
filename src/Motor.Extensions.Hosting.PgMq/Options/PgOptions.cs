@@ -26,6 +26,10 @@ public abstract record PgOptions
     [Required]
     public string Password { get; init; } = string.Empty;
 
+    /// <summary>The pgmq queue name.</summary>
+    [Required]
+    public string QueueName { get; init; } = string.Empty;
+
     /// <summary>
     /// Builds a connection string from the structured properties.
     /// </summary>

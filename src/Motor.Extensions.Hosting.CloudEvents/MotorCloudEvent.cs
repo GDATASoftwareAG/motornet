@@ -156,11 +156,6 @@ public static class CloudEventExtensions
         IApplicationNameService applicationNameService
     )
     {
-        if (cloudEvent.Data is null)
-        {
-            throw new ArgumentException("Data property of CloudEvent is null", nameof(cloudEvent));
-        }
-
         if (cloudEvent.Source is null)
         {
             throw new ArgumentException("Source property of CloudEvent is null", nameof(cloudEvent));
@@ -169,6 +164,7 @@ public static class CloudEventExtensions
         var data = cloudEvent.Data switch
         {
             byte[] bytes => bytes,
+            null => Array.Empty<byte>(),
             _ => Encoding.UTF8.GetBytes(cloudEvent.Data.ToString() ?? string.Empty),
         };
 
