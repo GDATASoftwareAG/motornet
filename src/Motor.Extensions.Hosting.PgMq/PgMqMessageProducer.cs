@@ -21,7 +21,7 @@ namespace Motor.Extensions.Hosting.PgMq;
 /// </list>
 /// </remarks>
 /// <typeparam name="TOutput">The output message type.</typeparam>
-public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
+public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>, IAsyncDisposable
     where TOutput : notnull
 {
     private readonly PgMqPublisherOptions<TOutput> _options;
@@ -107,4 +107,6 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
         motorCloudEvent
             .GetPopulatedAttributes()
             .ToDictionary(kvp => kvp.Key.Name, kvp => (object)kvp.Key.Format(kvp.Value));
+
+    public ValueTask DisposeAsync() => _npgmqClient is IAsyncDisposable d ? d.DisposeAsync() : ValueTask.CompletedTask;
 }

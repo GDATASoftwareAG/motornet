@@ -193,4 +193,3 @@ public static class CloudEventExtensions
         return motorCloudEvent;
     }
 }
-

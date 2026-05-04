@@ -9,8 +9,7 @@ public class PgMqMessageCollection : ICollectionFixture<PostgresFixture> { }
 
 public class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("quay.io/tembo/pg16-pgmq:latest")
-        .Build();
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("quay.io/tembo/pg16-pgmq:latest").Build();
 
     // Get ConnectionString from TestContainer.
     public string ConnectionString => _container.GetConnectionString();

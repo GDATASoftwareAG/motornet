@@ -1,14 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Npgmq;
+
 namespace Motor.Extensions.Hosting.PgMq;
+
 /// <summary>
 /// Message consumer for pgmq (https://github.com/pgmq/pgmq).
 /// </summary>
@@ -18,19 +20,18 @@ namespace Motor.Extensions.Hosting.PgMq;
 /// </list>
 /// </remarks>
 /// <typeparam name="TData">The input message type.</typeparam>
-public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
+public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>, IAsyncDisposable
     where TData : notnull
 {
     private readonly PgMqConsumerOptions<TData> _options;
-    private readonly CloudEventFormatter _cloudEventFormatter;
     private readonly ILogger<PgMqMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IApplicationNameService _applicationNameService;
     private readonly INpgmqClient _npgmqClient;
-    private IPgMqMessageReader? _messageReader;
+    private bool _started;
+
     public PgMqMessageConsumer(
         PgMqConsumerOptions<TData> options,
-        CloudEventFormatter cloudEventFormatter,
         ILogger<PgMqMessageConsumer<TData>> logger,
         IHostApplicationLifetime applicationLifetime,
         IApplicationNameService applicationNameService,
@@ -38,17 +39,18 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     )
     {
         _options = options;
-        _cloudEventFormatter = cloudEventFormatter;
         _logger = logger;
         _applicationLifetime = applicationLifetime;
         _applicationNameService = applicationNameService;
         _npgmqClient = npgmqClient;
     }
+
     public Func<
         MotorCloudEvent<byte[]>,
         CancellationToken,
         Task<ProcessedMessageStatus>
     >? ConsumeCallbackAsync { get; set; }
+
     /// <summary>
     /// Starts the <see cref="PgMqMessageConsumer{TData}"/>.
     /// </summary>
@@ -63,10 +65,11 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// </remarks>
     public async Task StartAsync(CancellationToken token = default)
     {
-        _messageReader = new AutoDetectMessageReader(_cloudEventFormatter, _applicationNameService);
         await _npgmqClient.InitAsync(token);
         await _npgmqClient.CreateQueueAsync(_options.QueueName, token);
+        _started = true;
     }
+
     /// <summary>
     /// Executes the <see cref="PgMqMessageConsumer{TData}"/>.
     /// </summary>
@@ -83,7 +86,8 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// </remarks>
     public async Task ExecuteAsync(CancellationToken token = default)
     {
-        EnsureInitialized();
+        if (!EnsureInitialized())
+            return;
         while (!token.IsCancellationRequested)
         {
             try
@@ -106,33 +110,56 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
             }
         }
     }
-    public Task StopAsync(CancellationToken token = default)
+
+    public Task StopAsync(CancellationToken token = default) => Task.CompletedTask;
+
+    public ValueTask DisposeAsync() => _npgmqClient is IAsyncDisposable d ? d.DisposeAsync() : ValueTask.CompletedTask;
+
+    private bool EnsureInitialized()
     {
-        return Task.CompletedTask;
-    }
-    private void EnsureInitialized()
-    {
-        if (_messageReader is null)
-            throw new InvalidOperationException("Consumer not started. Call StartAsync before ExecuteAsync.");
+        if (!_started)
+        {
+            _logger.LogError(
+                LogEvents.ConsumerNotStarted,
+                "Consumer not started. Call StartAsync before ExecuteAsync."
+            );
+            return false;
+        }
         if (ConsumeCallbackAsync is null)
-            throw new InvalidOperationException("ConsumeCallbackAsync is not configured.");
+        {
+            _logger.LogError(LogEvents.ConsumerNotStarted, "ConsumeCallbackAsync is not configured.");
+            return false;
+        }
+        return true;
     }
 
     private async Task ProcessNextMessageAsync(CancellationToken token)
     {
-        var message = await _messageReader!.ReadAsync(
-            _npgmqClient,
+        // Poll as byte[] to match the protocol format: the producer sends raw payload bytes,
+        // which Npgmq stores as Base64 in the JSONB column and deserialises back to byte[] on read.
+        var message = await _npgmqClient.PollAsync<byte[]>(
             _options.QueueName,
             _options.VisibilityTimeoutInSeconds,
             _options.PollTimeoutSeconds,
             _options.PollIntervalMilliseconds,
             token
         );
+
         if (message is null)
         {
             return;
         }
-        var status = await InvokeCallbackAsync(message.CloudEvent, token);
+
+        // If the message has no pgmq headers with CloudEvent attributes, it is a JSON envelope
+        // (structured content mode), which is not supported by this consumer.
+        if (message.Headers is not { Count: > 0 })
+            throw new NotImplementedException(
+                "Structured-mode JSON CloudEvents are not supported by the PgMq consumer. Use protocol (binary content mode) format."
+            );
+
+        var cloudEvent = DecodeProtocolFormat(message.Message ?? Array.Empty<byte>(), message.Headers);
+
+        var status = await InvokeCallbackAsync(cloudEvent, token);
         switch (status)
         {
             case ProcessedMessageStatus.Success:
@@ -181,6 +208,28 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
                 throw new ArgumentOutOfRangeException(nameof(status), status.ToString());
         }
     }
+
+    /// <summary>
+    /// Protocol (binary content mode): CloudEvent attributes are stored in pgmq headers,
+    /// the body is the raw payload as <c>byte[]</c> (Npgmq deserialises from the Base64-encoded JSONB value).
+    /// </summary>
+    private MotorCloudEvent<byte[]> DecodeProtocolFormat(byte[] body, IReadOnlyDictionary<string, object> headers)
+    {
+        var cloudEvent = new MotorCloudEvent<byte[]>(_applicationNameService, body, new Uri("pgmq://notset"));
+        foreach (var (key, value) in headers)
+        {
+            try
+            {
+                cloudEvent.SetAttributeFromString(key, value.ToString() ?? string.Empty);
+            }
+            catch (ArgumentException)
+            {
+                // Ignore headers that cannot be parsed as valid CloudEvent attributes.
+            }
+        }
+        return cloudEvent;
+    }
+
     private Task<ProcessedMessageStatus> InvokeCallbackAsync(
         MotorCloudEvent<byte[]> cloudEvent,
         CancellationToken token

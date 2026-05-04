@@ -8,8 +8,8 @@ using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Motor.Extensions.TestUtilities;
-using Npgsql;
 using Npgmq;
+using Npgsql;
 using RandomDataGenerator.FieldOptions;
 using RandomDataGenerator.Randomizers;
 using Xunit;
@@ -34,8 +34,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         const string expectedMessage = "hello-protocol";
         var queueName = _randomizerString.Generate()!;
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         byte[]? received = null;
@@ -64,8 +64,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         const string expectedMessage = "hello-json";
         var queueName = _randomizerString.Generate()!;
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Json);
-        var consumer = GetConsumer<string>(queueName);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Json);
+        await using var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         byte[]? received = null;
@@ -94,7 +94,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         var queueName = _randomizerString.Generate()!;
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
-        var consumer = GetConsumer(queueName, loggerMock.Object);
+        await using var consumer = GetConsumer(queueName, loggerMock.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await consumer.ExecuteAsync(cts.Token);
         loggerMock.Verify(
@@ -115,11 +115,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         var queueName = _randomizerString.Generate()!;
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(
-            queueName,
-                        applicationLifetime: lifetimeMock.Object
-        );
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer<string>(queueName, applicationLifetime: lifetimeMock.Object);
         await producer.StartAsync();
         await consumer.StartAsync();
         consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.CriticalFailure);
@@ -139,8 +136,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var queueName = _randomizerString.Generate()!;
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var loggerMock = new Mock<ILogger<PgMqMessageConsumer<string>>>();
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer(queueName, loggerMock.Object, lifetimeMock.Object);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer(queueName, loggerMock.Object, lifetimeMock.Object);
         await producer.StartAsync();
         await consumer.StartAsync();
         consumer.ConsumeCallbackAsync = (_, _) => throw new InvalidOperationException("boom");
@@ -170,8 +167,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         const int messageCount = 5;
         var queueName = _randomizerString.Generate()!;
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         var received = new List<string>();
@@ -182,9 +179,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
             {
                 received.Add(Encoding.UTF8.GetString(evt.TypedData));
                 if (received.Count == messageCount)
-                {
                     tcs.TrySetResult();
-                }
             }
             return Task.FromResult(ProcessedMessageStatus.Success);
         };
@@ -212,10 +207,7 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     {
         var queueName = _randomizerString.Generate()!;
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
-        var consumer = GetConsumer<string>(
-            queueName,
-                        applicationLifetime: lifetimeMock.Object
-        );
+        await using var consumer = GetConsumer<string>(queueName, applicationLifetime: lifetimeMock.Object);
         consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -228,8 +220,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     public async Task Consume_MessageDeletedOnSuccess_NotRedelivered()
     {
         var queueName = _randomizerString.Generate()!;
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName, visibilityTimeoutInSeconds: 3);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer<string>(queueName, visibilityTimeoutInSeconds: 3);
         await producer.StartAsync();
         await consumer.StartAsync();
         var callCount = 0;
@@ -260,8 +252,8 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
         var queueName = _randomizerString.Generate()!;
         var expectedSource = new Uri("motor://test-source");
         var expectedId = Guid.NewGuid().ToString();
-        var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
-        var consumer = GetConsumer<string>(queueName);
+        await using var producer = GetProducer<string>(queueName, CloudEventFormat.Protocol);
+        await using var consumer = GetConsumer<string>(queueName);
         await producer.StartAsync();
         await consumer.StartAsync();
         MotorCloudEvent<byte[]>? receivedEvent = null;
@@ -297,18 +289,14 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     private PgMqMessageProducer<T> GetProducer<T>(string queueName, CloudEventFormat cloudEventFormat)
         where T : notnull
     {
-        var options = new PgMqPublisherOptions<T>
-        {
-            Host = _pgConnectionStringBuilder.Host ?? "localhost",
-            Port = _pgConnectionStringBuilder.Port,
-            Database = _pgConnectionStringBuilder.Database ?? string.Empty,
-            Username = _pgConnectionStringBuilder.Username ?? string.Empty,
-            Password = _pgConnectionStringBuilder.Password ?? string.Empty,
-            QueueName = queueName,
-        };
+        var options = BuildPgOptions(new PgMqPublisherOptions<T> { QueueName = queueName });
         var producerOptions = MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat });
-        var npgmqClient = new NpgmqClient(options.ToConnectionString());
-        return new PgMqMessageProducer<T>(MSOptions.Create(options), producerOptions, new JsonEventFormatter(), npgmqClient);
+        return new PgMqMessageProducer<T>(
+            MSOptions.Create(options),
+            producerOptions,
+            new JsonEventFormatter(),
+            new NpgmqClient(options.ToConnectionString())
+        );
     }
 
     private PgMqMessageConsumer<T> GetConsumer<T>(
@@ -319,29 +307,36 @@ public class PgMqIntegrationTests : IClassFixture<PostgresFixture>
     )
         where T : notnull
     {
-        var options = new PgMqConsumerOptions<T>
-        {
-            Host = _pgConnectionStringBuilder.Host ?? "localhost",
-            Port = _pgConnectionStringBuilder.Port,
-            Database = _pgConnectionStringBuilder.Database ?? string.Empty,
-            Username = _pgConnectionStringBuilder.Username ?? string.Empty,
-            Password = _pgConnectionStringBuilder.Password ?? string.Empty,
-            QueueName = queueName,
-            VisibilityTimeoutInSeconds = visibilityTimeoutInSeconds,
-            PollTimeoutSeconds = 2,
-            PollIntervalMilliseconds = 100,
-        };
+        var options = BuildPgOptions(
+            new PgMqConsumerOptions<T>
+            {
+                QueueName = queueName,
+                VisibilityTimeoutInSeconds = visibilityTimeoutInSeconds,
+                PollTimeoutSeconds = 2,
+                PollIntervalMilliseconds = 100,
+            }
+        );
         logger ??= Mock.Of<ILogger<PgMqMessageConsumer<T>>>();
         applicationLifetime ??= Mock.Of<IHostApplicationLifetime>();
         return new PgMqMessageConsumer<T>(
             options,
-            new JsonEventFormatter(),
             logger,
             applicationLifetime,
             GetApplicationNameService(),
             new NpgmqClient(options.ToConnectionString())
         );
     }
+
+    private T BuildPgOptions<T>(T options)
+        where T : PgOptions =>
+        options with
+        {
+            Host = _pgConnectionStringBuilder.Host ?? "localhost",
+            Port = _pgConnectionStringBuilder.Port,
+            Database = _pgConnectionStringBuilder.Database ?? string.Empty,
+            Username = _pgConnectionStringBuilder.Username ?? string.Empty,
+            Password = _pgConnectionStringBuilder.Password ?? string.Empty,
+        };
 
     private IApplicationNameService GetApplicationNameService(string source = "motor://test")
     {

@@ -4,7 +4,7 @@ namespace Motor.Extensions.Hosting.PgMq.Options;
 public record PgMqConsumerOptions<T> : PgOptions
 {
     public string QueueName { get; init; } = string.Empty;
-    
+
     public int VisibilityTimeoutInSeconds { get; init; } = 300;
 
     public int PollTimeoutSeconds { get; init; } = 5;

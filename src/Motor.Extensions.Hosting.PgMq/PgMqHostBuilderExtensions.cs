@@ -18,14 +18,11 @@ public static class PgMqHostBuilderExtensions
     public static void AddPgMqWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
         where T : notnull
     {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-
         var options = new PgMqConsumerOptions<T>();
         config.Bind(options);
 
         builder.AddConsumer(sp => new PgMqMessageConsumer<T>(
             options,
-            sp.GetRequiredService<CloudEventFormatter>(),
             sp.GetRequiredService<ILogger<PgMqMessageConsumer<T>>>(),
             sp.GetRequiredService<IHostApplicationLifetime>(),
             sp.GetRequiredService<IApplicationNameService>(),
@@ -62,6 +59,3 @@ public static class PgMqHostBuilderExtensions
         builder.AddPgMqWithConfig(builder.Context.Configuration.GetSection(configSection));
     }
 }
-
-
-
