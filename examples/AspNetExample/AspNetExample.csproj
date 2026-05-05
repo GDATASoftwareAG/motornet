@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="OpenTelemetry.Exporter.Console" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  <PackageReference Include="Prometheus.Client" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
   </ItemGroup>
 </Project>

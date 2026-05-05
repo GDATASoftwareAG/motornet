@@ -51,7 +51,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
     <PackageVersion Include="Polly" Version="8.6.6" />
-    <PackageVersion Include="Prometheus.Client" Version="6.1.0" />
+    <PackageVersion Include="Prometheus.Client" Version="6.3.0" />
     <PackageVersion Include="Prometheus.Client.AspNetCore" Version="6.0.0" />
     <PackageVersion Include="Prometheus.Client.HttpRequestDurations" Version="4.1.0" />
     <PackageVersion Include="Quartz" Version="3.18.0" />
