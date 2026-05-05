@@ -2,7 +2,6 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.34" />
     <PackageVersion Include="AWSSDK.SQS" Version="4.0.2.28" />
@@ -43,6 +42,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="NATS.Client" Version="1.1.8" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Npgmq" Version="1.13.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
@@ -65,6 +65,7 @@
     <PackageVersion Include="System.Text.Json" Version="9.0.14" />
     <PackageVersion Include="TestContainers" Version="4.11.0" />
     <PackageVersion Include="TestContainers.Kafka" Version="4.11.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.11.0" />
     <PackageVersion Include="TestContainers.RabbitMq" Version="4.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
+using System.Text;
 using CloudNative.CloudEvents;
 
 namespace Motor.Extensions.Hosting.CloudEvents;
@@ -145,5 +146,46 @@ public class MotorCloudEvent<TData>
                 BaseEvent.GetPopulatedAttributes().ToArray()
             )
             : CreateCloudEvent(_applicationNameService, data, BaseEvent.GetPopulatedAttributes());
+    }
+}
+
+public static class CloudEventExtensions
+{
+    public static MotorCloudEvent<byte[]> ToMotorCloudEvent(
+        this CloudEvent cloudEvent,
+        IApplicationNameService applicationNameService
+    )
+    {
+        if (cloudEvent.Source is null)
+        {
+            throw new ArgumentException("Source property of CloudEvent is null", nameof(cloudEvent));
+        }
+
+        var data = cloudEvent.Data switch
+        {
+            byte[] bytes => bytes,
+            null => Array.Empty<byte>(),
+            _ => Encoding.UTF8.GetBytes(cloudEvent.Data.ToString() ?? string.Empty),
+        };
+
+        var motorCloudEvent = new MotorCloudEvent<byte[]>(
+            applicationNameService,
+            data,
+            cloudEvent.Type,
+            cloudEvent.Source,
+            cloudEvent.Id,
+            cloudEvent.Time,
+            cloudEvent.DataContentType
+        );
+
+        foreach (var (key, value) in cloudEvent.GetPopulatedAttributes())
+        {
+            if (motorCloudEvent.GetAttribute(key.Name) is null)
+            {
+                motorCloudEvent[key] = value;
+            }
+        }
+
+        return motorCloudEvent;
     }
 }

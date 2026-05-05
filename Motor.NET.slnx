@@ -48,6 +48,7 @@
     <Project Path="src/Motor.Extensions.Hosting.Consumer/Motor.Extensions.Hosting.Consumer.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.Kafka/Motor.Extensions.Hosting.Kafka.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.NATS/Motor.Extensions.Hosting.NATS.csproj" />
+    <Project Path="src/Motor.Extensions.Hosting.PgMq/Motor.Extensions.Hosting.PgMq.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.Publisher/Motor.Extensions.Hosting.Publisher.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.RabbitMQ/Motor.Extensions.Hosting.RabbitMQ.csproj" />
     <Project Path="src/Motor.Extensions.Hosting.SQS/Motor.Extensions.Hosting.SQS.csproj" />
@@ -74,6 +75,7 @@
     <Project Path="test/Motor.Extensions.Hosting.Kafka_IntegrationTest/Motor.Extensions.Hosting.Kafka_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.Kafka_UnitTest/Motor.Extensions.Hosting.Kafka_UnitTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.NATS_IntegrationTest/Motor.Extensions.Hosting.NATS_IntegrationTest.csproj" />
+    <Project Path="test/Motor.Extensions.Hosting.PgMq_IntegrationTest/Motor.Extensions.Hosting.PgMq_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.Publisher_UnitTest/Motor.Extensions.Hosting.Publisher_UnitTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest/Motor.Extensions.Hosting.RabbitMQ_IntegrationTest.csproj" />
     <Project Path="test/Motor.Extensions.Hosting.RabbitMQ_UnitTest/Motor.Extensions.Hosting.RabbitMQ_UnitTest.csproj" />
