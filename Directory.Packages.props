@@ -60,7 +60,7 @@
     <PackageVersion Include="Scalar.AspNetCore" Version="2.14.4" />
     <PackageVersion Include="Sentry.Serilog" Version="5.16.2" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="System.Text.Json" Version="9.0.14" />
     <PackageVersion Include="TestContainers" Version="4.11.0" />
