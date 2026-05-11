@@ -388,10 +388,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
         return status switch
         {
-            ProcessedMessageStatus.Failure => _options.DeadLetterQueue.PublishFailure,
-            ProcessedMessageStatus.InvalidInput => _options.DeadLetterQueue.PublishInvalidInput,
-            ProcessedMessageStatus.TemporaryFailure => _options.DeadLetterQueue.PublishTemporaryFailureAfterRetries,
-            _ => false
+            ProcessedMessageStatus.Failure
+            or ProcessedMessageStatus.InvalidInput
+            or ProcessedMessageStatus.TemporaryFailure => true,
+            _ => false,
         };
     }
 
@@ -414,11 +414,19 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            _logger.LogError(
-                LogEvents.DeadLetterQueuePublishFailed,
-                e,
-                "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
-            );
+            if (_options.DeadLetterQueue!.ShutdownAppOnPublishFailure)
+            {
+                _logger.LogWarning(LogEvents.CriticalFailureOnConsume, "Message consume fails with critical failure");
+                _applicationLifetime.StopApplication();
+            }
+            else
+            {
+                _logger.LogError(
+                    LogEvents.DeadLetterQueuePublishFailed,
+                    e,
+                    "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
+                );
+            }
         }
     }
 

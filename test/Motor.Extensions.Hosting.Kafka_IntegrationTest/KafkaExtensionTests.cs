@@ -506,9 +506,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var options = Options.Create(config ?? GetConsumerConfig<T>(topic));
         var logger = output.BuildLoggerFor<KafkaMessageConsumer<T>>();
         fakeLifetimeMock ??= Mock.Of<IHostApplicationLifetime>();
-        IRawMessagePublisher<T>[] dlqPublishers = deadLetterPublisher != null
-            ? [deadLetterPublisher]
-            : [];
+        IRawMessagePublisher<T>[] dlqPublishers = deadLetterPublisher != null ? [deadLetterPublisher] : [];
         return new KafkaMessageConsumer<T>(
             logger,
             options,
@@ -576,11 +574,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await PublishMessage(topic, "someKey", Message);
         await PublishMessage(topic, "someKey", Message);
 
-        var config = GetConsumerConfig<string>(
-            topic,
-            maxConcurrentMessages: 1,
-            retriesOnTemporaryFailure: 0
-        );
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
         config.CommitPeriod = 1;
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
@@ -683,36 +677,70 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     }
 
     [Fact(Timeout = 50000)]
-    public async Task Consume_FailureWithDeadLetterQueuePublishFailureDisabled_DoesNotPublishToDlq()
+    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureTrue_ApplicationIsStopped()
     {
         var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var dlqMock = new Mock<IRawMessagePublisher<string>>();
-        var taskCompletionSource = new TaskCompletionSource();
+        dlqMock
+            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("DLQ publish failed"));
         await PublishMessage(topic, "someKey", Message);
 
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
         config.CommitPeriod = 1;
         config.AutoCommitIntervalMs = null;
-        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { PublishFailure = false };
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = true };
 
-        var consumer = GetConsumer(topic, config, deadLetterPublisher: dlqMock.Object);
+        var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, dlqMock.Object);
+        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Failure);
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
+        await consumer.StopAsync();
+        await executionTask;
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureFalse_MessageIsCommittedAndContinues()
+    {
+        var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var dlqMock = new Mock<IRawMessagePublisher<string>>();
+        dlqMock
+            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("DLQ publish failed"));
+        await PublishMessage(topic, "someKey", Message);
+        await PublishMessage(topic, "someKey", Message);
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = false };
+
+        var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, dlqMock.Object);
+        var processedCount = 0;
+        var taskCompletionSource = new TaskCompletionSource();
         consumer.ConsumeCallbackAsync = async (_, _) =>
         {
-            taskCompletionSource.TrySetResult();
+            processedCount++;
+            if (processedCount == 2)
+            {
+                taskCompletionSource.TrySetResult();
+            }
             return await Task.FromResult(ProcessedMessageStatus.Failure);
         };
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
         await taskCompletionSource.Task;
-        await WaitForCommittedOffset(consumer, 1);
+        await WaitForCommittedOffset(consumer, 2);
         await consumer.StopAsync();
         await executionTask;
 
-        dlqMock.Verify(
-            p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
+        Assert.Equal(2, processedCount);
     }
 }
-
