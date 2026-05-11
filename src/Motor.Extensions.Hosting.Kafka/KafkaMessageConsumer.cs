@@ -34,7 +34,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
-    private readonly IRawMessagePublisher<TData>? _deadLetterPublisher;
+    private readonly List<IRawMessagePublisher<TData>>? _deadLetterPublisher;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -53,7 +53,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         _applicationNameService =
             applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
         _cloudEventFormatter = cloudEventFormatter;
-        _deadLetterPublisher = deadLetterPublishers?.FirstOrDefault();
+        _deadLetterPublisher = deadLetterPublishers?.ToList();
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
@@ -93,10 +93,6 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
         _consumer = consumerBuilder.Build();
         _consumer.Subscribe(_options.Topic);
-        if (_deadLetterPublisher != null)
-        {
-            await _deadLetterPublisher.StartAsync(token);
-        }
     }
 
     public async Task ExecuteAsync(CancellationToken token = default)
@@ -155,7 +151,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     public Task StopAsync(CancellationToken token = default)
     {
         CloseOrDispose();
-        return _deadLetterPublisher?.StopAsync(token) ?? Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     private void WriteLog(LogMessage logMessage)
@@ -402,15 +398,20 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         _logger.LogWarning(
             LogEvents.DeadLetterQueuePublish,
-            "Message with status {Status} forwarded to dead letter queue",
-            result.ProcessedMessageStatus
+            "Message {Offset} {Partition} with status {Status} forwarded to dead letter queue",
+            result.ProcessedMessageStatus,
+            result.ConsumeResult.Offset,
+            result.ConsumeResult.Partition.Value
         );
         try
         {
-            await _deadLetterPublisher!.PublishMessageAsync(
-                KafkaMessageToCloudEvent(result.ConsumeResult.Message),
-                cancellationToken
-            );
+            foreach (var publisher in _deadLetterPublisher!)
+            {
+                await publisher.PublishMessageAsync(
+                    KafkaMessageToCloudEvent(result.ConsumeResult.Message),
+                    cancellationToken
+                );
+            }
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
