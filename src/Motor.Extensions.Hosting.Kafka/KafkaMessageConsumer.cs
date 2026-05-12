@@ -34,7 +34,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
-    private readonly List<IRawMessagePublisher<TData>>? _deadLetterPublisher;
+    private readonly List<IRawMessagePublisher<TData>> _deadLetterPublisher;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -53,7 +53,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         _applicationNameService =
             applicationNameService ?? throw new ArgumentNullException(nameof(applicationNameService));
         _cloudEventFormatter = cloudEventFormatter;
-        _deadLetterPublisher = deadLetterPublishers?.ToList();
+        _deadLetterPublisher = deadLetterPublishers?.ToList() ?? new List<IRawMessagePublisher<TData>>();
         _options = config.Value ?? throw new ArgumentNullException(nameof(config));
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
@@ -80,7 +80,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         Task<ProcessedMessageStatus>
     >? ConsumeCallbackAsync { get; set; }
 
-    public async Task StartAsync(CancellationToken token = default)
+    public Task StartAsync(CancellationToken token = default)
     {
         if (ConsumeCallbackAsync is null)
         {
@@ -93,6 +93,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
         _consumer = consumerBuilder.Build();
         _consumer.Subscribe(_options.Topic);
+        return Task.CompletedTask;
     }
 
     public async Task ExecuteAsync(CancellationToken token = default)
@@ -377,7 +378,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     private bool ShouldPublishToDeadLetter(ProcessedMessageStatus status)
     {
-        if (_deadLetterPublisher == null || _options.DeadLetterQueue == null)
+        if (_options.DeadLetterQueue == null)
         {
             return false;
         }
@@ -403,30 +404,34 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             result.ConsumeResult.Offset,
             result.ConsumeResult.Partition.Value
         );
-        try
+
+        foreach (var publisher in _deadLetterPublisher)
         {
-            foreach (var publisher in _deadLetterPublisher!)
+            try
             {
                 await publisher.PublishMessageAsync(
                     KafkaMessageToCloudEvent(result.ConsumeResult.Message),
                     cancellationToken
                 );
             }
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            if (_options.DeadLetterQueue!.ShutdownAppOnPublishFailure)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
-                _logger.LogWarning(LogEvents.CriticalFailureOnConsume, "Message consume fails with critical failure");
-                _applicationLifetime.StopApplication();
-            }
-            else
-            {
-                _logger.LogError(
-                    LogEvents.DeadLetterQueuePublishFailed,
-                    e,
-                    "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
-                );
+                if (_options.DeadLetterQueue!.ShutdownAppOnPublishFailure)
+                {
+                    _logger.LogWarning(
+                        LogEvents.CriticalFailureOnConsume,
+                        "Message consume fails with critical failure"
+                    );
+                    _applicationLifetime.StopApplication();
+                }
+                else
+                {
+                    _logger.LogError(
+                        LogEvents.DeadLetterQueuePublishFailed,
+                        e,
+                        "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
+                    );
+                }
             }
         }
     }
