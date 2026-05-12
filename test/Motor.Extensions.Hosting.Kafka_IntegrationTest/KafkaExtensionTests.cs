@@ -500,16 +500,12 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         string topic,
         KafkaConsumerOptions<T> config = null,
         IHostApplicationLifetime fakeLifetimeMock = null,
-        IRawMessagePublisher<T> deadLetterPublisher = null,
-        IEnumerable<IRawMessagePublisher<T>> deadLetterPublishers = null
+        IEnumerable<IRawMessagePublisher<T>>? deadLetterPublishers = null
     )
     {
         var options = Options.Create(config ?? GetConsumerConfig<T>(topic));
         var logger = output.BuildLoggerFor<KafkaMessageConsumer<T>>();
         fakeLifetimeMock ??= Mock.Of<IHostApplicationLifetime>();
-        IEnumerable<IRawMessagePublisher<T>> dlqPublishers =
-            deadLetterPublishers
-            ?? (deadLetterPublisher != null ? [deadLetterPublisher] : Array.Empty<IRawMessagePublisher<T>>());
         return new KafkaMessageConsumer<T>(
             logger,
             options,
@@ -517,7 +513,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             null,
             GetApplicationNameService(),
             new JsonEventFormatter(),
-            dlqPublishers
+            deadLetterPublishers
         );
     }
 
@@ -582,7 +578,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
 
-        using var consumer = GetConsumer(topic, config, deadLetterPublisher: dlqMock.Object);
+        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
         var processedCount = 0;
         consumer.ConsumeCallbackAsync = (_, _) =>
         {
@@ -629,7 +625,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
 
-        using var consumer = GetConsumer(topic, config, deadLetterPublisher: dlqMock.Object);
+        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
         var processedCount = 0;
         consumer.ConsumeCallbackAsync = (_, _) =>
         {
@@ -695,7 +691,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = true };
 
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, dlqMock.Object);
+        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
         consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Failure);
 
         await consumer.StartAsync();
@@ -723,7 +719,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = false };
 
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, dlqMock.Object);
+        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
         var processedCount = 0;
         var taskCompletionSource = new TaskCompletionSource();
         consumer.ConsumeCallbackAsync = (_, _) =>
