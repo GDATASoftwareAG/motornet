@@ -383,13 +383,10 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             return false;
         }
 
-        return status switch
-        {
-            ProcessedMessageStatus.Failure
-            or ProcessedMessageStatus.InvalidInput
-            or ProcessedMessageStatus.TemporaryFailure => true,
-            _ => false,
-        };
+        return status
+            is ProcessedMessageStatus.Failure
+                or ProcessedMessageStatus.InvalidInput
+                or ProcessedMessageStatus.TemporaryFailure;
     }
 
     private async Task PublishToDeadLetterAsync(
