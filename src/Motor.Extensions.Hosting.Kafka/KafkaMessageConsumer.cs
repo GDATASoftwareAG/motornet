@@ -288,7 +288,12 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
                 if (ShouldPublishToDeadLetter(result.ProcessedMessageStatus))
                 {
-                    await PublishToDeadLetterAsync(result, cancellationToken);
+                    var deadLetterFailed = await PublishToDeadLetterAsync(result, cancellationToken);
+                    if (deadLetterFailed)
+                    {
+                        await _internalCts.CancelAsync();
+                        break;
+                    }
                 }
                 else if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
                 {
@@ -382,14 +387,13 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         {
             return false;
         }
-
         return status
             is ProcessedMessageStatus.Failure
                 or ProcessedMessageStatus.InvalidInput
                 or ProcessedMessageStatus.TemporaryFailure;
     }
 
-    private async Task PublishToDeadLetterAsync(
+    private async Task<bool> PublishToDeadLetterAsync(
         ConsumeResultAndProcessedMessageStatus result,
         CancellationToken cancellationToken
     )
@@ -420,6 +424,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                         "Message consume fails with critical failure"
                     );
                     _applicationLifetime.StopApplication();
+                    return true;
                 }
                 else
                 {
@@ -431,6 +436,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 }
             }
         }
+
+        return false;
     }
 
     private bool IsIrrecoverableFailure(ProcessedMessageStatus status)
