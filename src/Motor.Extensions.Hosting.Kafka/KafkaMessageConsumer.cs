@@ -288,8 +288,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
                 if (ShouldPublishToDeadLetter(result.ProcessedMessageStatus))
                 {
-                    var deadLetterFailed = await PublishToDeadLetterAsync(result, cancellationToken);
-                    if (deadLetterFailed)
+                    try
+                    {
+                        await PublishToDeadLetterAsync(result, cancellationToken);
+                    }
+                    catch (Exception)
                     {
                         await _internalCts.CancelAsync();
                         _applicationLifetime.StopApplication();
@@ -394,7 +397,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                 or ProcessedMessageStatus.TemporaryFailure;
     }
 
-    private async Task<bool> PublishToDeadLetterAsync(
+    private async Task PublishToDeadLetterAsync(
         ConsumeResultAndProcessedMessageStatus result,
         CancellationToken cancellationToken
     )
@@ -424,20 +427,15 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                         LogEvents.CriticalFailureOnConsume,
                         "Message consume fails with critical failure"
                     );
-                    return true;
+                    throw;
                 }
-                else
-                {
-                    _logger.LogError(
-                        LogEvents.DeadLetterQueuePublishFailed,
-                        e,
-                        "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
-                    );
-                }
+                _logger.LogError(
+                    LogEvents.DeadLetterQueuePublishFailed,
+                    e,
+                    "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
+                );
             }
         }
-
-        return false;
     }
 
     private bool IsIrrecoverableFailure(ProcessedMessageStatus status)
