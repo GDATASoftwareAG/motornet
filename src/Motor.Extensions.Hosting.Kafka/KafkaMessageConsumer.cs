@@ -292,6 +292,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                     if (deadLetterFailed)
                     {
                         await _internalCts.CancelAsync();
+                        _applicationLifetime.StopApplication();
                         break;
                     }
                 }
@@ -423,7 +424,6 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                         LogEvents.CriticalFailureOnConsume,
                         "Message consume fails with critical failure"
                     );
-                    _applicationLifetime.StopApplication();
                     return true;
                 }
                 else
