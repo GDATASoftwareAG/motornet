@@ -2,8 +2,6 @@ using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.Kafka.Options;
 
