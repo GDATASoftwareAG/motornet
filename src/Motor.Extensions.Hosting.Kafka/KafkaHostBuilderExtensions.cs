@@ -15,7 +15,7 @@ public static class KafkaHostBuilderExtensions
         where T : notnull
     {
         builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-        builder.Configure<KafkaConsumerOptions<T>>(config);
+        builder.Configure<KafkaConsumerOptions>(config);
         builder.AddConsumer<KafkaMessageConsumer<T>>();
     }
 

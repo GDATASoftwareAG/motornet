@@ -1,6 +1,6 @@
 namespace Motor.Extensions.Hosting.Kafka.Options;
 
-public class KafkaDeadLetterQueueOptions
+public record KafkaDeadLetterQueueOptions
 {
     /// <summary>
     /// When <see langword="true"/>, application shuts down when there is a failure during publishing to the dead letter queue. This is the default behavior to prevent message loss.
