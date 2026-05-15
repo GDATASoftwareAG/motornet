@@ -567,12 +567,10 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", Message);
         await PublishMessage(topic, "someKey", Message);
-
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
         config.CommitPeriod = 1;
         config.AutoCommitIntervalMs = null;
         config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
-
         using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
         var processedCount = 0;
         consumer.ConsumeCallbackAsync = (_, _) =>
