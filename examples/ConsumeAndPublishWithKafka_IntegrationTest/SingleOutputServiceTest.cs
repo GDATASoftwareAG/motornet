@@ -19,7 +19,7 @@ public class SingleOutputServiceTest(KafkaFixture fixture) : IClassFixture<Kafka
         using var consumer = fixture.ConsumerFor(PublishedTopic);
         await using var testHost = MotorTestHost
             .BasedOn<Program>()
-            .Configure<KafkaConsumerOptions<InputMessage>>(o =>
+            .Configure<KafkaConsumerOptions>(o =>
             {
                 o.BootstrapServers = fixture.BootstrapServers;
                 o.AutoOffsetReset = AutoOffsetReset.Earliest;

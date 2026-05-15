@@ -29,7 +29,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 {
     private readonly IApplicationNameService _applicationNameService;
     private readonly CloudEventFormatter _cloudEventFormatter;
-    private readonly KafkaConsumerOptions<TData> _options;
+    private readonly KafkaConsumerOptions _options;
     private readonly IMetricFamily<IGauge>? _consumerLagGauge;
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
@@ -40,7 +40,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
 
     public KafkaMessageConsumer(
         ILogger<KafkaMessageConsumer<TData>> logger,
-        IOptions<KafkaConsumerOptions<TData>> config,
+        IOptions<KafkaConsumerOptions> config,
         IHostApplicationLifetime applicationLifetime,
         IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
         IApplicationNameService applicationNameService,

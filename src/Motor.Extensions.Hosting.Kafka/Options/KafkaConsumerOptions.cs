@@ -3,7 +3,7 @@ using Confluent.Kafka;
 
 namespace Motor.Extensions.Hosting.Kafka.Options;
 
-public class KafkaConsumerOptions<T> : ConsumerConfig
+public class KafkaConsumerOptions : ConsumerConfig
 {
     public KafkaConsumerOptions()
     {
