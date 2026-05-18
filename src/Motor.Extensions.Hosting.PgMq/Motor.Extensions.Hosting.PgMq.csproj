@@ -10,5 +10,6 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Npgmq" />
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 </Project>
