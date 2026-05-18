@@ -96,7 +96,8 @@ public class KafkaMessageTests
         return new KafkaMessagePublisher<TData>(
             Options.Create(options),
             new JsonEventFormatter(),
-            Options.Create(new PublisherOptions { CloudEventFormat = format })
+            Options.Create(new PublisherOptions { CloudEventFormat = format }),
+            Mock.Of<ILogger<KafkaMessagePublisher<TData>>>()
         );
     }
 
