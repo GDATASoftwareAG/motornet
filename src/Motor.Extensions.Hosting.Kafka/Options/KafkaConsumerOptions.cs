@@ -3,7 +3,8 @@ using Confluent.Kafka;
 
 namespace Motor.Extensions.Hosting.Kafka.Options;
 
-public class KafkaConsumerOptions : ConsumerConfig
+// ReSharper disable once UnusedTypeParameter
+public class KafkaConsumerOptions<T> : ConsumerConfig
 {
     public KafkaConsumerOptions()
     {
