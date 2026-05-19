@@ -100,7 +100,7 @@ public class KafkaMessageTests
 
     private KafkaMessageConsumer<T> GetKafkaConsumer<T>()
     {
-        var options = Options.Create(GetConsumerConfig(KafkaTopic));
+        var options = Options.Create(GetConsumerConfig<T>(KafkaTopic));
         var fakeLoggerMock = Mock.Of<ILogger<KafkaMessageConsumer<T>>>();
         var fakeLifetimeMock = Mock.Of<IHostApplicationLifetime>();
         return new KafkaMessageConsumer<T>(
@@ -120,7 +120,7 @@ public class KafkaMessageTests
         return mock.Object;
     }
 
-    private KafkaConsumerOptions GetConsumerConfig(string topic, string groupId = "group_id")
+    private KafkaConsumerOptions<T> GetConsumerConfig<T>(string topic, string groupId = "group_id")
     {
         return new()
         {

@@ -493,7 +493,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
 
     private KafkaMessageConsumer<T> GetConsumer<T>(
         string topic,
-        KafkaConsumerOptions config = null,
+        KafkaConsumerOptions<T> config = null,
         IHostApplicationLifetime fakeLifetimeMock = null,
         IEnumerable<IRawMessagePublisher<T>>? deadLetterPublishers = null
     )
@@ -531,7 +531,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         return mock.Object;
     }
 
-    private KafkaConsumerOptions GetConsumerConfig<T>(
+    private KafkaConsumerOptions<T> GetConsumerConfig<T>(
         string topic,
         int maxConcurrentMessages = 1000,
         string groupId = "group_id",
@@ -539,7 +539,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         TimeSpan? retryBasePeriod = null
     )
     {
-        return new KafkaConsumerOptions
+        return new KafkaConsumerOptions<T>
         {
             Topic = topic,
             GroupId = groupId,
