@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Motor.Extensions.ContentEncoding.Abstractions;
 using Xunit;
 
@@ -18,8 +19,19 @@ public class NoOpDecoderTests
         Assert.Equal(encoded, decoded);
     }
 
-    private static NoOpMessageDecoder CreateDecoder()
+    [Fact]
+    public async Task Decode_MessageTooLarge_ThrowsArgumentException()
     {
-        return new();
+        var decoder = CreateDecoder(new ContentEncodingOptions { MaxMessageBytes = 2 });
+        var encoded = new byte[] { 1, 2, 3 };
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await decoder.DecodeAsync(encoded, CancellationToken.None)
+        );
+    }
+
+    private static NoOpMessageDecoder CreateDecoder(ContentEncodingOptions? options = null)
+    {
+        return new(Options.Create(options ?? new ContentEncodingOptions()));
     }
 }

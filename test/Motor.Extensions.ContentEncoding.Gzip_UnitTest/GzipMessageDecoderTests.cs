@@ -2,6 +2,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using Motor.Extensions.ContentEncoding.Abstractions;
 using Motor.Extensions.ContentEncoding.Gzip;
 using Xunit;
 
@@ -21,9 +23,21 @@ public class GzipMessageDecoderTests
         Assert.Equal(decodedInput, decoded);
     }
 
-    private static GzipMessageDecoder CreateDecoder()
+    [Fact]
+    public async Task Decode_DecodedMessageTooLarge_ThrowsArgumentException()
     {
-        return new();
+        var decoder = CreateDecoder(new ContentEncodingOptions { MaxMessageBytes = 100 });
+        var decodedInput = new byte[1000];
+        var encoded = await EncodeAsync(decodedInput);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await decoder.DecodeAsync(encoded, CancellationToken.None)
+        );
+    }
+
+    private static GzipMessageDecoder CreateDecoder(ContentEncodingOptions? options = null)
+    {
+        return new(Options.Create(options ?? new ContentEncodingOptions()));
     }
 
     private static async Task<byte[]> EncodeAsync(byte[] rawMessage)
