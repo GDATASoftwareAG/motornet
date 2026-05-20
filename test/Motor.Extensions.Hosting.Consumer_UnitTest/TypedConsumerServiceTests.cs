@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -49,6 +45,24 @@ public class TypedConsumerServiceTests
     }
 
     [Fact]
+    public async Task SingleMessageConsumeAsync_MessageTooLarge__InvalidInput()
+    {
+        var inputEvent = CreateMotorCloudEventWithEncoding("some-encoding", new byte[1000]);
+        var fakeDecoder = new Mock<IMessageDecoder>();
+        fakeDecoder.Setup(m => m.Encoding).Returns("some-encoding");
+        fakeDecoder
+            .Setup(m => m.DecodeAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Message is too large"));
+        var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
+        fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
+        CreateConsumerService(decoder: fakeDecoder.Object, consumer: fakeMessageConsumer.Object);
+
+        var actual = await fakeMessageConsumer.Object.ConsumeCallbackAsync?.Invoke(inputEvent, CancellationToken.None)!;
+
+        Assert.Equal(ProcessedMessageStatus.InvalidInput, actual);
+    }
+
+    [Fact]
     public async Task SingleMessageConsumeAsync_UnknownEncodingInInput__InvalidInput()
     {
         var inputEvent = CreateMotorCloudEventWithEncoding("unknown-encoding");
@@ -70,7 +84,7 @@ public class TypedConsumerServiceTests
         var fakeMessageConsumer = new Mock<IMessageConsumer<string>>();
         fakeMessageConsumer.SetupProperty(p => p.ConsumeCallbackAsync);
         CreateConsumerService(
-            decoder: new NoOpMessageDecoder(),
+            decoder: new NoOpMessageDecoder(Options.Create(new ContentEncodingOptions())),
             consumer: fakeMessageConsumer.Object,
             ignoreEncoding: true
         );
