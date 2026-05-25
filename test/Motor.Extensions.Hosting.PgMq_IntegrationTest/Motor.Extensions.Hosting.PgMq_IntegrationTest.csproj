@@ -5,6 +5,7 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="RandomDataGenerator.Net" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" />
     <PackageReference Include="xunit" />
