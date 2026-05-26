@@ -56,7 +56,24 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
     /// </remarks>
     public async Task StartAsync(CancellationToken token = default)
     {
-        await _npgmqClient.InitAsync(token);
+        try
+        {
+            await _npgmqClient.InitAsync(token);
+        }
+        catch (NpgmqException e)
+        {
+            // This is possibly a race with another extension initializing in parallel.
+            // Check if the extension is already present.
+            try
+            {
+                await _npgmqClient.GetPgmqVersionAsync(token);
+            }
+            catch (NpgmqException)
+            {
+                throw e;
+            }
+        }
+
         await _npgmqClient.CreateQueueAsync(_options.QueueName, token);
     }
 
