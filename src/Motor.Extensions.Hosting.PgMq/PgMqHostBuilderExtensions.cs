@@ -52,6 +52,7 @@ public static class PgMqHostBuilderExtensions
         builder.Configure<PgMqPublisherOptions>(config);
         builder.AddPublisher(sp => new PgMqMessageProducer<T>(
             MSOptions.Create(options),
+            sp.GetRequiredService<ILogger<PgMqMessageProducer<T>>>(),
             sp.GetRequiredService<IOptions<PublisherOptions>>(),
             new NpgmqClient(options.ToConnectionString())
         ));

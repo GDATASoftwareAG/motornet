@@ -320,7 +320,11 @@ public class PgMqIntegrationTests(PostgresFixture fixture) : IClassFixture<Postg
         Assert.NotNull(requeued);
     }
 
-    private PgMqMessageProducer<T> GetProducer<T>(string queueName, CloudEventFormat cloudEventFormat)
+    private PgMqMessageProducer<T> GetProducer<T>(
+        string queueName,
+        CloudEventFormat cloudEventFormat,
+        ILogger<PgMqMessageProducer<T>>? logger = null
+    )
         where T : notnull
     {
         var options = BuildPgOptions(
@@ -334,8 +338,10 @@ public class PgMqIntegrationTests(PostgresFixture fixture) : IClassFixture<Postg
             }
         );
         var producerOptions = MSOptions.Create(new PublisherOptions { CloudEventFormat = cloudEventFormat });
+        logger ??= Mock.Of<ILogger<PgMqMessageProducer<T>>>();
         return new PgMqMessageProducer<T>(
             MSOptions.Create(options),
+            logger,
             producerOptions,
             new NpgmqClient(options.ToConnectionString())
         );
