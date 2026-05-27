@@ -8,6 +8,7 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Npgmq;
+using Npgsql;
 
 namespace Motor.Extensions.Hosting.PgMq;
 
@@ -83,15 +84,13 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
         }
         catch (NpgmqException e)
         {
-            // This is possibly a race with another extension initializing in parallel.
-            // Check if the extension is already present.
-            try
+            if (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
             {
-                await _npgmqClient.GetPgmqVersionAsync(token);
+                _logger.LogWarning(e, "pgmq extension already exists, assuming it was created by another instance");
             }
-            catch (NpgmqException)
+            else
             {
-                throw e;
+                throw;
             }
         }
 

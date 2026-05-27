@@ -2,11 +2,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Npgmq;
+using Npgsql;
 
 namespace Motor.Extensions.Hosting.PgMq;
 
@@ -23,16 +25,19 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
     where TOutput : notnull
 {
     private readonly PgMqPublisherOptions _options;
+    private readonly ILogger<PgMqMessageProducer<TOutput>> _logger;
     private readonly PublisherOptions _publisherOptions;
     private readonly INpgmqClient _npgmqClient;
 
     public PgMqMessageProducer(
         IOptions<PgMqPublisherOptions> options,
+        ILogger<PgMqMessageProducer<TOutput>> logger,
         IOptions<PublisherOptions> publisherOptions,
         INpgmqClient npgmqClient
     )
     {
         _options = options.Value;
+        _logger = logger;
         _publisherOptions = publisherOptions.Value;
         _npgmqClient = npgmqClient;
     }
@@ -62,15 +67,13 @@ public class PgMqMessageProducer<TOutput> : IRawMessagePublisher<TOutput>
         }
         catch (NpgmqException e)
         {
-            // This is possibly a race with another extension initializing in parallel.
-            // Check if the extension is already present.
-            try
+            if (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
             {
-                await _npgmqClient.GetPgmqVersionAsync(token);
+                _logger.LogWarning(e, "pgmq extension already exists, assuming it was created by another instance");
             }
-            catch (NpgmqException)
+            else
             {
-                throw e;
+                throw;
             }
         }
 
