@@ -43,7 +43,7 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory)
         where TPublisher : class, IRawMessagePublisher<TOutput>
     {
-        _serviceCollection.AddTransient(typeof(IRawMessagePublisher<TOutput>), typeof(TPublisher));
+        _serviceCollection.AddTransient<IRawMessagePublisher<TOutput>>(sp => implementationFactory(sp));
         _serviceCollection.AddTransient(implementationFactory);
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
         PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
