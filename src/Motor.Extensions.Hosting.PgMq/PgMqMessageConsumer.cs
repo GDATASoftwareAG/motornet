@@ -8,7 +8,6 @@ using Motor.Extensions.Hosting.Abstractions;
 using Motor.Extensions.Hosting.CloudEvents;
 using Motor.Extensions.Hosting.PgMq.Options;
 using Npgmq;
-using Npgsql;
 
 namespace Motor.Extensions.Hosting.PgMq;
 
