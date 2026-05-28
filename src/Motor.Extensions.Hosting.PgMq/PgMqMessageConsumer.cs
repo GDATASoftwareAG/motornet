@@ -78,19 +78,24 @@ public sealed class PgMqMessageConsumer<TData> : IMessageConsumer<TData>
     /// </exception>
     public async Task StartAsync(CancellationToken token = default)
     {
-        try
+        var retry = 0;
+        while (true)
         {
-            await _npgmqClient.InitAsync(token);
-        }
-        catch (NpgmqException e)
-        {
-            if (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            try
             {
-                _logger.LogWarning(e, "pgmq extension already exists, assuming it was created by another instance");
+                await _npgmqClient.InitAsync(token);
+                break;
             }
-            else
+            catch (NpgmqException e)
             {
-                throw;
+                retry++;
+                if (retry > 5)
+                {
+                    _logger.LogError(e, "Failed to initialize Npgmq client after {RetryCount} attempts.", retry);
+                    throw;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken: token);
             }
         }
 
