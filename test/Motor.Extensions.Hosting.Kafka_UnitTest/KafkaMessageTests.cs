@@ -80,6 +80,24 @@ public class KafkaMessageTests
         Assert.Equal(inputCloudEvent.Id, cloudEvent.Id);
     }
 
+    [Fact]
+    public void KafkaMessageToCloudEvent_WithHeaders_HeadersExtractedToCloudEvent()
+    {
+        var consumer = GetKafkaConsumer<byte[]>();
+        var publisher = GetKafkaPublisher<byte[]>();
+        var inputCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Array.Empty<byte>());
+
+        var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
+        kafkaMessage.Headers ??= new Headers();
+        kafkaMessage.Headers.Add("firstcustomheader", "customvalue"u8.ToArray());
+        kafkaMessage.Headers.Add("secondcustomheader", "customvalue_two"u8.ToArray());
+
+        var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
+
+        Assert.Equal("customvalue", outputCloudEvent["firstcustomheader"]?.ToString());
+        Assert.Equal("customvalue_two", outputCloudEvent["secondcustomheader"]?.ToString());
+    }
+
     /*
      * Helper Methods
      */
