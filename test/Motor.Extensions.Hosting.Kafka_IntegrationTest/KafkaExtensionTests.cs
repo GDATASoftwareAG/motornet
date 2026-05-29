@@ -61,21 +61,47 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         const string message = "testMessage";
         await PublishMessage(topic, "someKey", message);
         using var consumer = GetConsumer<string>(topic);
-        byte[] rawConsumedKafkaMessage = null;
-        var taskCompletionSource = new TaskCompletionSource();
+        var rawConsumedKafkaMessageCompletionSource = new TaskCompletionSource<byte[]>();
         consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
-            rawConsumedKafkaMessage = dataEvent.TypedData;
-            taskCompletionSource.TrySetResult();
+            rawConsumedKafkaMessageCompletionSource.TrySetResult(dataEvent.TypedData);
             return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-        await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await Task.WhenAny(consumerStartTask, rawConsumedKafkaMessageCompletionSource.Task);
         await consumer.StopAsync();
 
-        Assert.Equal(message, Encoding.UTF8.GetString(rawConsumedKafkaMessage));
+        Assert.Equal(message, Encoding.UTF8.GetString(await rawConsumedKafkaMessageCompletionSource.Task));
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_RawPublishWithKafkaHeader_HeaderValueIsAvailableAsCloudEventAttribute()
+    {
+        var topic = NewTopic();
+        const string headerKey = "customheader";
+        const string headerValue = "customHeaderValue";
+        await PublishMessage(
+            topic,
+            "someKey",
+            Message,
+            new Headers { { headerKey, Encoding.UTF8.GetBytes(headerValue) } }
+        );
+        using var consumer = GetConsumer<string>(topic);
+        var consumedHeaderValueCompletionSource = new TaskCompletionSource<string?>();
+        consumer.ConsumeCallbackAsync = (dataEvent, _) =>
+        {
+            consumedHeaderValueCompletionSource.TrySetResult(dataEvent[headerKey] as string);
+            return Task.FromResult(ProcessedMessageStatus.Success);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+        await Task.WhenAny(executionTask, consumedHeaderValueCompletionSource.Task);
+        await consumer.StopAsync();
+
+        Assert.Equal(headerValue, await consumedHeaderValueCompletionSource.Task);
     }
 
     [Fact(Timeout = 50000)]
@@ -86,21 +112,19 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
         using var consumer = GetConsumer<byte[]>(topic);
-        string id = null;
-        var taskCompletionSource = new TaskCompletionSource();
+        var idCompletionSource = new TaskCompletionSource<string>();
         consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
-            id = dataEvent.Id;
-            taskCompletionSource.TrySetResult();
+            idCompletionSource.TrySetResult(dataEvent.Id);
             return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-        await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await Task.WhenAny(consumerStartTask, idCompletionSource.Task);
         await consumer.StopAsync();
 
-        Assert.Equal(motorCloudEvent.Id, id);
+        Assert.Equal(motorCloudEvent.Id, await idCompletionSource.Task);
     }
 
     [Fact(Timeout = 50000)]
@@ -112,21 +136,19 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         motorCloudEvent.SetKafkaTopic(topic);
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
         using var consumer = GetConsumer<byte[]>(topic);
-        string id = null;
-        var taskCompletionSource = new TaskCompletionSource();
+        var idCompletionSource = new TaskCompletionSource<string>();
         consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
-            id = dataEvent.Id;
-            taskCompletionSource.TrySetResult();
+            idCompletionSource.TrySetResult(dataEvent.Id);
             return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         var consumerStartTask = consumer.ExecuteAsync();
-        await Task.WhenAny(consumerStartTask, taskCompletionSource.Task);
+        await Task.WhenAny(consumerStartTask, idCompletionSource.Task);
         await consumer.StopAsync();
 
-        Assert.Equal(motorCloudEvent.Id, id);
+        Assert.Equal(motorCloudEvent.Id, await idCompletionSource.Task);
     }
 
     [Fact(Timeout = 50000)]
@@ -481,12 +503,17 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
 
     private static void WaitUntil(Action action) => Policy.Handle<Exception>().RetryForever().Execute(action);
 
-    private async Task PublishMessage(string topic, string key, string value)
+    private async Task PublishMessage(string topic, string key, string value, Headers headers = null)
     {
         using var producer = new ProducerBuilder<string, byte[]>(GetPublisherConfig<string>(topic)).Build();
         await producer.ProduceAsync(
             topic,
-            new Message<string, byte[]> { Key = key, Value = Encoding.UTF8.GetBytes(value) }
+            new Message<string, byte[]>
+            {
+                Key = key,
+                Value = Encoding.UTF8.GetBytes(value),
+                Headers = headers,
+            }
         );
         producer.Flush();
     }

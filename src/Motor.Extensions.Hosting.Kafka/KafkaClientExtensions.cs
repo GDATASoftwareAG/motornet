@@ -19,7 +19,13 @@ internal static class KafkaClientExtensions
     {
         if (!message.IsCloudEvent())
         {
-            return new MotorCloudEvent<byte[]>(applicationNameService, message.Value, new Uri("kafka://notset"));
+            var nonCloudEvent = new MotorCloudEvent<byte[]>(
+                applicationNameService,
+                message.Value,
+                new Uri("kafka://notset")
+            );
+            AddHeadersToCloudEvent(message, nonCloudEvent);
+            return nonCloudEvent;
         }
 
         var cloudEvent = message.ToCloudEvent(cloudEventFormatter);
@@ -53,6 +59,35 @@ internal static class KafkaClientExtensions
             }
         }
 
+        AddHeadersToCloudEvent(message, motorCloudEvent);
+
         return motorCloudEvent;
+    }
+
+    private static void AddHeadersToCloudEvent(
+        Message<string?, byte[]> message,
+        MotorCloudEvent<byte[]> motorCloudEvent
+    )
+    {
+        if (message.Headers is null)
+        {
+            return;
+        }
+
+        foreach (var header in message.Headers)
+        {
+            var headerValue = header.GetValueBytes();
+            if (headerValue is not null)
+            {
+                try
+                {
+                    motorCloudEvent.SetAttributeFromString(header.Key, Encoding.UTF8.GetString(headerValue));
+                }
+                catch (ArgumentException)
+                {
+                    // Ignore headers that cannot be parsed as valid CloudEvent attributes.
+                }
+            }
+        }
     }
 }
