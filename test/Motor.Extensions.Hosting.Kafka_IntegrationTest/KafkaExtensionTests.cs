@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
@@ -40,7 +35,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     public async Task StopAsync_AlreadyDisposed_NoException()
     {
         var consumer = GetConsumer<string>(NewTopic());
-        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
         _ = consumer.ExecuteAsync();
         consumer.Dispose();
@@ -51,8 +46,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     [Fact(Timeout = 50000)]
     public async Task StopAsync_CalledTwice_Idempotent()
     {
-        var consumer = GetConsumer<string>(NewTopic());
-        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.Success);
+        using var consumer = GetConsumer<string>(NewTopic());
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Success);
         await consumer.StartAsync();
         _ = consumer.ExecuteAsync();
         await consumer.StopAsync();
@@ -66,14 +61,14 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var topic = NewTopic();
         const string message = "testMessage";
         await PublishMessage(topic, "someKey", message);
-        var consumer = GetConsumer<string>(topic);
+        using var consumer = GetConsumer<string>(topic);
         byte[] rawConsumedKafkaMessage = null;
         var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
+        consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
             rawConsumedKafkaMessage = dataEvent.TypedData;
             taskCompletionSource.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
@@ -91,14 +86,14 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var publisher = GetPublisher<byte[]>(topic);
         var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
-        var consumer = GetConsumer<byte[]>(topic);
+        using var consumer = GetConsumer<byte[]>(topic);
         string id = null;
         var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
+        consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
             id = dataEvent.Id;
             taskCompletionSource.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
@@ -117,14 +112,14 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var motorCloudEvent = MotorCloudEvent.CreateTestCloudEvent(Message).CreateNew(Encoding.UTF8.GetBytes(Message));
         motorCloudEvent.SetKafkaTopic(topic);
         await publisher.PublishMessageAsync(motorCloudEvent, CancellationToken.None);
-        var consumer = GetConsumer<byte[]>(topic);
+        using var consumer = GetConsumer<byte[]>(topic);
         string id = null;
         var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = async (dataEvent, _) =>
+        consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
             id = dataEvent.Id;
             taskCompletionSource.TrySetResult();
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
@@ -147,7 +142,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         }
 
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages);
-        var consumer = GetConsumer(topic, config);
+        using var consumer = GetConsumer<string>(topic, config);
         var numberOfStartedMessages = 0;
         var lockObject = new object();
         consumer.ConsumeCallbackAsync = async (_, cancellationToken) =>
@@ -159,7 +154,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             }
 
             await Task.Delay(-1, cancellationToken); // Wait indefinitely
-            return await Task.FromResult(ProcessedMessageStatus.Success);
+            return ProcessedMessageStatus.Success;
         };
 
         await consumer.StartAsync();
@@ -186,14 +181,14 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await PublishMessage(topic, "someKey", "1");
         await PublishMessage(topic, "someKey", "2");
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
-        var consumer = GetConsumer(topic, config);
+        using var consumer = GetConsumer<string>(topic, config);
         var distinctHandledMessages = new HashSet<string>();
-        consumer.ConsumeCallbackAsync = async (data, _) =>
+        consumer.ConsumeCallbackAsync = (data, _) =>
         {
             taskCompletionSource.TrySetResult();
             distinctHandledMessages.Add(Encoding.UTF8.GetString(data.TypedData));
 
-            return await Task.FromResult(returnStatus);
+            return Task.FromResult(returnStatus);
         };
 
         await consumer.StartAsync();
@@ -228,10 +223,10 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
         config.CommitPeriod = 1;
         config.AutoCommitIntervalMs = null;
-        var consumer = GetConsumer(topic, config);
+        using var consumer = GetConsumer<string>(topic, config);
         var distinctHandledMessages = new HashSet<string>();
         var lockObject = new object();
-        consumer.ConsumeCallbackAsync = async (data, _) =>
+        consumer.ConsumeCallbackAsync = (data, _) =>
         {
             lock (lockObject)
             {
@@ -242,7 +237,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
                 }
             }
 
-            return await Task.FromResult(processedMessageStatus);
+            return Task.FromResult(processedMessageStatus);
         };
 
         await consumer.StartAsync();
@@ -268,13 +263,13 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             retriesOnTemporaryFailure: expectedNumberOfRetries,
             retryBasePeriod: retryBasePeriod
         );
-        var consumer = GetConsumer(topic, config);
+        using var consumer = GetConsumer<string>(topic, config);
         var actualNumberOfTries = 0;
-        consumer.ConsumeCallbackAsync = async (_, _) =>
+        consumer.ConsumeCallbackAsync = (_, _) =>
         {
             taskCompletionSource.TrySetResult();
             actualNumberOfTries += 1;
-            return await Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+            return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
         };
 
         await consumer.StartAsync();
@@ -302,8 +297,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             retriesOnTemporaryFailure: numberOfRetries,
             retryBasePeriod: retryBasePeriod
         );
-        var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
-        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
@@ -320,8 +315,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         await PublishMessage(topic, "someKey", Message);
         var config = GetConsumerConfig<string>(topic);
-        var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
-        consumer.ConsumeCallbackAsync = async (_, _) => await Task.FromResult(ProcessedMessageStatus.CriticalFailure);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.CriticalFailure);
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
@@ -339,7 +334,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 2;
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -399,7 +394,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 10;
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -422,7 +417,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.CommitPeriod = 1000; // default
         config.AutoCommitIntervalMs = 1;
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -444,7 +439,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
         var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
         config.AutoCommitIntervalMs = null;
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
         var cts = new CancellationTokenSource();
         await consumer.StartAsync(cts.Token);
@@ -471,7 +466,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         {
             output.WriteLine($"Processed message with status {statusToReturn.ToString()}");
             await channel.Writer.WriteAsync(data.TypedData, CancellationToken.None);
-            return await Task.FromResult(statusToReturn);
+            return statusToReturn;
         };
 
     private Func<MotorCloudEvent<byte[]>, CancellationToken, Task<ProcessedMessageStatus>> CreateBlockingCallback(
@@ -500,7 +495,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     private KafkaMessageConsumer<T> GetConsumer<T>(
         string topic,
         KafkaConsumerOptions<T> config = null,
-        IHostApplicationLifetime fakeLifetimeMock = null
+        IHostApplicationLifetime fakeLifetimeMock = null,
+        IEnumerable<IRawMessagePublisher<T>>? deadLetterPublishers = null
     )
     {
         var options = Options.Create(config ?? GetConsumerConfig<T>(topic));
@@ -512,7 +508,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             fakeLifetimeMock,
             null,
             GetApplicationNameService(),
-            new JsonEventFormatter()
+            new JsonEventFormatter(),
+            deadLetterPublishers
         );
     }
 
@@ -562,5 +559,186 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             RetriesOnTemporaryFailure = retriesOnTemporaryFailure,
             RetryBasePeriod = retryBasePeriod ?? TimeSpan.FromSeconds(1),
         };
+    }
+
+    [Theory(Timeout = 50000)]
+    [InlineData(ProcessedMessageStatus.Failure)]
+    [InlineData(ProcessedMessageStatus.InvalidInput)]
+    public async Task Consume_WithDeadLetterQueue_ForwardsFailedMessageToDlqAndContinues(
+        ProcessedMessageStatus returnStatus
+    )
+    {
+        var topic = NewTopic();
+        var dlqMock = new Mock<IRawMessagePublisher<string>>();
+        var taskCompletionSource = new TaskCompletionSource();
+        await PublishMessage(topic, "someKey", Message);
+        await PublishMessage(topic, "someKey", Message);
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
+        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
+        var processedCount = 0;
+        consumer.ConsumeCallbackAsync = (_, _) =>
+        {
+            processedCount++;
+            if (processedCount == 2)
+            {
+                taskCompletionSource.TrySetResult();
+            }
+            return Task.FromResult(returnStatus);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+        await taskCompletionSource.Task;
+        await WaitForCommittedOffset(consumer, 2);
+        await consumer.StopAsync();
+        await executionTask;
+
+        dlqMock.Verify(
+            p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2)
+        );
+        Assert.Equal(2, processedCount);
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_TemporaryFailureWithDeadLetterQueue_ForwardsToDeadLetterAfterRetriesAndContinues()
+    {
+        var topic = NewTopic();
+        var dlqMock = new Mock<IRawMessagePublisher<string>>();
+        var taskCompletionSource = new TaskCompletionSource();
+        const int numberOfRetries = 1;
+        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
+        await PublishMessage(topic, "someKey", Message);
+        await PublishMessage(topic, "someKey", Message);
+
+        var config = GetConsumerConfig<string>(
+            topic,
+            maxConcurrentMessages: 1,
+            retriesOnTemporaryFailure: numberOfRetries,
+            retryBasePeriod: retryBasePeriod
+        );
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
+
+        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
+        var processedCount = 0;
+        consumer.ConsumeCallbackAsync = (_, _) =>
+        {
+            processedCount++;
+            if (processedCount == 2 * (numberOfRetries + 1))
+            {
+                taskCompletionSource.TrySetResult();
+            }
+            return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+        await taskCompletionSource.Task;
+        await WaitForCommittedOffset(consumer, 2);
+        await consumer.StopAsync();
+        await executionTask;
+
+        dlqMock.Verify(
+            p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2)
+        );
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_TemporaryFailureWithoutDeadLetterQueue_ApplicationStillStopped()
+    {
+        var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        const int numberOfRetries = 1;
+        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
+        await PublishMessage(topic, "someKey", Message);
+        var config = GetConsumerConfig<string>(
+            topic,
+            retriesOnTemporaryFailure: numberOfRetries,
+            retryBasePeriod: retryBasePeriod
+        );
+        // No DLQ configured — existing behavior must be preserved
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
+        await consumer.StopAsync();
+        await executionTask;
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureTrue_ApplicationIsStopped()
+    {
+        var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var dlqMock = new Mock<IRawMessagePublisher<string>>();
+        dlqMock
+            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("DLQ publish failed"));
+        await PublishMessage(topic, "someKey", Message);
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = true };
+
+        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
+        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Failure);
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
+        await consumer.StopAsync();
+        await executionTask;
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureFalse_MessageIsCommittedAndContinues()
+    {
+        var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var dlqMock = new Mock<IRawMessagePublisher<string>>();
+        dlqMock
+            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("DLQ publish failed"));
+        await PublishMessage(topic, "someKey", Message);
+        await PublishMessage(topic, "someKey", Message);
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = false };
+
+        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
+        var processedCount = 0;
+        var taskCompletionSource = new TaskCompletionSource();
+        consumer.ConsumeCallbackAsync = (_, _) =>
+        {
+            processedCount++;
+            if (processedCount == 2)
+            {
+                taskCompletionSource.TrySetResult();
+            }
+            return Task.FromResult(ProcessedMessageStatus.Failure);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+        await taskCompletionSource.Task;
+        await WaitForCommittedOffset(consumer, 2);
+        await consumer.StopAsync();
+        await executionTask;
+
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
+        Assert.Equal(2, processedCount);
     }
 }

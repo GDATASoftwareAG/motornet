@@ -35,6 +35,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly AsyncPolicy<ProcessedMessageStatus> _retryPolicy;
+    private readonly List<IRawMessagePublisher<TData>> _deadLetterPublisher;
     private IConsumer<string?, byte[]>? _consumer;
     private readonly CancellationTokenSource _internalCts = new();
 
@@ -44,7 +45,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         IHostApplicationLifetime applicationLifetime,
         IMetricsFactory<KafkaMessageConsumer<TData>>? metricsFactory,
         IApplicationNameService applicationNameService,
-        CloudEventFormatter cloudEventFormatter
+        CloudEventFormatter cloudEventFormatter,
+        IEnumerable<IRawMessagePublisher<TData>>? deadLetterPublishers = null
     )
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -56,8 +58,8 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         _applicationLifetime = applicationLifetime;
         _applicationNameService = applicationNameService;
         _cloudEventFormatter = cloudEventFormatter;
-        _options = config.Value;
-
+        _deadLetterPublisher = deadLetterPublishers?.ToList() ?? new List<IRawMessagePublisher<TData>>();
+        _options = config.Value ?? throw new ArgumentNullException(nameof(config));
         _consumerLagSummary = metricsFactory?.CreateSummary(
             "consumer_lag_distribution",
             "Contains a summary of current consumer lag of each partition",
@@ -296,7 +298,20 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             {
                 var result = await PeekAndAwaitProcessedMessages(cancellationToken);
 
-                if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
+                if (ShouldPublishToDeadLetter(result.ProcessedMessageStatus))
+                {
+                    try
+                    {
+                        await PublishToDeadLetterAsync(result, cancellationToken);
+                    }
+                    catch (Exception)
+                    {
+                        await _internalCts.CancelAsync();
+                        _applicationLifetime.StopApplication();
+                        break;
+                    }
+                }
+                else if (IsIrrecoverableFailure(result.ProcessedMessageStatus))
                 {
                     await _internalCts.CancelAsync();
                     _applicationLifetime.StopApplication();
@@ -384,6 +399,59 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         Commit();
         RestartCommitTimer();
+    }
+
+    private bool ShouldPublishToDeadLetter(ProcessedMessageStatus status)
+    {
+        if (_options.DeadLetterQueue == null)
+        {
+            return false;
+        }
+        return status
+            is ProcessedMessageStatus.Failure
+                or ProcessedMessageStatus.InvalidInput
+                or ProcessedMessageStatus.TemporaryFailure;
+    }
+
+    private async Task PublishToDeadLetterAsync(
+        ConsumeResultAndProcessedMessageStatus result,
+        CancellationToken cancellationToken
+    )
+    {
+        _logger.LogWarning(
+            LogEvents.DeadLetterQueuePublish,
+            "Message {Offset} {Partition} with status {Status} forwarded to dead letter queue",
+            result.ProcessedMessageStatus,
+            result.ConsumeResult.Offset,
+            result.ConsumeResult.Partition.Value
+        );
+
+        foreach (var publisher in _deadLetterPublisher)
+        {
+            try
+            {
+                await publisher.PublishMessageAsync(
+                    KafkaMessageToCloudEvent(result.ConsumeResult.Message),
+                    cancellationToken
+                );
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                if (_options.DeadLetterQueue!.ShutdownAppOnPublishFailure)
+                {
+                    _logger.LogWarning(
+                        LogEvents.CriticalFailureOnConsume,
+                        "Message consume fails with critical failure"
+                    );
+                    throw;
+                }
+                _logger.LogError(
+                    LogEvents.DeadLetterQueuePublishFailed,
+                    e,
+                    "Failed to publish message to dead letter queue; message will be committed without dead-lettering"
+                );
+            }
+        }
     }
 
     private bool IsIrrecoverableFailure(ProcessedMessageStatus status)

@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using CloudNative.CloudEvents.SystemTextJson;
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
