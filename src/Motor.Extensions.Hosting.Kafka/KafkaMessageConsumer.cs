@@ -391,6 +391,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         {
             return false;
         }
+
         return status
             is ProcessedMessageStatus.Failure
                 or ProcessedMessageStatus.InvalidInput
@@ -404,10 +405,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     {
         _logger.LogWarning(
             LogEvents.DeadLetterQueuePublish,
-            "Message {Offset} {Partition} with status {Status} forwarded to dead letter queue",
-            result.ProcessedMessageStatus,
+            "Message '{Topic}:{Partition}' - '{Offset}' with status {Status} forwarded to dead letter queue",
+            result.ConsumeResult.Topic,
+            result.ConsumeResult.Partition,
             result.ConsumeResult.Offset,
-            result.ConsumeResult.Partition.Value
+            result.ProcessedMessageStatus
         );
 
         foreach (var publisher in _deadLetterPublisher)
@@ -429,6 +431,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
                     );
                     throw;
                 }
+
                 _logger.LogError(
                     LogEvents.DeadLetterQueuePublishFailed,
                     e,
