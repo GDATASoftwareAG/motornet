@@ -15,52 +15,56 @@ namespace Motor.Extensions.Hosting.RabbitMQ;
 
 public static class RabbitMQMessageHostBuilderExtensions
 {
-    public static void AddRabbitMQWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+    extension<T>(IConsumerBuilder<T> builder)
         where T : notnull
     {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-        var consumerOptions = new RabbitMQConsumerOptions<T>();
-        config.Bind(consumerOptions);
-        var connectionFactory = RabbitMQConnectionFactory<T>.From(consumerOptions);
-        builder.AddConsumer(sp => new RabbitMQMessageConsumer<T>(
-            sp.GetRequiredService<ILogger<RabbitMQMessageConsumer<T>>>(),
-            connectionFactory,
-            MSOptions.Create(consumerOptions),
-            sp.GetRequiredService<IHostApplicationLifetime>(),
-            sp.GetRequiredService<IApplicationNameService>()
-        ));
-        builder.AddSingleton<IQueueMonitor>(sp => new RabbitMQQueueMonitor<T>(
-            sp.GetRequiredService<ILogger<RabbitMQQueueMonitor<T>>>(),
-            MSOptions.Create(consumerOptions),
-            connectionFactory
-        ));
+        public IConsumerBuilder<T> AddRabbitMQWithConfig(IConfiguration config)
+        {
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
+            var consumerOptions = new RabbitMQConsumerOptions<T>();
+            config.Bind(consumerOptions);
+            var connectionFactory = RabbitMQConnectionFactory<T>.From(consumerOptions);
+            builder.AddConsumer(sp => new RabbitMQMessageConsumer<T>(
+                sp.GetRequiredService<ILogger<RabbitMQMessageConsumer<T>>>(),
+                connectionFactory,
+                MSOptions.Create(consumerOptions),
+                sp.GetRequiredService<IHostApplicationLifetime>(),
+                sp.GetRequiredService<IApplicationNameService>()
+            ));
+            builder.AddSingleton<IQueueMonitor>(sp => new RabbitMQQueueMonitor<T>(
+                sp.GetRequiredService<ILogger<RabbitMQQueueMonitor<T>>>(),
+                MSOptions.Create(consumerOptions),
+                connectionFactory
+            ));
+
+            return builder;
+        }
+
+        public IConsumerBuilder<T> AddRabbitMQ(string configSection = "RabbitMQConsumer") =>
+            builder.AddRabbitMQWithConfig(builder.Configuration.GetSection(configSection));
     }
 
-    public static void AddRabbitMQ<T>(this IConsumerBuilder<T> builder, string configSection = "RabbitMQConsumer")
+    extension<T>(IPublisherBuilder<T> builder)
         where T : notnull
     {
-        builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
-    }
+        public IPublisherBuilder<T> AddRabbitMQWithConfig(IConfiguration config)
+        {
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
+            builder.Configure<RabbitMQPublisherOptions<T>>(config);
 
-    public static void AddRabbitMQWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config)
-        where T : notnull
-    {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-        builder.Configure<RabbitMQPublisherOptions<T>>(config);
+            var rabbitMqPublisherOptions = config.Get<RabbitMQPublisherOptions<T>>();
+            var connectionFactory = RabbitMQConnectionFactory<T>.From(rabbitMqPublisherOptions);
+            builder.AddPublisher(sp => new RabbitMQMessagePublisher<T>(
+                connectionFactory,
+                MSOptions.Create(rabbitMqPublisherOptions),
+                sp.GetRequiredService<IOptions<PublisherOptions>>(),
+                sp.GetRequiredService<CloudEventFormatter>()
+            ));
 
-        var rabbitMqPublisherOptions = config.Get<RabbitMQPublisherOptions<T>>();
-        var connectionFactory = RabbitMQConnectionFactory<T>.From(rabbitMqPublisherOptions);
-        builder.AddPublisher(sp => new RabbitMQMessagePublisher<T>(
-            connectionFactory,
-            MSOptions.Create(rabbitMqPublisherOptions),
-            sp.GetRequiredService<IOptions<PublisherOptions>>(),
-            sp.GetRequiredService<CloudEventFormatter>()
-        ));
-    }
+            return builder;
+        }
 
-    public static void AddRabbitMQ<T>(this IPublisherBuilder<T> builder, string configSection = "RabbitMQPublisher")
-        where T : notnull
-    {
-        builder.AddRabbitMQWithConfig(builder.Context.Configuration.GetSection(configSection));
+        public IPublisherBuilder<T> AddRabbitMQ(string configSection = "RabbitMQPublisher") =>
+            builder.AddRabbitMQWithConfig(builder.Configuration.GetSection(configSection));
     }
 }

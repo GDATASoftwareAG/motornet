@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Motor.Extensions.Conversion.Abstractions;
 using Motor.Extensions.Hosting.Abstractions;
@@ -12,14 +10,13 @@ using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Utilities;
-using Motor.Extensions.Utilities.Abstractions;
 using Xunit;
 
 namespace Motor.Extensions.Hosting.RabbitMQ_UnitTest;
 
 public class RabbitMQMessageHostBuilderExtensionsTests
 {
-    private static IMotorHostBuilder GetHostBuilder()
+    private static IHostBuilder GetHostBuilder()
     {
         return MotorHost
             .CreateDefaultBuilder()

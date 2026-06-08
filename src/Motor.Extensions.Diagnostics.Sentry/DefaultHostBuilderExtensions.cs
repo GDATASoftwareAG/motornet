@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Motor.Extensions.Utilities.Abstractions;
 using Sentry;
 using Sentry.Serilog;
 using MSOptions = Microsoft.Extensions.Options.Options;
@@ -10,17 +10,32 @@ namespace Motor.Extensions.Diagnostics.Sentry;
 
 public static class DefaultHostBuilderExtensions
 {
-    public static IMotorHostBuilder ConfigureSentry(this IMotorHostBuilder hostBuilder)
+    extension(IHostApplicationBuilder builder)
     {
-        return hostBuilder.ConfigureServices(
-            (context, services) =>
-            {
-                var sentryOptions = new SentrySerilogOptions();
-                context.Configuration.GetSection("Sentry").Bind(sentryOptions);
-                sentryOptions.Dsn ??= string.Empty;
-                SentrySdk.Init(sentryOptions);
-                services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
-            }
-        );
+        public IHostApplicationBuilder ConfigureSentry()
+        {
+            var sentryOptions = new SentrySerilogOptions();
+            builder.Configuration.GetSection("Sentry").Bind(sentryOptions);
+            sentryOptions.Dsn ??= string.Empty;
+            SentrySdk.Init(sentryOptions);
+            builder.Services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
+
+            return builder;
+        }
+    }
+
+    extension(IHostBuilder builder)
+    {
+        public IHostBuilder ConfigureSentry() =>
+            builder.ConfigureServices(
+                (context, services) =>
+                {
+                    var sentryOptions = new SentrySerilogOptions();
+                    context.Configuration.GetSection("Sentry").Bind(sentryOptions);
+                    sentryOptions.Dsn ??= string.Empty;
+                    SentrySdk.Init(sentryOptions);
+                    services.AddTransient<IOptions<SentrySerilogOptions>>(_ => MSOptions.Create(sentryOptions));
+                }
+            );
     }
 }

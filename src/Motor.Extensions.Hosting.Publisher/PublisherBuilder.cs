@@ -15,21 +15,36 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
     where TOutput : class
 {
     private readonly IServiceCollection _serviceCollection;
-    private IConfiguration? _configSection;
     private const string PublisherSection = "Publisher";
 
     public PublisherBuilder(IServiceCollection serviceCollection, HostBuilderContext context)
     {
         _serviceCollection = serviceCollection;
-        Context = context;
+        HostingEnvironment = context.HostingEnvironment;
+        Configuration = context.Configuration;
+        serviceCollection.Configure<PublisherOptions>(context.Configuration.GetSection(PublisherSection));
     }
 
-    public Type? PublisherImplType { get; private set; }
-    public HostBuilderContext Context { get; }
+    public PublisherBuilder(
+        IServiceCollection serviceCollection,
+        IHostEnvironment hostingEnvironment,
+        IConfiguration configuration
+    )
+    {
+        _serviceCollection = serviceCollection;
+        HostingEnvironment = hostingEnvironment;
+        Configuration = configuration;
+        serviceCollection.Configure<PublisherOptions>(configuration.GetSection(PublisherSection));
+    }
 
-    public void ConfigurePublisher(string section) => _configSection = Context.Configuration.GetSection(section);
+    public IHostEnvironment HostingEnvironment { get; }
 
-    public void ConfigurePublisher(IConfiguration section) => _configSection = section;
+    public IConfiguration Configuration { get; }
+
+    public void ConfigurePublisher(string section) =>
+        _serviceCollection.Configure<PublisherOptions>(Configuration.GetSection(section));
+
+    public void ConfigurePublisher(IConfiguration section) => _serviceCollection.Configure<PublisherOptions>(section);
 
     public void AddPublisher<TPublisher>()
         where TPublisher : IRawMessagePublisher<TOutput>
@@ -37,16 +52,16 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
         _serviceCollection.AddTransient(typeof(IRawMessagePublisher<TOutput>), typeof(TPublisher));
         _serviceCollection.AddTransient(typeof(TPublisher));
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
-        PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
+        _serviceCollection.AddSingleton<ITypedMessagePublisher<TOutput>, TypedMessagePublisher<TOutput, TPublisher>>();
     }
 
     public void AddPublisher<TPublisher>(Func<IServiceProvider, TPublisher> implementationFactory)
         where TPublisher : class, IRawMessagePublisher<TOutput>
     {
-        _serviceCollection.AddTransient<IRawMessagePublisher<TOutput>>(sp => implementationFactory(sp));
+        _serviceCollection.AddTransient<IRawMessagePublisher<TOutput>>(implementationFactory);
         _serviceCollection.AddTransient(implementationFactory);
         _serviceCollection.AddTransient<IMessageEncoder, NoOpMessageEncoder>();
-        PublisherImplType = typeof(TypedMessagePublisher<TOutput, TPublisher>);
+        _serviceCollection.AddSingleton<ITypedMessagePublisher<TOutput>, TypedMessagePublisher<TOutput, TPublisher>>();
     }
 
     public void AddSerializer<TSerializer>()
@@ -88,15 +103,12 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
 
     public void Build(Action<HostBuilderContext, IPublisherBuilder<TOutput>> action)
     {
-        action(Context, this);
-        if (PublisherImplType is null)
+        var context = new HostBuilderContext(new Dictionary<object, object>())
         {
-            throw new ArgumentNullException(nameof(PublisherImplType));
-        }
-        _serviceCollection.AddSingleton(typeof(ITypedMessagePublisher<TOutput>), PublisherImplType);
-        _serviceCollection.AddHostedService<TypedPublisherService<TOutput>>();
+            Configuration = Configuration,
+            HostingEnvironment = HostingEnvironment,
+        };
 
-        _configSection ??= Context.Configuration.GetSection(PublisherSection);
-        _serviceCollection.Configure<PublisherOptions>(_configSection);
+        action(context, this);
     }
 }

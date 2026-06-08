@@ -16,51 +16,59 @@ namespace Motor.Extensions.Hosting.PgMq;
 
 public static class PgMqHostBuilderExtensions
 {
-    public static void AddPgMqWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+    extension<T>(IConsumerBuilder<T> builder)
         where T : notnull
     {
-        var options =
-            config.Get<PgMqConsumerOptions>()
-            ?? throw new InvalidOperationException("PgMqConsumerOptions configuration section is missing or invalid");
-        config.Bind(options);
+        public IConsumerBuilder<T> AddPgMqWithConfig(IConfiguration config)
+        {
+            var options =
+                config.Get<PgMqConsumerOptions>()
+                ?? throw new InvalidOperationException(
+                    "PgMqConsumerOptions configuration section is missing or invalid"
+                );
+            config.Bind(options);
 
-        builder.AddConsumer(sp => new PgMqMessageConsumer<T>(
-            options,
-            sp.GetRequiredService<ILogger<PgMqMessageConsumer<T>>>(),
-            sp.GetRequiredService<IHostApplicationLifetime>(),
-            sp.GetRequiredService<IApplicationNameService>(),
-            new NpgmqClient(options.ToConnectionString())
-        ));
+            builder.AddConsumer(sp => new PgMqMessageConsumer<T>(
+                options,
+                sp.GetRequiredService<ILogger<PgMqMessageConsumer<T>>>(),
+                sp.GetRequiredService<IHostApplicationLifetime>(),
+                sp.GetRequiredService<IApplicationNameService>(),
+                new NpgmqClient(options.ToConnectionString())
+            ));
+
+            return builder;
+        }
+
+        public IConsumerBuilder<T> AddPgMq(string configSection = "PgMqConsumer") =>
+            builder.AddPgMqWithConfig(builder.Configuration.GetSection(configSection));
     }
 
-    public static void AddPgMq<T>(this IConsumerBuilder<T> builder, string configSection = "PgMqConsumer")
+    extension<T>(IPublisherBuilder<T> builder)
         where T : notnull
     {
-        builder.AddPgMqWithConfig(builder.Context.Configuration.GetSection(configSection));
-    }
+        public IPublisherBuilder<T> AddPgMqWithConfig(IConfiguration config)
+        {
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
 
-    public static void AddPgMqWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config)
-        where T : notnull
-    {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
+            var options =
+                config.Get<PgMqPublisherOptions>()
+                ?? throw new InvalidOperationException(
+                    "PgMqPublisherOptions configuration section is missing or invalid"
+                );
+            config.Bind(options);
 
-        var options =
-            config.Get<PgMqPublisherOptions>()
-            ?? throw new InvalidOperationException("PgMqPublisherOptions configuration section is missing or invalid");
-        config.Bind(options);
+            builder.Configure<PgMqPublisherOptions>(config);
+            builder.AddPublisher(sp => new PgMqMessageProducer<T>(
+                MSOptions.Create(options),
+                sp.GetRequiredService<ILogger<PgMqMessageProducer<T>>>(),
+                sp.GetRequiredService<IOptions<PublisherOptions>>(),
+                new NpgmqClient(options.ToConnectionString())
+            ));
 
-        builder.Configure<PgMqPublisherOptions>(config);
-        builder.AddPublisher(sp => new PgMqMessageProducer<T>(
-            MSOptions.Create(options),
-            sp.GetRequiredService<ILogger<PgMqMessageProducer<T>>>(),
-            sp.GetRequiredService<IOptions<PublisherOptions>>(),
-            new NpgmqClient(options.ToConnectionString())
-        ));
-    }
+            return builder;
+        }
 
-    public static void AddPgMq<T>(this IPublisherBuilder<T> builder, string configSection = "PgMqPublisher")
-        where T : notnull
-    {
-        builder.AddPgMqWithConfig(builder.Context.Configuration.GetSection(configSection));
+        public IPublisherBuilder<T> AddPgMq(string configSection = "PgMqPublisher") =>
+            builder.AddPgMqWithConfig(builder.Configuration.GetSection(configSection));
     }
 }

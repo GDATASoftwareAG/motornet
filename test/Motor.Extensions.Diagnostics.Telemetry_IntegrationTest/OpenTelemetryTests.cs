@@ -14,7 +14,6 @@ using Motor.Extensions.Hosting.Consumer;
 using Motor.Extensions.Hosting.Publisher;
 using Motor.Extensions.TestUtilities;
 using Motor.Extensions.Utilities;
-using Motor.Extensions.Utilities.Abstractions;
 using OpenTelemetry.Exporter;
 using Serilog;
 using Xunit;
@@ -83,7 +82,7 @@ public class OpenTelemetryTests : IDisposable, IClassFixture<OpenTelemetryCollec
         InMemoryConsumer<string> consumer,
         InMemoryPublisher<string> publisher,
         string? appSettings,
-        params Func<IMotorHostBuilder, IMotorHostBuilder>[] extraConfigurations
+        params Func<IHostBuilder, IHostBuilder>[] extraConfigurations
     )
     {
         var motorHostBuilder = new MotorHostBuilder(new HostBuilder(), false)

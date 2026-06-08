@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Version>0.18.2</Version>
     <TargetFrameworks>net8.0;net9.0;</TargetFrameworks>
-    <LangVersion>11</LangVersion>
+    <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>CS8600;CS8602;CS8625;CS8618;CS8604;CS8601</WarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
