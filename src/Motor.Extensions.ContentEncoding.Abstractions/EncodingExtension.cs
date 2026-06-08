@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Core;
 using Motor.Extensions.Hosting.CloudEvents;
@@ -11,8 +10,7 @@ public static class EncodingExtension
     public static CloudEventAttribute EncodingAttribute { get; } =
         CloudEventAttribute.CreateExtension("contentencoding", CloudEventAttributeType.String);
 
-    public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
-        new[] { EncodingAttribute }.ToList().AsReadOnly();
+    public static IReadOnlyList<CloudEventAttribute> AllAttributes { get; } = [EncodingAttribute];
 
     public static MotorCloudEvent<TData> SetEncoding<TData>(this MotorCloudEvent<TData> cloudEvent, string? value)
         where TData : class
