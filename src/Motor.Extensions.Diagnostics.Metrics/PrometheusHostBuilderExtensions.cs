@@ -1,33 +1,44 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Diagnostics.Metrics.Abstractions;
-using Motor.Extensions.Utilities.Abstractions;
 using Prometheus.Client.AspNetCore;
 
 namespace Motor.Extensions.Diagnostics.Metrics;
 
 public static class PrometheusHostBuilderExtensions
 {
-    public static IMotorHostBuilder ConfigurePrometheus(this IMotorHostBuilder hostBuilder)
+    extension(IHostBuilder builder)
     {
-        hostBuilder.ConfigureServices(
-            (_, services) =>
-            {
-                services.AddSingleton(typeof(IMetricsFactory<>), typeof(MetricsFactory<>));
-                services.AddSingleton<IMotorMetricsFactory, MotorMetricsFactory>();
-            }
-        );
-        return hostBuilder;
+        public IHostBuilder ConfigurePrometheus()
+        {
+            builder.ConfigureServices(
+                (_, services) =>
+                {
+                    services.AddSingleton(typeof(IMetricsFactory<>), typeof(MetricsFactory<>));
+                    services.AddSingleton<IMotorMetricsFactory, MotorMetricsFactory>();
+                }
+            );
+            return builder;
+        }
     }
 
-    public static IApplicationBuilder UsePrometheusServer(
-        this IApplicationBuilder applicationBuilder,
-        bool useDefaultCollectors = true
-    )
+    extension(IHostApplicationBuilder builder)
     {
-        return applicationBuilder.UsePrometheusServer(prometheusOptions =>
+        public IHostApplicationBuilder ConfigurePrometheus()
         {
-            prometheusOptions.UseDefaultCollectors = useDefaultCollectors;
-        });
+            builder.Services.AddSingleton(typeof(IMetricsFactory<>), typeof(MetricsFactory<>));
+            builder.Services.AddSingleton<IMotorMetricsFactory, MotorMetricsFactory>();
+            return builder;
+        }
+    }
+
+    extension(IApplicationBuilder applicationBuilder)
+    {
+        public IApplicationBuilder UsePrometheusServer(bool useDefaultCollectors = true) =>
+            applicationBuilder.UsePrometheusServer(prometheusOptions =>
+            {
+                prometheusOptions.UseDefaultCollectors = useDefaultCollectors;
+            });
     }
 }

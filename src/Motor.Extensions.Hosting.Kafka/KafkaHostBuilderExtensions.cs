@@ -9,31 +9,35 @@ namespace Motor.Extensions.Hosting.Kafka;
 
 public static class KafkaHostBuilderExtensions
 {
-    public static void AddKafkaWithConfig<T>(this IConsumerBuilder<T> builder, IConfiguration config)
+    extension<T>(IConsumerBuilder<T> builder)
         where T : notnull
     {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-        builder.Configure<KafkaConsumerOptions<T>>(config);
-        builder.AddConsumer<KafkaMessageConsumer<T>>();
+        public IConsumerBuilder<T> AddKafkaWithConfig(IConfiguration config)
+        {
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
+            builder.Configure<KafkaConsumerOptions<T>>(config);
+            builder.AddConsumer<KafkaMessageConsumer<T>>();
+
+            return builder;
+        }
+
+        public IConsumerBuilder<T> AddKafka(string configSection = "KafkaConsumer") =>
+            builder.AddKafkaWithConfig(builder.Configuration.GetSection(configSection));
     }
 
-    public static void AddKafka<T>(this IConsumerBuilder<T> builder, string configSection = "KafkaConsumer")
+    extension<T>(IPublisherBuilder<T> builder)
         where T : notnull
     {
-        builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
-    }
+        public IPublisherBuilder<T> AddKafkaWithConfig(IConfiguration config)
+        {
+            builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
+            builder.AddPublisher<KafkaMessagePublisher<T>>();
+            builder.Configure<KafkaPublisherOptions<T>>(config);
 
-    public static void AddKafkaWithConfig<T>(this IPublisherBuilder<T> builder, IConfiguration config)
-        where T : notnull
-    {
-        builder.AddTransient<CloudEventFormatter, JsonEventFormatter>();
-        builder.AddPublisher<KafkaMessagePublisher<T>>();
-        builder.Configure<KafkaPublisherOptions<T>>(config);
-    }
+            return builder;
+        }
 
-    public static void AddKafka<T>(this IPublisherBuilder<T> builder, string configSection = "KafkaPublisher")
-        where T : notnull
-    {
-        builder.AddKafkaWithConfig(builder.Context.Configuration.GetSection(configSection));
+        public IPublisherBuilder<T> AddKafka(string configSection = "KafkaPublisher") =>
+            builder.AddKafkaWithConfig(builder.Configuration.GetSection(configSection));
     }
 }

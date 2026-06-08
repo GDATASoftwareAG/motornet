@@ -10,7 +10,9 @@ namespace Motor.Extensions.Hosting.Abstractions;
 public interface IPublisherBuilder<TOutput> : IServiceCollection
     where TOutput : notnull
 {
-    HostBuilderContext Context { get; }
+    IHostEnvironment HostingEnvironment { get; }
+
+    IConfiguration Configuration { get; }
 
     void ConfigurePublisher(string section);
     void ConfigurePublisher(IConfiguration section);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.ContentEncoding.Abstractions;
@@ -17,10 +18,24 @@ public class ConsumerBuilder<T> : IConsumerBuilder<T>
     public ConsumerBuilder(IServiceCollection serviceCollection, HostBuilderContext context)
     {
         _serviceCollection = serviceCollection;
-        Context = context;
+        HostingEnvironment = context.HostingEnvironment;
+        Configuration = context.Configuration;
     }
 
-    public HostBuilderContext Context { get; }
+    public ConsumerBuilder(
+        IServiceCollection serviceCollection,
+        IHostEnvironment hostingEnvironment,
+        IConfiguration configuration
+    )
+    {
+        _serviceCollection = serviceCollection;
+        HostingEnvironment = hostingEnvironment;
+        Configuration = configuration;
+    }
+
+    public IHostEnvironment HostingEnvironment { get; }
+
+    public IConfiguration Configuration { get; }
 
     public void AddConsumer<TConsumer>()
         where TConsumer : IMessageConsumer<T>

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.ContentEncoding.Abstractions;
@@ -9,7 +10,9 @@ namespace Motor.Extensions.Hosting.Abstractions;
 public interface IConsumerBuilder<T> : IServiceCollection
     where T : notnull
 {
-    HostBuilderContext Context { get; }
+    IHostEnvironment HostingEnvironment { get; }
+
+    IConfiguration Configuration { get; }
 
     public void AddConsumer<TConsumer>()
         where TConsumer : IMessageConsumer<T>;

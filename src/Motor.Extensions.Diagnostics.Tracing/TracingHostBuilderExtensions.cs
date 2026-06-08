@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Diagnostics.Telemetry;
 using Motor.Extensions.Utilities.Abstractions;
 
@@ -17,7 +18,7 @@ public static class TracingHostBuilderExtensions
         TelemetryHostBuilderExtensions.AttributeMotorNetLibraryVersion;
 
     [Obsolete("Replaced by ConfigureOpenTelemetry")]
-    public static IMotorHostBuilder ConfigureJaegerTracing(this IMotorHostBuilder hostBuilder)
+    public static IHostBuilder ConfigureJaegerTracing(this IMotorHostBuilder hostBuilder)
     {
         return hostBuilder.ConfigureOpenTelemetry();
     }

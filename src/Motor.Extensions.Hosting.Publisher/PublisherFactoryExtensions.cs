@@ -1,25 +1,40 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Motor.Extensions.Hosting.Abstractions;
-using Motor.Extensions.Utilities.Abstractions;
 
 namespace Motor.Extensions.Hosting.Publisher;
 
 public static class TypedMessagePublisherExtensions
 {
-    public static IMotorHostBuilder ConfigurePublisher<TOutput>(
-        this IMotorHostBuilder hostBuilder,
-        Action<HostBuilderContext, IPublisherBuilder<TOutput>> action
-    )
+    extension<TOutput>(IHostApplicationBuilder hostBuilder)
         where TOutput : class
     {
-        hostBuilder.ConfigureServices(
-            (context, collection) =>
-            {
-                var consumerBuilder = new PublisherBuilder<TOutput>(collection, context);
-                consumerBuilder.Build(action);
-            }
-        );
-        return hostBuilder;
+        public IPublisherBuilder<TOutput> AddPublisher()
+        {
+            hostBuilder.Services.AddHostedService<TypedPublisherService<TOutput>>();
+            return new PublisherBuilder<TOutput>(
+                hostBuilder.Services,
+                hostBuilder.Environment,
+                hostBuilder.Configuration
+            );
+        }
+    }
+
+    extension<TOutput>(IHostBuilder builder)
+        where TOutput : class
+    {
+        public IHostBuilder ConfigurePublisher(Action<HostBuilderContext, IPublisherBuilder<TOutput>> action)
+        {
+            builder.ConfigureServices(
+                (context, services) =>
+                {
+                    services.AddHostedService<TypedPublisherService<TOutput>>();
+                    var consumerBuilder = new PublisherBuilder<TOutput>(services, context);
+                    consumerBuilder.Build(action);
+                }
+            );
+            return builder;
+        }
     }
 }
