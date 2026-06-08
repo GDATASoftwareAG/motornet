@@ -18,25 +18,27 @@ public static class DistributedTracingExtension
     public static IEnumerable<CloudEventAttribute> AllAttributes { get; } =
         new[] { TraceParentAttribute, TraceStateAttribute }.ToList().AsReadOnly();
 
-    public static void SetActivity<TData>(this MotorCloudEvent<TData> cloudEvent, Activity activity)
-        where TData : class
+    extension<TData>(MotorCloudEvent<TData> cloudEvent)
     {
-        Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
-        cloudEvent[TraceParentAttribute] = activity.Id;
-        if (!string.IsNullOrWhiteSpace(activity.TraceStateString))
+        public void SetActivity(Activity activity)
         {
-            cloudEvent[TraceStateAttribute] = activity.TraceStateString;
+            Validation.CheckNotNull(cloudEvent, nameof(cloudEvent));
+            cloudEvent[TraceParentAttribute] = activity.Id;
+            if (!string.IsNullOrWhiteSpace(activity.TraceStateString))
+            {
+                cloudEvent[TraceStateAttribute] = activity.TraceStateString;
+            }
         }
-    }
 
-    public static ActivityContext GetActivityContext<TData>(this MotorCloudEvent<TData> extension)
-        where TData : class
-    {
-        if (extension[TraceParentAttribute] is not string traceParent)
+        public ActivityContext GetActivityContext()
         {
-            return default;
+            if (cloudEvent[TraceParentAttribute] is not string traceParent)
+            {
+                return default;
+            }
+
+            var traceState = cloudEvent[TraceStateAttribute] as string;
+            return ActivityContext.Parse(traceParent, traceState);
         }
-        var traceState = extension[TraceStateAttribute] as string;
-        return ActivityContext.Parse(traceParent, traceState);
     }
 }

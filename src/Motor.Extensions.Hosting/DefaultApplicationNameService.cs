@@ -25,14 +25,13 @@ public class DefaultApplicationNameService : IApplicationNameService
 
     private string GetProduct()
     {
-        var assemblyProductAttribute = (AssemblyProductAttribute?)
-            Attribute.GetCustomAttribute(_assembly, typeof(AssemblyProductAttribute));
-        if (assemblyProductAttribute?.Product == GetAssemblyName())
+        var assemblyProductAttribute = _assembly.GetCustomAttribute<AssemblyProductAttribute>();
+        if (assemblyProductAttribute?.Product.Equals(GetAssemblyName()) ?? true)
         {
             throw new InvalidProgramException("Product is not set.");
         }
 
-        return assemblyProductAttribute!.Product;
+        return assemblyProductAttribute.Product;
     }
 
     public string GetVersion()

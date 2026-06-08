@@ -6,20 +6,22 @@ namespace Motor.Extensions.Hosting.RabbitMQ;
 
 public static class BasicDeliverEventArgsExtensions
 {
-    public static MotorCloudEvent<byte[]> ExtractCloudEvent(
-        this BasicDeliverEventArgs self,
-        IApplicationNameService applicationNameService,
-        ReadOnlyMemory<byte> body,
-        bool extractBindingKey
-    )
+    extension(BasicDeliverEventArgs self)
     {
-        var cloudEvent = self.BasicProperties.ExtractCloudEvent(applicationNameService, body);
-
-        if (extractBindingKey)
+        public MotorCloudEvent<byte[]> ExtractCloudEvent(
+            IApplicationNameService applicationNameService,
+            ReadOnlyMemory<byte> body,
+            bool extractBindingKey
+        )
         {
-            cloudEvent.SetRabbitMQBinding(self.Exchange, self.RoutingKey);
-        }
+            var cloudEvent = self.BasicProperties.ExtractCloudEvent(applicationNameService, body);
 
-        return cloudEvent;
+            if (extractBindingKey)
+            {
+                cloudEvent.SetRabbitMQBinding(self.Exchange, self.RoutingKey);
+            }
+
+            return cloudEvent;
+        }
     }
 }

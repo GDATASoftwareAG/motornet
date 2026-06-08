@@ -47,15 +47,13 @@ public class MotorWebApplicationFactory<TStartup> : WebApplicationFactory<TStart
 
     public async Task<bool> IsHealthy()
     {
-        var client = CreateClient();
+        using var client = CreateClient();
         var response = await client.GetAsync("/health");
         return response.IsSuccessStatusCode;
     }
 
     public async Task WaitUntilHealthy()
     {
-        CreateClient();
-
         var retryPolicy = Policy
             .HandleResult<bool>(healthy => !healthy)
             .WaitAndRetryAsync(10, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt)));
