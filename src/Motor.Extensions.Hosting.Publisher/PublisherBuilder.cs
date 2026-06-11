@@ -41,10 +41,17 @@ public class PublisherBuilder<TOutput> : IPublisherBuilder<TOutput>
 
     public IConfiguration Configuration { get; }
 
-    public void ConfigurePublisher(string section) =>
+    public IPublisherBuilder<TOutput> ConfigurePublisher(string section)
+    {
         _serviceCollection.Configure<PublisherOptions>(Configuration.GetSection(section));
+        return this;
+    }
 
-    public void ConfigurePublisher(IConfiguration section) => _serviceCollection.Configure<PublisherOptions>(section);
+    public IPublisherBuilder<TOutput> ConfigurePublisher(IConfiguration section)
+    {
+        _serviceCollection.Configure<PublisherOptions>(section);
+        return this;
+    }
 
     public void AddPublisher<TPublisher>()
         where TPublisher : IRawMessagePublisher<TOutput>
