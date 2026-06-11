@@ -90,7 +90,7 @@ public class KafkaMessageTests
         var kafkaMessage = publisher.CloudEventToKafkaMessage(inputCloudEvent);
         kafkaMessage.Headers ??= new Headers();
         kafkaMessage.Headers.Add("firstcustomheader", "customvalue"u8.ToArray());
-        kafkaMessage.Headers.Add("secondcustomheader", "customvalue_two"u8.ToArray());
+        kafkaMessage.Headers.Add("SECONDCUSTOMHEADER", "customvalue_two"u8.ToArray());
 
         var outputCloudEvent = consumer.KafkaMessageToCloudEvent(kafkaMessage);
 
