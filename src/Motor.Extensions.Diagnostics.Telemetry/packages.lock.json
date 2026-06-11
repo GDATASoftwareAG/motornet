@@ -60,11 +60,11 @@
       },
       "OpenTelemetry.Exporter.Console": {
         "type": "Direct",
-        "requested": "[1.15.3, )",
-        "resolved": "1.15.3",
-        "contentHash": "QBGOoPwLHDXX+hXeUpspOjsqEn4vMkLw672QN+MzVWFBzjf625DdxLxhzowS1J/dRtW93U34rRbJec+4808fkg==",
+        "requested": "[1.16.0, )",
+        "resolved": "1.16.0",
+        "contentHash": "cv3pKEn3KyJUNz9o8kvu5UN0NJEUoNSo5hJR4rgbfvqM6oA3moj+tkpbbQrE3bDvetBvYBes17ZxQxBBTvnJ+w==",
         "dependencies": {
-          "OpenTelemetry": "1.15.3"
+          "OpenTelemetry": "1.16.0"
         }
       },
       "OpenTelemetry.Exporter.Jaeger": {
@@ -298,29 +298,29 @@
       },
       "OpenTelemetry": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "N0i6WjPoHPbZyms1ugbDIFAJFuGlpeExJMU/+XSL0lQRUkg/D0utFkDoLXf8Z1km5B+xVZ2GyMXXiX8qdeNmPg==",
+        "resolved": "1.16.0",
+        "contentHash": "nE/Px3MUvQC8c0UG0DOP5OJE7vMtiMaPYi/6TkSS/o/O0s/oPq+8WaPYTVEPzb7lwu/QyLgknc+sFm2FjPXe2A==",
         "dependencies": {
           "Microsoft.Extensions.Diagnostics.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Configuration": "8.0.0",
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.15.3"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.16.0"
         }
       },
       "OpenTelemetry.Api": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "fX+fkCysfPut+qCcT3bKqyX4QN9Saf4CgX8HLOHywEVD+Xr7sULtfuypITpoDysjx8R59dn/3mWhgimMH8cm/g==",
+        "resolved": "1.16.0",
+        "contentHash": "WZP8Eb6vZTeNqeV+fjBitc7iefBoTHIhaWorqg/h/YiQBlcQJu0bICuTqKV0XRyjiE0eWs80yLlnUtHAFSkFWA==",
         "dependencies": {
           "System.Diagnostics.DiagnosticSource": "10.0.0"
         }
       },
       "OpenTelemetry.Api.ProviderBuilderExtensions": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "SYn0lqYDwLMWhv/zlNGsQcl2yX++yTumanX46bmOZE/ZDOd1WjPBO2kZaZgKLEZTZk48pavIFGJ6vOvxXgWVFQ==",
+        "resolved": "1.16.0",
+        "contentHash": "hZwaHAkXvUNn9+cS+vEvYBgIrIQOQRz2cIRUODZ5gxHsDsLeNCueLgZFkybopjE0jUhLut6lm5eL3LTqbW0hMg==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
-          "OpenTelemetry.Api": "1.15.3"
+          "OpenTelemetry.Api": "1.16.0"
         }
       },
       "System.Diagnostics.DiagnosticSource": {
@@ -353,7 +353,7 @@
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.conversion.abstractions": {
@@ -367,9 +367,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.14, )",
-          "Motor.Extensions.ContentEncoding.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Conversion.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.ContentEncoding.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Conversion.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.hosting.cloudevents": {
@@ -535,11 +535,11 @@
       },
       "OpenTelemetry.Exporter.Console": {
         "type": "Direct",
-        "requested": "[1.15.3, )",
-        "resolved": "1.15.3",
-        "contentHash": "QBGOoPwLHDXX+hXeUpspOjsqEn4vMkLw672QN+MzVWFBzjf625DdxLxhzowS1J/dRtW93U34rRbJec+4808fkg==",
+        "requested": "[1.16.0, )",
+        "resolved": "1.16.0",
+        "contentHash": "cv3pKEn3KyJUNz9o8kvu5UN0NJEUoNSo5hJR4rgbfvqM6oA3moj+tkpbbQrE3bDvetBvYBes17ZxQxBBTvnJ+w==",
         "dependencies": {
-          "OpenTelemetry": "1.15.3"
+          "OpenTelemetry": "1.16.0"
         }
       },
       "OpenTelemetry.Exporter.Jaeger": {
@@ -769,29 +769,29 @@
       },
       "OpenTelemetry": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "N0i6WjPoHPbZyms1ugbDIFAJFuGlpeExJMU/+XSL0lQRUkg/D0utFkDoLXf8Z1km5B+xVZ2GyMXXiX8qdeNmPg==",
+        "resolved": "1.16.0",
+        "contentHash": "nE/Px3MUvQC8c0UG0DOP5OJE7vMtiMaPYi/6TkSS/o/O0s/oPq+8WaPYTVEPzb7lwu/QyLgknc+sFm2FjPXe2A==",
         "dependencies": {
           "Microsoft.Extensions.Diagnostics.Abstractions": "9.0.0",
           "Microsoft.Extensions.Logging.Configuration": "9.0.0",
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.15.3"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.16.0"
         }
       },
       "OpenTelemetry.Api": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "fX+fkCysfPut+qCcT3bKqyX4QN9Saf4CgX8HLOHywEVD+Xr7sULtfuypITpoDysjx8R59dn/3mWhgimMH8cm/g==",
+        "resolved": "1.16.0",
+        "contentHash": "WZP8Eb6vZTeNqeV+fjBitc7iefBoTHIhaWorqg/h/YiQBlcQJu0bICuTqKV0XRyjiE0eWs80yLlnUtHAFSkFWA==",
         "dependencies": {
           "System.Diagnostics.DiagnosticSource": "10.0.0"
         }
       },
       "OpenTelemetry.Api.ProviderBuilderExtensions": {
         "type": "Transitive",
-        "resolved": "1.15.3",
-        "contentHash": "SYn0lqYDwLMWhv/zlNGsQcl2yX++yTumanX46bmOZE/ZDOd1WjPBO2kZaZgKLEZTZk48pavIFGJ6vOvxXgWVFQ==",
+        "resolved": "1.16.0",
+        "contentHash": "hZwaHAkXvUNn9+cS+vEvYBgIrIQOQRz2cIRUODZ5gxHsDsLeNCueLgZFkybopjE0jUhLut6lm5eL3LTqbW0hMg==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0",
-          "OpenTelemetry.Api": "1.15.3"
+          "OpenTelemetry.Api": "1.16.0"
         }
       },
       "System.Diagnostics.DiagnosticSource": {
@@ -814,7 +814,7 @@
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.conversion.abstractions": {
@@ -828,9 +828,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.14, )",
-          "Motor.Extensions.ContentEncoding.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Conversion.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.ContentEncoding.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Conversion.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.hosting.cloudevents": {

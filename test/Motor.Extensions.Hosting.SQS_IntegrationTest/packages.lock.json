@@ -76,8 +76,8 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "4.0.8",
-        "contentHash": "JFq4sdtnlLePkISe5M0j1a5ushTrvwCGO1CNOGZaoBv33dscHls14m5dsPzyrN54xn924MtAP+s5xTdfNGNTUQ=="
+        "resolved": "4.0.9",
+        "contentHash": "++VT2Q80ieKgJaSkD4WsIB+lSwDbkOn45AJ89M4zMZyuogW3AeUG915ePy7hAcfpujTWnf39cUgNDA30c45IpA=="
       },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
@@ -331,7 +331,7 @@
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.conversion.abstractions": {
@@ -345,9 +345,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.14, )",
-          "Motor.Extensions.ContentEncoding.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Conversion.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.ContentEncoding.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Conversion.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.hosting.cloudevents": {
@@ -359,13 +359,13 @@
       "motor.extensions.hosting.sqs": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.Extensions.NETCore.Setup": "[4.0.4.4, )",
-          "AWSSDK.SQS": "[4.0.3, )",
+          "AWSSDK.Extensions.NETCore.Setup": "[4.0.4.6, )",
+          "AWSSDK.SQS": "[4.0.3.3, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.14, )",
-          "Motor.Extensions.Hosting.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Utilities.Abstractions": "[0.18.2, )"
+          "Motor.Extensions.Hosting.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Utilities.Abstractions": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.utilities.abstractions": {
@@ -373,11 +373,11 @@
       },
       "AWSSDK.Extensions.NETCore.Setup": {
         "type": "CentralTransitive",
-        "requested": "[4.0.4.4, )",
-        "resolved": "4.0.4.4",
-        "contentHash": "LO3oTBMmeEe7nytrn46oByLXmo6HF4bSlBXIkhWyLdqG/EJKwN6drzkhhe6TAYwHhEKEwnH8L3WGBxcQo0AvOQ==",
+        "requested": "[4.0.4.6, )",
+        "resolved": "4.0.4.6",
+        "contentHash": "t6s/R+qBnHhomxX/orFVghR9aNHqdV805eS8K5iDDeo1AJHDozfCQ3jFSejQxoho+osKu9qsBKVkeTS6OjfXtw==",
         "dependencies": {
-          "AWSSDK.Core": "4.0.8",
+          "AWSSDK.Core": "4.0.9",
           "Microsoft.Extensions.Configuration.Abstractions": "2.0.0",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "2.0.0"
@@ -385,11 +385,11 @@
       },
       "AWSSDK.SQS": {
         "type": "CentralTransitive",
-        "requested": "[4.0.3, )",
-        "resolved": "4.0.3",
-        "contentHash": "noEJIWidd1UP912qjQag2D0BCyoQUSOso0n2HPleGOdQiGSt/nfpYKEBCbEvjQBlvcu9B5alVC5q1TXroxlG4g==",
+        "requested": "[4.0.3.3, )",
+        "resolved": "4.0.3.3",
+        "contentHash": "dbmrUpb+4wYKW1IqtkLTQlUmGs66AfM1xdrMYQkENs9c8Ax7Ga2VZI/GIWFuHsxYovCZHL85EwaXE/6jDFj85Q==",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.7.5, 5.0.0)"
+          "AWSSDK.Core": "[4.0.9, 5.0.0)"
         }
       },
       "CloudNative.CloudEvents": {
@@ -535,8 +535,8 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "4.0.8",
-        "contentHash": "JFq4sdtnlLePkISe5M0j1a5ushTrvwCGO1CNOGZaoBv33dscHls14m5dsPzyrN54xn924MtAP+s5xTdfNGNTUQ=="
+        "resolved": "4.0.9",
+        "contentHash": "++VT2Q80ieKgJaSkD4WsIB+lSwDbkOn45AJ89M4zMZyuogW3AeUG915ePy7hAcfpujTWnf39cUgNDA30c45IpA=="
       },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
@@ -778,7 +778,7 @@
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.conversion.abstractions": {
@@ -792,9 +792,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.14, )",
-          "Motor.Extensions.ContentEncoding.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Conversion.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Hosting.CloudEvents": "[0.18.2, )"
+          "Motor.Extensions.ContentEncoding.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Conversion.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Hosting.CloudEvents": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.hosting.cloudevents": {
@@ -806,13 +806,13 @@
       "motor.extensions.hosting.sqs": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.Extensions.NETCore.Setup": "[4.0.4.4, )",
-          "AWSSDK.SQS": "[4.0.3, )",
+          "AWSSDK.Extensions.NETCore.Setup": "[4.0.4.6, )",
+          "AWSSDK.SQS": "[4.0.3.3, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.14, )",
           "Microsoft.Extensions.Options": "[9.0.14, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.14, )",
-          "Motor.Extensions.Hosting.Abstractions": "[0.18.2, )",
-          "Motor.Extensions.Utilities.Abstractions": "[0.18.2, )"
+          "Motor.Extensions.Hosting.Abstractions": "[0.19.0-pre2, )",
+          "Motor.Extensions.Utilities.Abstractions": "[0.19.0-pre2, )"
         }
       },
       "motor.extensions.utilities.abstractions": {
@@ -820,11 +820,11 @@
       },
       "AWSSDK.Extensions.NETCore.Setup": {
         "type": "CentralTransitive",
-        "requested": "[4.0.4.4, )",
-        "resolved": "4.0.4.4",
-        "contentHash": "LO3oTBMmeEe7nytrn46oByLXmo6HF4bSlBXIkhWyLdqG/EJKwN6drzkhhe6TAYwHhEKEwnH8L3WGBxcQo0AvOQ==",
+        "requested": "[4.0.4.6, )",
+        "resolved": "4.0.4.6",
+        "contentHash": "t6s/R+qBnHhomxX/orFVghR9aNHqdV805eS8K5iDDeo1AJHDozfCQ3jFSejQxoho+osKu9qsBKVkeTS6OjfXtw==",
         "dependencies": {
-          "AWSSDK.Core": "4.0.8",
+          "AWSSDK.Core": "4.0.9",
           "Microsoft.Extensions.Configuration.Abstractions": "2.0.0",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "2.0.0"
@@ -832,11 +832,11 @@
       },
       "AWSSDK.SQS": {
         "type": "CentralTransitive",
-        "requested": "[4.0.3, )",
-        "resolved": "4.0.3",
-        "contentHash": "noEJIWidd1UP912qjQag2D0BCyoQUSOso0n2HPleGOdQiGSt/nfpYKEBCbEvjQBlvcu9B5alVC5q1TXroxlG4g==",
+        "requested": "[4.0.3.3, )",
+        "resolved": "4.0.3.3",
+        "contentHash": "dbmrUpb+4wYKW1IqtkLTQlUmGs66AfM1xdrMYQkENs9c8Ax7Ga2VZI/GIWFuHsxYovCZHL85EwaXE/6jDFj85Q==",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.7.5, 5.0.0)"
+          "AWSSDK.Core": "[4.0.9, 5.0.0)"
         }
       },
       "CloudNative.CloudEvents": {
