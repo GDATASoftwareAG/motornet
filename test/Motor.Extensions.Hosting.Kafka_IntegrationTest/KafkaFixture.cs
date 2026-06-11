@@ -6,7 +6,7 @@ namespace Motor.Extensions.Hosting.Kafka_IntegrationTest;
 
 public class KafkaFixture : IAsyncLifetime
 {
-    private readonly KafkaContainer _container = new KafkaBuilder().Build();
+    private readonly KafkaContainer _container = new KafkaBuilder("confluentinc/cp-kafka:7.5.14").Build();
 
     public string BootstrapServers => _container.GetBootstrapAddress();
 
