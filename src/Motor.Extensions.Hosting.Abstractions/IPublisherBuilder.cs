@@ -14,8 +14,8 @@ public interface IPublisherBuilder<TOutput> : IServiceCollection
 
     IConfiguration Configuration { get; }
 
-    void ConfigurePublisher(string section);
-    void ConfigurePublisher(IConfiguration section);
+    IPublisherBuilder<TOutput> ConfigurePublisher(string section);
+    IPublisherBuilder<TOutput> ConfigurePublisher(IConfiguration section);
 
     void AddPublisher<TPublisher>()
         where TPublisher : IRawMessagePublisher<TOutput>;
