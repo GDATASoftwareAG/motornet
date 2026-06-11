@@ -12,52 +12,45 @@ on:
       - published
 
 env:
-  NUGET_KEY: ${{ secrets.NUGET_KEY }}
+  NUGET_API_KEY: ${{ secrets.NUGET_KEY }}
   NUGET_FEED: https://api.nuget.org/v3/index.json
 
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            8.0.x
             9.0.x
-      - name: Install tools
-        run: dotnet tool restore
       - name: check format
-        run: dotnet csharpier check .
+        run: |
+          dotnet tool restore
+          ./build.sh --target CheckFormat
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             8.0.x
             9.0.x
-      - name: Install dependencies
-        run: dotnet restore Motor.NET.slnx
       - name: Build
-        run: dotnet build --configuration Release --no-restore Motor.NET.slnx
-      - name: Pack
-        run: dotnet pack -v minimal -c Release --no-restore -o ./artifacts Motor.NET.slnx
-      - name: Publish Bridge
-        run: dotnet publish --framework net9.0 -v minimal -c Release --no-restore -o ./artifacts-bridge ./src/Motor.Extensions.Hosting.Bridge/Motor.Extensions.Hosting.Bridge.csproj
+        run: ./build.sh --target Artifacts
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts
           path: |
             ./artifacts/*.nupkg
             ./artifacts/*.snupkg
       - name: Upload Artifact Bridge
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-bridge
           path: ./artifacts-bridge/*
@@ -65,30 +58,27 @@ jobs:
   test-net8:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             8.0.x
-      - name: Install dependencies
-        run: dotnet restore Motor.NET.slnx
+            9.0.x
       - name: Test .NET8
-        run: dotnet test --no-restore Motor.NET.slnx --framework net8.0
+        run: ./build.sh -t Test --dotnet-versions net8.0
 
   test-net9:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            8.0.x
-      - name: Install dependencies
-        run: dotnet restore Motor.NET.slnx
+            9.0.x
       - name: Test .NET9
-        run: dotnet test --no-restore Motor.NET.slnx --framework net9.0
+        run: ./build.sh -t Test --dotnet-versions net9.0
 
           
   #code-ql:
@@ -117,17 +107,17 @@ jobs:
     steps:
       - name: Download Artifact
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: artifacts
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             8.0.x
             9.0.x
-      - name: Push to NuGet Feed
-        run: dotnet nuget push "${{ steps.download.outputs.download-path }}/*.nupkg" --skip-duplicate --source $NUGET_FEED --api-key $NUGET_KEY
+      - name: Push to NuGet feed
+        run: ./build.sh -t NugetPush --artifacts-directory "${{ steps.download.outputs.download-path }}"
 
   build-bridge:
     needs: [build, format, test-net8, test-net9]
@@ -135,37 +125,14 @@ jobs:
     steps:
       - name: Download Artifact
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: artifacts-bridge
-      - name: Prepare
-        id: prep
-        run: |
-          DOCKER_IMAGE=ghcr.io/gdatasoftwareag/motornet/bridge
-          VERSION=edge
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          elif [[ $GITHUB_REF == refs/heads/* ]]; then
-            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
-          elif [[ $GITHUB_REF == refs/pull/* ]]; then
-            VERSION=pr-${{ github.event.number }}
-          fi
-          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${VERSION}-${GITHUB_SHA::8}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Login to Github Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push to GitHub Packages
-        uses: docker/build-push-action@v6
-        with:
-          push: ${{ github.event_name == 'release' }}
-          context: "${{ steps.download.outputs.download-path }}"
-          tags: ${{ steps.prep.outputs.tags }}
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+        run: /build.sh -t BridgeContainerImage --bridge-artifacts-directory "${{ steps.download.outputs.download-path }}"

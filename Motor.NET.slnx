@@ -90,4 +90,7 @@
     <Project Path="test/Motor.Extensions.Http_UnitTest/Motor.Extensions.Http_UnitTest.csproj" />
     <Project Path="test/Motor.Extensions.Utilities_IntegrationTest/Motor.Extensions.Utilities_IntegrationTest.csproj" />
   </Folder>
+  <Project Path="build/build.csproj">
+    <Build Project="false" />
+  </Project>
 </Solution>

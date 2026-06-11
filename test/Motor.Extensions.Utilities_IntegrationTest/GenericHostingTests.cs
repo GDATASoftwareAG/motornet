@@ -1,8 +1,4 @@
-using System;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -24,11 +20,10 @@ using Xunit;
 namespace Motor.Extensions.Utilities_IntegrationTest;
 
 [Collection("GenericHosting")]
-public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitMQFixture>
+public class GenericHostingTests(RabbitMQFixture fixture)
+    : GenericHostingTestBase(fixture),
+        IClassFixture<RabbitMQFixture>
 {
-    public GenericHostingTests(RabbitMQFixture fixture)
-        : base(fixture) { }
-
     [Fact(Timeout = 60000)]
     public async Task StartAsync_UseConfigureDefaultMessageHandlerWithMessageProcessingHealthCheck_HealthCheckUnhealthy()
     {
@@ -49,7 +44,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = new HttpClient();
 
         await WaitUntilAsync(async () =>
         {
@@ -81,7 +76,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = new HttpClient();
 
         var healthResponse = await httpClient.GetAsync("http://localhost:9110/health");
 
@@ -105,7 +100,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = new HttpClient();
 
         await WaitUntilAsync(async () =>
         {
@@ -131,7 +126,7 @@ public class GenericHostingTests : GenericHostingTestBase, IClassFixture<RabbitM
             await PublishMessageIntoQueueOfServiceAsync(channel, message);
         }
 
-        var httpClient = new HttpClient();
+        using var httpClient = new HttpClient();
 
         await WaitUntilAsync(async () =>
         {
