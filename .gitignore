@@ -8,6 +8,7 @@ obj/
 v14/
 tools/*
 artifacts/
+artifacts-bridge/
 test-results/
 TestResults/
 *.trx
@@ -15,3 +16,4 @@ TestResults/
 .rider
 *.user
 .ionide/
+build/tools/
