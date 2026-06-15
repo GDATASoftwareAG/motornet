@@ -21,6 +21,7 @@
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="System.Text.Json" />
     <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
   </ItemGroup>
 </Project>
