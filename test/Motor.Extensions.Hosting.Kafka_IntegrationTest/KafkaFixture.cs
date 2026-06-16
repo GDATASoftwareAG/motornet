@@ -1,4 +1,5 @@
-using System.Threading.Tasks;
+using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Testcontainers.Kafka;
 using Xunit;
 
@@ -13,6 +14,24 @@ public class KafkaFixture : IAsyncLifetime
     public Task InitializeAsync()
     {
         return _container.StartAsync();
+    }
+
+    public async Task CreateTopicAsync(string topicName, int numPartitions)
+    {
+        using var adminClient = new AdminClientBuilder(
+            new AdminClientConfig { BootstrapServers = _container.GetBootstrapAddress() }
+        ).Build();
+
+        var topicExists = adminClient.GetMetadata(TimeSpan.FromMinutes(1)).Topics.Any(t => t.Topic == topicName);
+        if (!topicExists)
+        {
+            await adminClient.CreateTopicsAsync(
+                new[]
+                {
+                    new TopicSpecification { Name = topicName, NumPartitions = numPartitions },
+                }
+            );
+        }
     }
 
     public Task DisposeAsync()

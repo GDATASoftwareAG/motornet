@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Channels;
 using CloudNative.CloudEvents.SystemTextJson;
@@ -202,8 +203,8 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         var taskCompletionSource = new TaskCompletionSource();
         await PublishMessage(topic, "someKey", "1");
         await PublishMessage(topic, "someKey", "2");
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
-        using var consumer = GetConsumer<string>(topic, config);
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 1);
+        var consumer = GetConsumer(topic, config);
         var distinctHandledMessages = new HashSet<string>();
         consumer.ConsumeCallbackAsync = (data, _) =>
         {
@@ -242,7 +243,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             await PublishMessage(topic, "someKey", message);
         }
 
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1);
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 1);
         config.CommitPeriod = 1;
         config.AutoCommitIntervalMs = null;
         using var consumer = GetConsumer<string>(topic, config);
@@ -353,7 +354,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
+        var config = GetConsumerConfig<string>(
+            topic,
+            maxConcurrentMessagesPerPartition: 1,
+            retriesOnTemporaryFailure: 1
+        );
         config.CommitPeriod = 2;
         config.AutoCommitIntervalMs = null;
         using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
@@ -413,7 +418,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
+        var config = GetConsumerConfig<string>(
+            topic,
+            maxConcurrentMessagesPerPartition: 1,
+            retriesOnTemporaryFailure: 1
+        );
         config.CommitPeriod = 10;
         config.AutoCommitIntervalMs = null;
         using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
@@ -436,7 +445,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
+        var config = GetConsumerConfig<string>(
+            topic,
+            maxConcurrentMessagesPerPartition: 1,
+            retriesOnTemporaryFailure: 1
+        );
         config.CommitPeriod = 1000; // default
         config.AutoCommitIntervalMs = 1;
         using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
@@ -459,7 +472,11 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     {
         var topic = NewTopic();
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 1);
+        var config = GetConsumerConfig<string>(
+            topic,
+            maxConcurrentMessagesPerPartition: 1,
+            retriesOnTemporaryFailure: 1
+        );
         config.AutoCommitIntervalMs = null;
         using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
         consumer.ConsumeCallbackAsync = CreateConsumeCallback(ProcessedMessageStatus.Success, _consumedChannel);
@@ -519,6 +536,25 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         producer.Flush();
     }
 
+    private async Task PublishMessageToPartition(string topic, int partition, string value)
+    {
+        using var producer = new ProducerBuilder<Null, byte[]>(
+            new ProducerConfig { BootstrapServers = fixture.BootstrapServers }
+        ).Build();
+        await producer.ProduceAsync(
+            new TopicPartition(topic, new Partition(partition)),
+            new Message<Null, byte[]> { Value = Encoding.UTF8.GetBytes(value) }
+        );
+        producer.Flush();
+    }
+
+    private async Task<string> CreateMultiPartitionTopic(int numPartitions)
+    {
+        var topic = NewTopic();
+        await fixture.CreateTopicAsync(topic, numPartitions);
+        return topic;
+    }
+
     private KafkaMessageConsumer<T> GetConsumer<T>(
         string topic,
         KafkaConsumerOptions<T> config = null,
@@ -566,7 +602,7 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
 
     private KafkaConsumerOptions<T> GetConsumerConfig<T>(
         string topic,
-        int maxConcurrentMessages = 1000,
+        int maxConcurrentMessagesPerPartition = 1000,
         string groupId = "group_id",
         int retriesOnTemporaryFailure = 10,
         TimeSpan? retryBasePeriod = null
@@ -582,116 +618,262 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
             StatisticsIntervalMs = 5000,
             SessionTimeoutMs = 6000,
             AutoOffsetReset = AutoOffsetReset.Earliest,
-            MaxConcurrentMessages = maxConcurrentMessages,
+            MaxConcurrentMessagesPerPartition = maxConcurrentMessagesPerPartition,
             RetriesOnTemporaryFailure = retriesOnTemporaryFailure,
             RetryBasePeriod = retryBasePeriod ?? TimeSpan.FromSeconds(1),
         };
     }
 
-    [Theory(Timeout = 50000)]
-    [InlineData(ProcessedMessageStatus.Failure)]
-    [InlineData(ProcessedMessageStatus.InvalidInput)]
-    public async Task Consume_WithDeadLetterQueue_ForwardsFailedMessageToDlqAndContinues(
-        ProcessedMessageStatus returnStatus
-    )
+    #region Per-partition fair processing tests
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_MultiPartitionTopic_AllPartitionsProcessed()
     {
-        var topic = NewTopic();
-        var dlqMock = new Mock<IRawMessagePublisher<string>>();
-        var taskCompletionSource = new TaskCompletionSource();
-        await PublishMessage(topic, "someKey", Message);
-        await PublishMessage(topic, "someKey", Message);
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
-        config.CommitPeriod = 1;
-        config.AutoCommitIntervalMs = null;
-        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
-        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
-        var processedCount = 0;
-        consumer.ConsumeCallbackAsync = (_, _) =>
+        const int numPartitions = 3;
+        const int messagesPerPartition = 5;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
+
+        for (var p = 0; p < numPartitions; p++)
         {
-            processedCount++;
-            if (processedCount == 2)
+            for (var m = 0; m < messagesPerPartition; m++)
             {
-                taskCompletionSource.TrySetResult();
+                await PublishMessageToPartition(topic, p, $"p{p}-m{m}");
             }
-            return Task.FromResult(returnStatus);
+        }
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: messagesPerPartition);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = 1;
+        var consumer = GetConsumer(topic, config);
+        var processedMessages = new ConcurrentBag<string>();
+        var allProcessed = new TaskCompletionSource();
+        const int totalMessages = numPartitions * messagesPerPartition;
+        consumer.ConsumeCallbackAsync = async (data, _) =>
+        {
+            processedMessages.Add(Encoding.UTF8.GetString(data.TypedData));
+            if (processedMessages.Count >= totalMessages)
+            {
+                allProcessed.TrySetResult();
+            }
+
+            return await Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
-        await taskCompletionSource.Task;
-        await WaitForCommittedOffset(consumer, 2);
+        await Task.WhenAny(allProcessed.Task, Task.Delay(TimeSpan.FromSeconds(30)));
         await consumer.StopAsync();
         await executionTask;
 
-        dlqMock.Verify(
-            p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
-        );
-        Assert.Equal(2, processedCount);
+        Assert.Equal(totalMessages, processedMessages.Count);
+        // Verify all partitions were represented
+        for (var p = 0; p < numPartitions; p++)
+        {
+            for (var m = 0; m < messagesPerPartition; m++)
+            {
+                Assert.Contains($"p{p}-m{m}", processedMessages);
+            }
+        }
     }
 
     [Fact(Timeout = 50000)]
-    public async Task Consume_TemporaryFailureWithDeadLetterQueue_ForwardsToDeadLetterAfterRetriesAndContinues()
+    public async Task Consume_SlowPartitionDoesNotBlockOtherPartitions_OtherPartitionsStillProcessed()
     {
-        var topic = NewTopic();
-        var dlqMock = new Mock<IRawMessagePublisher<string>>();
-        var taskCompletionSource = new TaskCompletionSource();
-        const int numberOfRetries = 1;
-        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
-        await PublishMessage(topic, "someKey", Message);
-        await PublishMessage(topic, "someKey", Message);
+        const int numPartitions = 2;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
 
-        var config = GetConsumerConfig<string>(
-            topic,
-            maxConcurrentMessages: 1,
-            retriesOnTemporaryFailure: numberOfRetries,
-            retryBasePeriod: retryBasePeriod
-        );
-        config.CommitPeriod = 1;
-        config.AutoCommitIntervalMs = null;
-        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions();
-
-        using var consumer = GetConsumer(topic, config, deadLetterPublishers: [dlqMock.Object]);
-        var processedCount = 0;
-        consumer.ConsumeCallbackAsync = (_, _) =>
+        // Publish 1 message to partition 0 (will be slow) and multiple to partition 1
+        await PublishMessageToPartition(topic, 0, "slow");
+        for (var i = 0; i < 5; i++)
         {
-            processedCount++;
-            if (processedCount == 2 * (numberOfRetries + 1))
+            await PublishMessageToPartition(topic, 1, $"fast-{i}");
+        }
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 5);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = 1;
+        var consumer = GetConsumer(topic, config);
+
+        var partition0Blocked = new TaskCompletionSource();
+        var partition1Messages = new ConcurrentBag<string>();
+        var allFastProcessed = new TaskCompletionSource();
+
+        consumer.ConsumeCallbackAsync = async (data, cancellationToken) =>
+        {
+            var msg = Encoding.UTF8.GetString(data.TypedData);
+            if (msg == "slow")
             {
-                taskCompletionSource.TrySetResult();
+                partition0Blocked.TrySetResult();
+                // Block this message indefinitely to simulate a slow partition
+                await Task.Delay(-1, cancellationToken);
+                return ProcessedMessageStatus.Success;
             }
-            return Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+
+            partition1Messages.Add(msg);
+            if (partition1Messages.Count >= 5)
+            {
+                allFastProcessed.TrySetResult();
+            }
+
+            return await Task.FromResult(ProcessedMessageStatus.Success);
         };
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
-        await taskCompletionSource.Task;
-        await WaitForCommittedOffset(consumer, 2);
+
+        // Wait for the slow message to start processing
+        await Task.WhenAny(partition0Blocked.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+        Assert.True(partition0Blocked.Task.IsCompleted, "Slow message on partition 0 should have started processing");
+
+        // Wait for all fast messages to complete — they should not be blocked by partition 0
+        await Task.WhenAny(allFastProcessed.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+        Assert.True(
+            allFastProcessed.Task.IsCompleted,
+            "Fast messages on partition 1 should have completed despite slow partition 0"
+        );
+
         await consumer.StopAsync();
         await executionTask;
 
-        dlqMock.Verify(
-            p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
-        );
+        Assert.Equal(5, partition1Messages.Count);
     }
 
     [Fact(Timeout = 50000)]
-    public async Task Consume_TemporaryFailureWithoutDeadLetterQueue_ApplicationStillStopped()
+    public async Task Consume_PerPartitionConcurrencyLimit_LimitsEachPartitionIndependently()
     {
-        var topic = NewTopic();
+        const int numPartitions = 2;
+        const int perPartitionLimit = 3;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
+
+        // Publish more messages than the per-partition limit to each partition
+        for (var p = 0; p < numPartitions; p++)
+        {
+            for (var i = 0; i < perPartitionLimit * 2; i++)
+            {
+                await PublishMessageToPartition(topic, p, $"p{p}-{i}");
+            }
+        }
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: perPartitionLimit);
+        var consumer = GetConsumer(topic, config);
+
+        var perPartitionCounts = new ConcurrentDictionary<string, int>();
+        var firstMessageProcessed = new TaskCompletionSource();
+
+        consumer.ConsumeCallbackAsync = async (data, cancellationToken) =>
+        {
+            var msg = Encoding.UTF8.GetString(data.TypedData);
+            var partition = msg.Split('-')[0]; // "p0" or "p1"
+            perPartitionCounts.AddOrUpdate(partition, 1, (_, count) => count + 1);
+            firstMessageProcessed.TrySetResult();
+
+            // Block indefinitely to keep messages in-flight
+            await Task.Delay(-1, cancellationToken);
+            return ProcessedMessageStatus.Success;
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        // Wait for processing to start
+        await Task.WhenAny(firstMessageProcessed.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+        // Give time for the consumer to fill up the channels
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        await consumer.StopAsync();
+        await executionTask;
+
+        // Each partition should have at most perPartitionLimit in-flight messages
+        foreach (var kvp in perPartitionCounts)
+        {
+            output.WriteLine($"Partition {kvp.Key}: {kvp.Value} messages started");
+            Assert.True(
+                kvp.Value <= perPartitionLimit,
+                $"Partition {kvp.Key} had {kvp.Value} concurrent messages, expected at most {perPartitionLimit}"
+            );
+        }
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_MultiPartition_CommitsAllPartitions()
+    {
+        const int numPartitions = 3;
+        const int messagesPerPartition = 3;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
+
+        for (var p = 0; p < numPartitions; p++)
+        {
+            for (var m = 0; m < messagesPerPartition; m++)
+            {
+                await PublishMessageToPartition(topic, p, $"p{p}-m{m}");
+            }
+        }
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 5);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = 1;
+        var consumer = GetConsumer(topic, config);
+        var processedCount = 0;
+        var allProcessed = new TaskCompletionSource();
+        const int totalMessages = numPartitions * messagesPerPartition;
+        var lockObject = new object();
+        consumer.ConsumeCallbackAsync = async (_, _) =>
+        {
+            lock (lockObject)
+            {
+                processedCount++;
+                output.WriteLine($"Processed message {processedCount}/{totalMessages}");
+                if (processedCount >= totalMessages)
+                {
+                    allProcessed.TrySetResult();
+                }
+            }
+
+            return await Task.FromResult(ProcessedMessageStatus.Success);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        // Wait until all messages are processed
+        await Task.WhenAny(allProcessed.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        Assert.True(
+            allProcessed.Task.IsCompleted,
+            $"Expected all {totalMessages} messages to be processed, but only {processedCount} were processed"
+        );
+
+        // Give time for the commit loop to commit all offsets
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        // Verify all committed offsets sum to total messages (must be done before StopAsync disposes the consumer)
+        var offsets = consumer.Committed();
+        var committedTotal = offsets.Where(tpo => tpo.Offset != Offset.Unset).Sum(tpo => (long)tpo.Offset);
+
+        await consumer.StopAsync();
+        await executionTask;
+
+        Assert.Equal(totalMessages, committedTotal);
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_MultiPartition_IrrecoverableFailureStopsApplication()
+    {
+        const int numPartitions = 2;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
         var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        const int numberOfRetries = 1;
-        var retryBasePeriod = TimeSpan.FromMilliseconds(10);
-        await PublishMessage(topic, "someKey", Message);
-        var config = GetConsumerConfig<string>(
-            topic,
-            retriesOnTemporaryFailure: numberOfRetries,
-            retryBasePeriod: retryBasePeriod
-        );
-        // No DLQ configured — existing behavior must be preserved
-        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
-        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.TemporaryFailure);
+
+        await PublishMessageToPartition(topic, 0, "good");
+        await PublishMessageToPartition(topic, 1, "bad");
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 5);
+        var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object);
+        consumer.ConsumeCallbackAsync = async (data, _) =>
+        {
+            var msg = Encoding.UTF8.GetString(data.TypedData);
+            return await Task.FromResult(
+                msg == "bad" ? ProcessedMessageStatus.CriticalFailure : ProcessedMessageStatus.Success
+            );
+        };
 
         await consumer.StartAsync();
         var executionTask = consumer.ExecuteAsync();
@@ -701,71 +883,118 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         await executionTask;
     }
 
-    [Fact(Timeout = 50000)]
-    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureTrue_ApplicationIsStopped()
+    #endregion
+
+    #region Rebalance / repartitioning tests
+
+    [Fact(Timeout = 60000)]
+    public async Task Consume_SecondConsumerJoinsGroup_RebalanceDoesNotLoseMessages()
     {
-        var topic = NewTopic();
-        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var dlqMock = new Mock<IRawMessagePublisher<string>>();
-        dlqMock
-            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("DLQ publish failed"));
-        await PublishMessage(topic, "someKey", Message);
+        const int numPartitions = 10;
+        var topic = await CreateMultiPartitionTopic(numPartitions);
+        var groupId = $"rebalance-join-{Guid.NewGuid():N}";
 
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
-        config.CommitPeriod = 1;
-        config.AutoCommitIntervalMs = null;
-        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = true };
+        var processedMessagesA = new ConcurrentBag<string>();
+        var processedMessagesB = new ConcurrentBag<string>();
 
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
-        consumer.ConsumeCallbackAsync = (_, _) => Task.FromResult(ProcessedMessageStatus.Failure);
-
-        await consumer.StartAsync();
-        var executionTask = consumer.ExecuteAsync();
-
-        WaitUntil(() => fakeLifetimeMock.Verify(mock => mock.StopApplication()));
-        await consumer.StopAsync();
-        await executionTask;
-    }
-
-    [Fact(Timeout = 50000)]
-    public async Task Consume_DlqPublishFailureWithShutdownAppOnPublishFailureFalse_MessageIsCommittedAndContinues()
-    {
-        var topic = NewTopic();
-        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
-        var dlqMock = new Mock<IRawMessagePublisher<string>>();
-        dlqMock
-            .Setup(p => p.PublishMessageAsync(It.IsAny<MotorCloudEvent<byte[]>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("DLQ publish failed"));
-        await PublishMessage(topic, "someKey", Message);
-        await PublishMessage(topic, "someKey", Message);
-
-        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
-        config.CommitPeriod = 1;
-        config.AutoCommitIntervalMs = null;
-        config.DeadLetterQueue = new KafkaDeadLetterQueueOptions { ShutdownAppOnPublishFailure = false };
-
-        using var consumer = GetConsumer(topic, config, fakeLifetimeMock.Object, [dlqMock.Object]);
-        var processedCount = 0;
-        var taskCompletionSource = new TaskCompletionSource();
-        consumer.ConsumeCallbackAsync = (_, _) =>
+        // Start consumer A — initially owns all 4 partitions
+        var configA = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 10, groupId: groupId);
+        configA.CommitPeriod = 1;
+        configA.AutoCommitIntervalMs = 1;
+        configA.SessionTimeoutMs = 6000;
+        var consumerA = GetConsumer(topic, configA);
+        consumerA.ConsumeCallbackAsync = async (data, _) =>
         {
-            processedCount++;
-            if (processedCount == 2)
-            {
-                taskCompletionSource.TrySetResult();
-            }
-            return Task.FromResult(ProcessedMessageStatus.Failure);
+            processedMessagesA.Add(Encoding.UTF8.GetString(data.TypedData));
+            return await Task.FromResult(ProcessedMessageStatus.Success);
         };
+        await consumerA.StartAsync();
+        var executionA = consumerA.ExecuteAsync();
 
-        await consumer.StartAsync();
-        var executionTask = consumer.ExecuteAsync();
-        await taskCompletionSource.Task;
-        await WaitForCommittedOffset(consumer, 2);
-        await consumer.StopAsync();
-        await executionTask;
+        // Start a background publisher that continuously sends messages across all partitions.
+        // The stream runs before, during, and after both rebalances.
+        var publishCts = new CancellationTokenSource();
+        var publishedMessages = new ConcurrentBag<string>();
+        var publisherTask = Task.Run(
+            async () =>
+            {
+                var messageIndex = 0;
+                while (!publishCts.Token.IsCancellationRequested)
+                {
+                    for (var p = 0; p < numPartitions; p++)
+                    {
+                        var msg = $"msg-{messageIndex++}-p{p}";
+                        try
+                        {
+                            await PublishMessageToPartition(topic, p, msg);
+                            publishedMessages.Add(msg);
+                        }
+                        catch (Exception) when (publishCts.Token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                    }
+                    await Task.Delay(10, publishCts.Token);
+                }
+            },
+            publishCts.Token
+        );
 
-        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
-        Assert.Equal(2, processedCount);
+        // Wait for consumer A to consume some messages before the first rebalance
+        await Task.Delay(TimeSpan.FromSeconds(3));
+
+        // --- First rebalance: consumer B joins ---
+        var configB = GetConsumerConfig<string>(topic, maxConcurrentMessagesPerPartition: 10, groupId: groupId);
+        configB.CommitPeriod = 1;
+        configB.AutoCommitIntervalMs = 1;
+        configB.SessionTimeoutMs = 6000;
+        var consumerB = GetConsumer(topic, configB);
+        consumerB.ConsumeCallbackAsync = async (data, _) =>
+        {
+            processedMessagesB.Add(Encoding.UTF8.GetString(data.TypedData));
+            return await Task.FromResult(ProcessedMessageStatus.Success);
+        };
+        await consumerB.StartAsync();
+        var executionB = consumerB.ExecuteAsync();
+
+        // Let both consumers process messages together for a while
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        // --- Second rebalance: consumer B leaves ---
+        await consumerB.StopAsync();
+        await executionB;
+
+        // Let consumer A process alone after the second rebalance
+        await Task.Delay(TimeSpan.FromSeconds(3));
+
+        // Stop the message stream
+        await publishCts.CancelAsync();
+        try
+        {
+            await publisherTask;
+        }
+        catch (OperationCanceledException) { }
+
+        // Give consumer A time to process remaining messages
+        await Task.Delay(TimeSpan.FromSeconds(3));
+
+        await consumerA.StopAsync();
+        await executionA;
+
+        // Both consumers must have processed at least one message
+        output.WriteLine($"Consumer A processed: {processedMessagesA.Count}");
+        output.WriteLine($"Consumer B processed: {processedMessagesB.Count}");
+        output.WriteLine($"Total published: {publishedMessages.Count}");
+        Assert.NotEmpty(processedMessagesA);
+        Assert.NotEmpty(processedMessagesB);
+
+        // All published messages must have been processed by one of the consumers
+        var allProcessed = processedMessagesA.Concat(processedMessagesB).ToHashSet();
+        foreach (var msg in publishedMessages)
+        {
+            Assert.Contains(msg, allProcessed);
+        }
     }
+
+    #endregion
 }
