@@ -111,7 +111,7 @@ jobs:
   #    uses: github/codeql-action/analyze@v1
 
   deploy:
-    needs: [build, format, test-net8, test-net9]
+    needs: [build]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:

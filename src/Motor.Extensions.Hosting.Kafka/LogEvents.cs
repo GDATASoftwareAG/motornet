@@ -24,8 +24,6 @@ public static class LogEvents
     public static readonly EventId PartitionPaused = new(11, nameof(PartitionPaused));
     public static readonly EventId PartitionResumed = new(12, nameof(PartitionResumed));
 
-     public static readonly EventId DeadLetterQueuePublish = new(13, nameof(DeadLetterQueuePublish));
-    public static readonly EventId DeadLetterQueuePublishFailed = new(14,
-        nameof(DeadLetterQueuePublishFailed)
-    );
+    public static readonly EventId DeadLetterQueuePublish = new(13, nameof(DeadLetterQueuePublish));
+    public static readonly EventId DeadLetterQueuePublishFailed = new(14, nameof(DeadLetterQueuePublishFailed));
 }
