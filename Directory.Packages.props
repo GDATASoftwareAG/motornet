@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.4.9" />
-    <PackageVersion Include="AWSSDK.SQS" Version="4.0.3.5" />
+    <PackageVersion Include="AWSSDK.SQS" Version="4.0.3.6" />
     <PackageVersion Include="CloudNative.CloudEvents" Version="2.8.0" />
     <PackageVersion Include="CloudNative.CloudEvents.Kafka" Version="2.8.0" />
     <PackageVersion Include="CloudNative.CloudEvents.SystemTextJson" Version="2.8.0" />
