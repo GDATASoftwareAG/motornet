@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <ProjectReference Include="..\Motor.Extensions.Diagnostics.Telemetry\Motor.Extensions.Diagnostics.Telemetry.csproj" />
   </ItemGroup>
 </Project>
