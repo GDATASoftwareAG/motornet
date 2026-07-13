@@ -6,7 +6,7 @@
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.100.3" />
     <PackageVersion Include="AWSSDK.SQS" Version="4.0.100.3" />
     <PackageVersion Include="CloudNative.CloudEvents" Version="2.9.0" />
-    <PackageVersion Include="CloudNative.CloudEvents.Kafka" Version="2.8.0" />
+    <PackageVersion Include="CloudNative.CloudEvents.Kafka" Version="3.9.0" />
     <PackageVersion Include="CloudNative.CloudEvents.SystemTextJson" Version="2.9.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.15.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
