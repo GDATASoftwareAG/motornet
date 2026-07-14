@@ -81,7 +81,10 @@ internal static class KafkaClientExtensions
             {
                 try
                 {
-                    motorCloudEvent.SetAttributeFromString(header.Key, Encoding.UTF8.GetString(headerValue));
+                    motorCloudEvent.SetAttributeFromString(
+                        header.Key.ToLowerInvariant(),
+                        Encoding.UTF8.GetString(headerValue)
+                    );
                 }
                 catch (ArgumentException)
                 {
