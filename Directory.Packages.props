@@ -35,7 +35,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.14" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
