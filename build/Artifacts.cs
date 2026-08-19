@@ -9,7 +9,7 @@ using Cake.Frosting;
 namespace build;
 
 [TaskName("Pack")]
-[IsDependentOn(typeof(BuildTask))]
+[IsDependentOn(typeof(TestTask))]
 public sealed class PackTask : FrostingTask<BuildContext>
 {
     public override void Run(BuildContext context) =>
@@ -28,7 +28,7 @@ public sealed class PackTask : FrostingTask<BuildContext>
 }
 
 [TaskName("Publish")]
-[IsDependentOn(typeof(BuildTask))]
+[IsDependentOn(typeof(TestTask))]
 public sealed class PublishTask : FrostingTask<BuildContext>
 {
     public override void Run(BuildContext context)
@@ -45,7 +45,7 @@ public sealed class PublishTask : FrostingTask<BuildContext>
             new DotNetPublishSettings
             {
                 Configuration = context.BuildConfiguration,
-                Framework = newestVersion,
+                Framework = newestVersion.DotnetVersionName(),
                 OutputDirectory = context.BridgeArtifactsDirectory,
                 NoBuild = true,
                 Verbosity = DotNetVerbosity.Minimal,

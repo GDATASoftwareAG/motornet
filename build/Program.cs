@@ -1,17 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using build;
 using Cake.Common;
 using Cake.Common.Build;
 using Cake.Common.Build.GitHubActions;
-using Cake.Common.Diagnostics;
-using Cake.Common.IO;
-using Cake.Common.Tools.DotNet;
-using Cake.Common.Tools.DotNet.Build;
-using Cake.Common.Tools.DotNet.Restore;
-using Cake.Common.Tools.DotNet.Test;
 using Cake.Core;
-using Cake.Core.IO;
 using Cake.DotNetLocalTools.Module;
 using Cake.Frosting;
 using Path = System.IO.Path;
@@ -25,13 +20,16 @@ return new CakeHost()
 
 public class BuildContext : FrostingContext
 {
-    public IEnumerable<string> DotNetVersions { get; } = ["net8.0", "net9.0"];
-    public string SolutionFileName => "Motor.NET.slnx";
-    public string SolutionDirectory => Path.Combine(Directory.GetCurrentDirectory());
+    private const string SolutionFileName = "Motor.NET.slnx";
+
+    public IEnumerable<DotNetVersion> DotNetVersions { get; } = [DotNetVersion.Net8, DotNetVersion.Net9];
+    public string SolutionDirectory => Directory.GetCurrentDirectory();
     public string SolutionFilePath => Path.Combine(SolutionDirectory, SolutionFileName);
+    public string TestDirectory => Path.Combine(SolutionDirectory, "test");
     public string ArtifactsDirectory { get; }
     public string BridgeArtifactsDirectory { get; }
     public string BuildConfiguration { get; }
+    public int TestExecutionParallelism { get; private set; }
     public IGitHubActionsProvider GitHubContext { get; }
     public string NuGetFeed { get; }
     public string NuGetApiKey { get; }
@@ -41,9 +39,12 @@ public class BuildContext : FrostingContext
     {
         if (context.HasArgument("dotnet-versions"))
         {
-            DotNetVersions = context.Arguments.GetArguments("dotnet-versions");
+            DotNetVersions = context
+                .Arguments.GetArguments("dotnet-versions")
+                .Select(raw => Enum.Parse<DotNetVersion>(raw, true));
         }
 
+        TestExecutionParallelism = context.Argument("test-execution-parallelism", System.Environment.ProcessorCount);
         BuildConfiguration = context.Argument("build-configuration", "Release");
         ArtifactsDirectory = context.Argument(
             "artifacts-directory",
@@ -60,95 +61,7 @@ public class BuildContext : FrostingContext
     }
 }
 
-[TaskName("Restore")]
-public sealed class RestoreTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context)
-    {
-        context.DotNetRestore(context.SolutionFilePath, new DotNetRestoreSettings { UseLockFile = true });
-    }
-}
-
-[TaskName("Format")]
-public sealed class FormatTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context) =>
-        context.DotNetTool(context.SolutionFilePath, "csharpier", ProcessArgumentBuilder.FromStrings(["format", "."]));
-}
-
-[TaskName("CheckFormat")]
-public sealed class CheckFormatTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context) =>
-        context.DotNetTool(context.SolutionFilePath, "csharpier", ProcessArgumentBuilder.FromStrings(["check", "."]));
-}
-
-[TaskName("Clean")]
-public sealed class CleanTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context)
-    {
-        context.CleanDirectories(context.ArtifactsDirectory);
-
-        var binDirs = context.GetDirectories("**/bin/");
-        var objDirs = context.GetDirectories("**/obj/");
-
-        context.DeleteDirectories(binDirs.Union(objDirs), new DeleteDirectorySettings { Recursive = true });
-    }
-}
-
-[TaskName("Build")]
-[IsDependentOn(typeof(CleanTask))]
-[IsDependentOn(typeof(RestoreTask))]
-public sealed class BuildTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context)
-    {
-        foreach (var dotNetVersion in context.DotNetVersions)
-        {
-            context.Information("Building for .NET {0}", dotNetVersion);
-            Build(context, dotNetVersion);
-        }
-    }
-
-    private void Build(BuildContext context, string dotNetVersion) =>
-        context.DotNetBuild(
-            context.SolutionFilePath,
-            new DotNetBuildSettings
-            {
-                Configuration = context.BuildConfiguration,
-                NoRestore = true,
-                Framework = dotNetVersion,
-            }
-        );
-}
-
-[TaskName("Test")]
-[IsDependentOn(typeof(BuildTask))]
-public sealed class TestTask : FrostingTask<BuildContext>
-{
-    public override void Run(BuildContext context)
-    {
-        foreach (var dotNetVersion in context.DotNetVersions)
-        {
-            context.Information("Running tests for .NET {0}", dotNetVersion);
-            Test(context, dotNetVersion);
-        }
-    }
-
-    private void Test(BuildContext context, string dotnetVersion) =>
-        context.DotNetTest(
-            context.SolutionFilePath,
-            new DotNetTestSettings
-            {
-                Configuration = context.BuildConfiguration,
-                NoRestore = true,
-                NoBuild = true,
-                Framework = dotnetVersion,
-            }
-        );
-}
-
 [TaskName("Default")]
-[IsDependentOn(typeof(TestTask))]
+[IsDependentOn(typeof(NugetPushTask))]
+[IsDependentOn(typeof(BridgeContainerImageTask))]
 public class DefaultTask : FrostingTask { }

@@ -10,8 +10,13 @@ using Cake.Frosting;
 namespace build;
 
 [TaskName("NugetPush")]
+[IsDependentOn(typeof(PackTask))]
 public sealed class NugetPushTask : FrostingTask<BuildContext>
 {
+    public override bool ShouldRun(BuildContext context) =>
+        context.GitHubContext.IsRunningOnGitHubActions
+        && context.GitHubContext.Environment.Workflow.EventName == "release";
+
     public override void Run(BuildContext context)
     {
         ArgumentException.ThrowIfNullOrEmpty(context.NuGetApiKey);
@@ -29,7 +34,8 @@ public sealed class NugetPushTask : FrostingTask<BuildContext>
 }
 
 [TaskName("BridgeContainerImage")]
-public sealed class ContainerImage : FrostingTask<BuildContext>
+[IsDependentOn(typeof(PublishTask))]
+public sealed class BridgeContainerImageTask : FrostingTask<BuildContext>
 {
     private const string ContainerImageName = "ghcr.io/gdatasoftwareag/motornet/bridge";
 
@@ -38,7 +44,9 @@ public sealed class ContainerImage : FrostingTask<BuildContext>
         var isRunningOnGitHubActions = context.GitHubContext.IsRunningOnGitHubActions;
         var imageTags = isRunningOnGitHubActions
             ? new[] { "", context.GitHubContext.Environment.Workflow.Sha }
-                .Select(suffix => $"{DetermineImageTag(context.GitHubContext)}-{suffix}")
+                .Select(suffix =>
+                    $"{ContainerImageName}:{DetermineImageTag(context.GitHubContext)}-{suffix}".TrimEnd('-')
+                )
                 .ToArray()
             : [$"{ContainerImageName}:dev"];
 
@@ -53,6 +61,7 @@ public sealed class ContainerImage : FrostingTask<BuildContext>
                     $"org.opencontainers.image.revision={revision}",
                     $"org.opencontainers.image.created={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}",
                 ],
+                Platform = ["linux/amd64"],
                 Push = isRunningOnGitHubActions && context.GitHubContext.Environment.Workflow.EventName == "release",
             },
             context.BridgeArtifactsDirectory
