@@ -16,24 +16,16 @@ env:
   NUGET_FEED: https://api.nuget.org/v3/index.json
 
 jobs:
-  format:
+  cake:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+      - name: Login to GitHub Registry
+        uses: docker/login-action@v4
         with:
-          dotnet-version: |
-            9.0.x
-      - name: check format
-        run: |
-          dotnet tool restore
-          ./build.sh --target CheckFormat
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -41,44 +33,10 @@ jobs:
             8.0.x
             9.0.x
       - name: Build
-        run: ./build.sh --target Artifacts
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: artifacts
-          path: |
-            ./artifacts/*.nupkg
-            ./artifacts/*.snupkg
-      - name: Upload Artifact Bridge
-        uses: actions/upload-artifact@v7
-        with:
-          name: artifacts-bridge
-          path: ./artifacts-bridge/*
-
-  test-net8:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-      - name: Test .NET8
-        run: ./build.sh -t Test --dotnet-versions net8.0
-
-  test-net9:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            9.0.x
-      - name: Test .NET9
-        run: ./build.sh -t Test --dotnet-versions net9.0
+        run: |
+          # this should not be necessary, but for some reason cake is not restoring tools correctly
+          dotnet tool restore
+          bash build.sh
 
           
   #code-ql:
@@ -99,40 +57,3 @@ jobs:
   #    run: dotnet build --configuration Release --no-restore Motor.NET.slnx
   #  - name: Perform CodeQL Analysis
   #    uses: github/codeql-action/analyze@v1
-
-  deploy:
-    needs: [build, format, test-net8, test-net9]
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Artifact
-        id: download
-        uses: actions/download-artifact@v8
-        with:
-          name: artifacts
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-      - name: Push to NuGet feed
-        run: ./build.sh -t NugetPush --artifacts-directory "${{ steps.download.outputs.download-path }}"
-
-  build-bridge:
-    needs: [build, format, test-net8, test-net9]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Artifact
-        id: download
-        uses: actions/download-artifact@v8
-        with:
-          name: artifacts-bridge
-      - name: Login to Github Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push to GitHub Packages
-        run: /build.sh -t BridgeContainerImage --bridge-artifacts-directory "${{ steps.download.outputs.download-path }}"
