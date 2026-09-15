@@ -20,7 +20,7 @@ public class JsonNetDeserializer<T> : IMessageDeserializer<T>
         {
             return JsonConvert.DeserializeObject<T>(json);
         }
-        catch (JsonReaderException e)
+        catch (JsonException e)
         {
             throw new ArgumentException("JSON invalid.", nameof(message), e);
         }

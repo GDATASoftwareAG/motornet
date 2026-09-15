@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Text;
 using Motor.Extensions.Conversion.JsonNet;
 using Newtonsoft.Json;
@@ -46,6 +44,40 @@ public class JsonDeserializerTests
     {
         var serializer = CreateDeserializer();
         var bytes = Serialize(ValidMessage).Take(10).ToArray();
+
+        Assert.Throws<ArgumentException>(() => serializer.Deserialize(bytes));
+    }
+
+    [Theory]
+    [InlineData("not a json")]
+    [InlineData("{ invalid json }")]
+    [InlineData("{\"Firstname\": \"Foo\",")]
+    [InlineData("{\"Firstname\": }")]
+    [InlineData("{\"Firstname\" \"Foo\"}")]
+    [InlineData("<xml>not json</xml>")]
+    public void Deserialize_CompletelyBrokenJsonInput_Throw(string invalidJson)
+    {
+        var serializer = CreateDeserializer();
+        var bytes = Encoding.UTF8.GetBytes(invalidJson);
+
+        Assert.Throws<ArgumentException>(() => serializer.Deserialize(bytes));
+    }
+
+    [Theory]
+    [InlineData("[1, 2, 3]")]
+    [InlineData("[]")]
+    [InlineData("[{\"Firstname\": \"Foo\"}]")]
+    [InlineData("\"just a string\"")]
+    [InlineData("123")]
+    [InlineData("true")]
+    [InlineData("{\"Age\": \"not-a-number\"}")]
+    [InlineData("{\"Age\": [1, 2, 3]}")]
+    [InlineData("{\"Age\": {\"nested\": \"object\"}}")]
+    [InlineData("{\"Firstname\": [\"Foo\"]}")]
+    public void Deserialize_ValidJsonInputInvalidForTargetType_Throw(string invalidJson)
+    {
+        var serializer = CreateDeserializer();
+        var bytes = Encoding.UTF8.GetBytes(invalidJson);
 
         Assert.Throws<ArgumentException>(() => serializer.Deserialize(bytes));
     }
