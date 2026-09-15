@@ -335,6 +335,91 @@ public class RabbitMQMessageConsumerTests
         );
     }
 
+    [Fact]
+    public async Task ConsumerCallback_InvalidCloudEventHeader_RejectsMessageAndDoesNotStopApplication()
+    {
+        var channelMock = new Mock<IChannel>();
+        IAsyncBasicConsumer? registeredConsumer = null;
+        var rejectCompletionSource = new TaskCompletionSource<ulong>();
+        channelMock
+            .Setup(x =>
+                x.BasicConsumeAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IDictionary<string, object?>?>(),
+                    It.IsAny<IAsyncBasicConsumer>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<
+                string,
+                bool,
+                string,
+                bool,
+                bool,
+                IDictionary<string, object?>?,
+                IAsyncBasicConsumer,
+                CancellationToken
+            >((_, _, _, _, _, _, consumer, _) => registeredConsumer = consumer)
+            .ReturnsAsync("consumer-tag");
+
+        channelMock
+            .Setup(x => x.BasicRejectAsync(It.IsAny<ulong>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Callback<ulong, bool, CancellationToken>(
+                (deliveryTag, _, _) => rejectCompletionSource.TrySetResult(deliveryTag)
+            )
+            .Returns(ValueTask.CompletedTask);
+
+        var rabbitConnectionFactoryMock = GetDefaultConnectionFactoryMock<string>(channelMock: channelMock);
+        var lifetimeMock = new Mock<IHostApplicationLifetime>();
+        var consumer = GetRabbitMQMessageConsumer(
+            rabbitConnectionFactoryMock.Object,
+            applicationLifetime: lifetimeMock.Object
+        );
+        var callbackCalled = false;
+        consumer.ConsumeCallbackAsync = (_, _) =>
+        {
+            callbackCalled = true;
+            return Task.FromResult(ProcessedMessageStatus.Success);
+        };
+
+        await consumer.StartAsync();
+
+        Assert.NotNull(registeredConsumer);
+
+        var basicProperties = new BasicProperties
+        {
+            Headers = new Dictionary<string, object?>
+            {
+                [$"{BasicPropertiesExtensions.CloudEventPrefix}time"] = "invalid-timestamp"u8.ToArray(),
+            },
+        };
+
+        const ulong expectedDeliveryTag = 42;
+        await registeredConsumer.HandleBasicDeliverAsync(
+            "consumer-tag",
+            expectedDeliveryTag,
+            false,
+            "exchange",
+            "routing-key",
+            basicProperties,
+            new ReadOnlyMemory<byte>([1, 2, 3]),
+            CancellationToken.None
+        );
+
+        var rejectedTag = await rejectCompletionSource.Task;
+        Assert.Equal(expectedDeliveryTag, rejectedTag);
+        channelMock.Verify(
+            x => x.BasicRejectAsync(expectedDeliveryTag, false, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        lifetimeMock.Verify(x => x.StopApplication(), Times.Never);
+        Assert.False(callbackCalled);
+    }
+
     private static IDictionary<string, object?> GetExpectedArgumentsFromConfig(RabbitMQQueueOptions options)
     {
         var expectedArguments = options.Arguments.ToDictionary(t => t.Key, t => t.Value);
