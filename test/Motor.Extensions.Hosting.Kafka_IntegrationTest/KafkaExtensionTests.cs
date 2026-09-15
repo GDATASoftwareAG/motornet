@@ -762,4 +762,40 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
         fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
         Assert.Equal(2, processedCount);
     }
+
+    [Fact(Timeout = 50000)]
+    public async Task Consume_InvalidCloudEventMissingRequiredAttributes_HandledAsInvalidInputAndContinues()
+    {
+        var topic = NewTopic();
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        const string invalidMessage = "{\"key\":\"value\"}";
+        const string validMessage = "validMessage";
+
+        var headers = new Headers { { "content-type", "application/cloudevents+json"u8.ToArray() } };
+        await PublishMessage(topic, "someKey", invalidMessage, headers);
+        await PublishMessage(topic, "someKey", validMessage);
+
+        var config = GetConsumerConfig<string>(topic, maxConcurrentMessages: 1, retriesOnTemporaryFailure: 0);
+        config.CommitPeriod = 1;
+        config.AutoCommitIntervalMs = null;
+
+        using var consumer = GetConsumer<string>(topic, config, fakeLifetimeMock.Object);
+        var taskCompletionSource = new TaskCompletionSource<string>();
+        consumer.ConsumeCallbackAsync = (data, _) =>
+        {
+            taskCompletionSource.TrySetResult(Encoding.UTF8.GetString(data.TypedData));
+            return Task.FromResult(ProcessedMessageStatus.Success);
+        };
+
+        await consumer.StartAsync();
+        var executionTask = consumer.ExecuteAsync();
+
+        var receivedMessage = await taskCompletionSource.Task;
+        await WaitForCommittedOffset(consumer, 2);
+        await consumer.StopAsync();
+        await executionTask;
+
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
+        Assert.Equal(validMessage, receivedMessage);
+    }
 }

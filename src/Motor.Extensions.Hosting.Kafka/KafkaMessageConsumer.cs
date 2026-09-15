@@ -32,6 +32,7 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
     private readonly KafkaConsumerOptions<TData> _options;
     private readonly IMetricFamily<IGauge>? _consumerLagGauge;
     private readonly IMetricFamily<ISummary>? _consumerLagSummary;
+    private readonly IMetricFamily<ICounter>? _invalidInputCounter;
     private readonly ILogger<KafkaMessageConsumer<TData>> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly List<IRawMessagePublisher<TData>> _deadLetterPublisher;
@@ -66,6 +67,11 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
             false,
             "topic",
             "partition"
+        );
+        _invalidInputCounter = metricsFactory?.CreateCounter(
+            "invalid_input_count",
+            "Contains the number of invalid input messages",
+            ["topic", "partition"]
         );
 
         _processedMessages = Channel.CreateBounded<Task<ConsumeResultAndProcessedMessageStatus>>(
@@ -232,18 +238,36 @@ public sealed class KafkaMessageConsumer<TData> : IMessageConsumer<TData>, IDisp
         CancellationToken token
     )
     {
+        _logger.LogDebug(
+            LogEvents.ReceivedMessage,
+            "Received message from topic '{Topic}:{Partition}' with offset: '{Offset}[{TopicPartitionOffset}]'",
+            msg.Topic,
+            msg.Partition,
+            msg.Offset,
+            msg.TopicPartitionOffset
+        );
+
+        MotorCloudEvent<byte[]> cloudEvent;
+
         try
         {
-            _logger.LogDebug(
-                LogEvents.ReceivedMessage,
-                "Received message from topic '{Topic}:{Partition}' with offset: '{Offset}[{TopicPartitionOffset}]'",
-                msg.Topic,
-                msg.Partition,
-                msg.Offset,
-                msg.TopicPartitionOffset
-            );
-            var cloudEvent = KafkaMessageToCloudEvent(msg.Message);
+            cloudEvent = KafkaMessageToCloudEvent(msg.Message);
+        }
+        catch (Exception extractionException)
+        {
+            _invalidInputCounter?.WithLabels(msg.Topic, msg.Partition.ToString())?.Inc();
 
+            _logger.LogError(
+                LogEvents.MessageHandlingUnexpectedException,
+                extractionException,
+                "Input message is not a valid CloudEvent"
+            );
+
+            return new ConsumeResultAndProcessedMessageStatus(msg, ProcessedMessageStatus.InvalidInput);
+        }
+
+        try
+        {
             var retryPolicy = Policy
                 .HandleResult<ProcessedMessageStatus>(status => status == ProcessedMessageStatus.TemporaryFailure)
                 .WaitAndRetryAsync(
