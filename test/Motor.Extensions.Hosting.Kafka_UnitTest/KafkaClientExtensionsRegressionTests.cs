@@ -17,7 +17,7 @@ public class KafkaClientExtensionsRegressionTests
     {
         var applicationNameServiceMock = Mock.Of<IApplicationNameService>();
         var actualContent = "{\"key\":\"value\"}";
-        var message = new Message<string, byte[]>
+        var message = new Message<string?, byte[]>
         {
             Headers = new Headers { { "content-type", "application/cloudevents+json"u8.ToArray() } },
             Value = Encoding.UTF8.GetBytes(
@@ -35,5 +35,27 @@ public class KafkaClientExtensionsRegressionTests
         };
         var cloudEvent = message.ToMotorCloudEvent(applicationNameServiceMock, new JsonEventFormatter());
         Assert.Equal(Encoding.UTF8.GetBytes(actualContent), cloudEvent.Data);
+    }
+
+    [Theory]
+    [InlineData("{\"key\":\"value\"}")]
+    [InlineData("{\"specversion\":\"1.0\"}")]
+    [InlineData("{\"specversion\":\"1.0\",\"id\":\"123\"}")]
+    [InlineData("{\"specversion\":\"1.0\",\"id\":\"123\",\"source\":\"/src\"}")]
+    [InlineData("{\"specversion\":\"1.0\",\"id\":\"123\",\"type\":\"type\"}")]
+    public void ToMotorCloudEvent_ContentTypeIsCloudEventWithJson_MissingRequiredAttributes_ThrowsArgumentException(
+        string invalidCloudEventJson
+    )
+    {
+        var applicationNameServiceMock = Mock.Of<IApplicationNameService>();
+        var message = new Message<string?, byte[]>
+        {
+            Headers = new Headers { { "content-type", "application/cloudevents+json"u8.ToArray() } },
+            Value = Encoding.UTF8.GetBytes(invalidCloudEventJson),
+        };
+
+        Assert.Throws<ArgumentException>(() =>
+            message.ToMotorCloudEvent(applicationNameServiceMock, new JsonEventFormatter())
+        );
     }
 }
