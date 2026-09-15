@@ -151,9 +151,32 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T>
             return;
         }
 
+        if (_channel is null)
+        {
+            _logger.LogWarning(
+                LogEvents.ChannelNullAfterProcessingComplete,
+                "Message processing status could not be returned to the channel because the channel is null"
+            );
+            return;
+        }
+
         try
         {
-            var cloudEvent = args.ExtractCloudEvent(_applicationNameService, args.Body, _options.ExtractBindingKey);
+            MotorCloudEvent<byte[]> cloudEvent;
+            try
+            {
+                cloudEvent = args.ExtractCloudEvent(_applicationNameService, args.Body, _options.ExtractBindingKey);
+            }
+            catch (Exception extractionException)
+            {
+                _logger.LogError(
+                    LogEvents.UnexpectedErrorOnConsume,
+                    extractionException,
+                    "Input message is not a valid CloudEvent"
+                );
+                await _channel.BasicRejectAsync(args.DeliveryTag, false, _stoppingTokenSource.Token);
+                return;
+            }
 
             var processedMessageStatus = await ConsumeCallbackAsync
                 .Invoke(cloudEvent, _stoppingTokenSource.Token)
@@ -161,15 +184,6 @@ public class RabbitMQMessageConsumer<T> : IMessageConsumer<T>
 
             if (_stoppingTokenSource.IsCancellationRequested)
             {
-                return;
-            }
-
-            if (_channel is null)
-            {
-                _logger.LogWarning(
-                    LogEvents.ChannelNullAfterProcessingComplete,
-                    "Message processing status could not be returned to the channel because the channel is null"
-                );
                 return;
             }
 

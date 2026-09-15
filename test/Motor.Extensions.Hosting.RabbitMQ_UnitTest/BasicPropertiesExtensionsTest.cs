@@ -249,6 +249,27 @@ public class BasicPropertiesExtensionsTest
         }
     }
 
+    [Theory]
+    [InlineData("time", "invalid-timestamp")]
+    public void ExtractCloudEvent_InvalidCloudEventAttribute_ThrowsArgumentException(
+        string attributeName,
+        string invalidValue
+    )
+    {
+        var basicProperties = new BasicProperties
+        {
+            Headers = new Dictionary<string, object?>
+            {
+                [$"{BasicPropertiesExtensions.CloudEventPrefix}{attributeName}"] = Encoding.UTF8.GetBytes(invalidValue),
+            },
+        };
+        var mockedApplicationNameService = Mock.Of<IApplicationNameService>();
+
+        Assert.ThrowsAny<ArgumentException>(() =>
+            basicProperties.ExtractCloudEvent(mockedApplicationNameService, new ReadOnlyMemory<byte>([1, 2, 3]))
+        );
+    }
+
     private static Version CurrentMotorVersion => typeof(BasicPropertiesExtensionsTest).Assembly.GetName().Version;
 
     private static byte[] EscapeWithQuotes(byte[] value)

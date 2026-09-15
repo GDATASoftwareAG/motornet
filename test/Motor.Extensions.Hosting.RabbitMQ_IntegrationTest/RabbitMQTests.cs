@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using Motor.Extensions.Hosting.RabbitMQ;
 using Motor.Extensions.Hosting.RabbitMQ.Options;
 using Motor.Extensions.TestUtilities;
 using Polly;
+using RabbitMQ.Client;
 using Xunit;
 using Opts = Microsoft.Extensions.Options.Options;
 
@@ -429,6 +431,64 @@ public class RabbitMQTests(RabbitMQFixture fixture) : IClassFixture<RabbitMQFixt
         Assert.Equal(builder.QueueName, state.QueueName);
         Assert.Equal(1, state.ConsumerCount);
         Assert.InRange(state.ReadyMessages, 0, RabbitMQTestBuilder.PrefetchCount);
+    }
+
+    [Fact(Timeout = 50000)]
+    public async Task ConsumerStartAsync_InvalidCloudEventHeader_RejectedAndContinuesProcessing()
+    {
+        var fakeLifetimeMock = new Mock<IHostApplicationLifetime>();
+        var validMessage = new byte[] { 4, 5, 6 };
+        var taskCompletionSource = new TaskCompletionSource<byte[]>();
+
+        var builder = await RabbitMQTestBuilder
+            .CreateWithQueueDeclare(fixture)
+            .WithDeadLetterExchange()
+            .WithConsumerCallback(
+                (cloudEvent, _) =>
+                {
+                    taskCompletionSource.TrySetResult(cloudEvent.TypedData);
+                    return Task.FromResult(ProcessedMessageStatus.Success);
+                }
+            )
+            .BuildAsync();
+
+        var consumer = await builder.GetConsumerAsync<string>(fakeLifetimeMock.Object);
+
+        await using (var channel = await (await fixture.ConnectionAsync()).CreateChannelAsync())
+        {
+            var invalidProperties = new BasicProperties
+            {
+                DeliveryMode = DeliveryModes.Persistent,
+                Headers = new Dictionary<string, object?>
+                {
+                    [$"{BasicPropertiesExtensions.CloudEventPrefix}time"] = "invalid-timestamp"u8.ToArray(),
+                },
+            };
+            await channel.BasicPublishAsync(
+                "amq.topic",
+                builder.RoutingKey,
+                true,
+                invalidProperties,
+                new byte[] { 1, 2, 3 }
+            );
+
+            var validProperties = new BasicProperties { DeliveryMode = DeliveryModes.Persistent };
+            await channel.BasicPublishAsync("amq.topic", builder.RoutingKey, true, validProperties, validMessage);
+        }
+
+        await consumer.StartAsync();
+
+        var consumedMessage = await taskCompletionSource.Task;
+        Assert.Equal(validMessage, consumedMessage);
+
+        await WaitUntilAsync(async () =>
+        {
+            Assert.Equal((uint)0, await builder.MessagesInQueueAsync(builder.QueueName));
+            Assert.Equal((uint)1, await builder.MessagesInQueueAsync(builder.DlxQueueName));
+        });
+
+        fakeLifetimeMock.Verify(mock => mock.StopApplication(), Times.Never);
+        await consumer.StopAsync();
     }
 
     private static Task WaitUntilAsync(Action action) => WaitUntilAsync(async () => await Task.Run(action));
