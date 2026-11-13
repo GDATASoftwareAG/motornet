@@ -80,19 +80,20 @@ public class KafkaExtensionTests(ITestOutputHelper output, KafkaFixture fixture)
     public async Task Consume_RawPublishWithKafkaHeader_HeaderValueIsAvailableAsCloudEventAttribute()
     {
         var topic = NewTopic();
-        const string headerKey = "customheader";
+        const string headerKeyOriginal = "CustomHeaderNamE";
+        const string headerKeyConverted = "customheadername";
         const string headerValue = "customHeaderValue";
         await PublishMessage(
             topic,
             "someKey",
             Message,
-            new Headers { { headerKey, Encoding.UTF8.GetBytes(headerValue) } }
+            new Headers { { headerKeyOriginal, Encoding.UTF8.GetBytes(headerValue) } }
         );
         using var consumer = GetConsumer<string>(topic);
         var consumedHeaderValueCompletionSource = new TaskCompletionSource<string?>();
         consumer.ConsumeCallbackAsync = (dataEvent, _) =>
         {
-            consumedHeaderValueCompletionSource.TrySetResult(dataEvent[headerKey] as string);
+            consumedHeaderValueCompletionSource.TrySetResult(dataEvent[headerKeyConverted] as string);
             return Task.FromResult(ProcessedMessageStatus.Success);
         };
 
