@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.100.3" />
+    <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.100.4" />
     <PackageVersion Include="AWSSDK.SQS" Version="4.0.100.3" />
     <PackageVersion Include="Cake.Docker" Version="1.5.0" />
     <PackageVersion Include="Cake.DotNetLocalTools.Module" Version="3.0.12" />
