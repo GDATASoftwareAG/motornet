@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\src\Motor.Extensions.Utilities\Motor.Extensions.Utilities.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CloudNative.CloudEvents.Kafka" />
     <PackageReference Include="Confluent.Kafka" />
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
